@@ -22,7 +22,7 @@ def patch(path, edits):
 SIGNING = '''    // kharchili-patched
     signingConfigs {
         create("kharchili") {
-            val props = java.util.Properties()
+            val props = Properties()
             val keyFile = rootProject.file("key.properties")
             if (keyFile.exists()) keyFile.inputStream().use { props.load(it) }
             storeFile = file(props.getProperty("storeFile") ?: "sideload.keystore")
@@ -60,6 +60,7 @@ RECEIVERS = '''        <receiver android:exported="false" android:name="com.dext
 android = ROOT / 'android' / 'app'
 if android.exists():
     patch(android / 'build.gradle.kts', [
+        ('plugins {', 'import java.util.Properties\n\nplugins {'),
         ('compileOptions {', 'compileOptions {\n        isCoreLibraryDesugaringEnabled = true'),
         ('    buildTypes {', SIGNING),
         ('signingConfigs.getByName("debug")', 'signingConfigs.getByName("kharchili")'),

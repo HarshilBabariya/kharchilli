@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Kharchili is
 Kharchili (kharcha + chili) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/housequest`). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Kharchili** · app id / bundle id: `app.kharchili` · version `1.0.1+2`.
+- App name: **Kharchili** · app id / bundle id: `app.kharchili` · version `1.0.2+3`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Kharchili → Me → Your data → Import CSV.
 - Name check (Nov 2026): "Chillar" was the first pick but two expense trackers already use it; no app named Kharchili turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -120,5 +120,6 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.0.2 | 2026-11-18 | Build fix: the signing block in `android/app/build.gradle.kts` imports `java.util.Properties` (inside `android {}` the name `java` is Gradle's Java extension, so the qualified name did not resolve). |
 | 1.0.1 | 2026-11-18 | Build fix: icons and splash are pre-rendered and copied by `tool/patch_platforms.py`; `flutter_launcher_icons` and `flutter_native_splash` removed after the launcher-icons tool failed to compile in CI. |
 | 1.0.0 | 2026-11-18 | Kharchili: Flutter rewrite of HomeQuest 1.9.5 for Android and iOS under the new id `app.kharchili`; new lettermark icon and opening animation; redesigned navigation, add flow, charts and celebrations; comeback and weekly-roast notifications; one build instead of Full / Lite; SMS capture, UPI points packs and the festival launcher icon left out (see 3); website rebranded and its download fixed by building the APK and the site in one workflow. |

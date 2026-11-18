@@ -1,7 +1,7 @@
 name: kharchili
 description: Kharchili - household expenses with spice. Track, split, budget and get roasted for it.
 publish_to: none
-version: 1.0.1+2
+version: 1.0.2+3
 
 environment:
   sdk: ^3.8.0
