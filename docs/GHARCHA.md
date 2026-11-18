@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Gharcha is
 Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/Kharchili`; the repo kept the app's previous working name). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.3.0+9`.
+- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.5.1+12`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Gharcha → Me → Your data → Import CSV.
 - Names: 1.0.x shipped as Kharchili (`app.kharchili`); 1.1.0 renamed it to Gharcha with a new id, so it installs as a separate app from a 1.0.x test build (move data with CSV export / import). Name check (Nov 2026): "Chillar" and "GharKharch" are taken by other expense apps; no app named Gharcha turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -16,7 +16,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Every handover updates this document and the README in the same pass.
 - Fixes are verified in a fresh review pass before a zip is handed over.
 
-## 3. Features in 1.3.0
+## 3. Features in 1.5.0
 ### Look, feel and flows (new in the rewrite)
 - Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment plays on the brand red: the house rises, three gold coins drop into it (it bounces with each), the rupee writes itself, the saffron dot pops and the Gharcha wordmark and tagline slide in. It is the app's own story (money coming home); the earlier letter-with-orbiting-dots opening was too close to the reference app and is gone.
 - Illustrated art instead of emoji: 33 badge medals (bronze, silver or gold rim by difficulty, one to three rank stars, an emblem per badge) and 24 sticker icons (groups, home services, empty screens, shop, gold, forecast). They are drawn as SVG and rendered to PNG by `tool/make_art.py` into `assets/art/`; the app shows them with `Medal` and `Sticker` (`lib/ui/glyphs.dart`). Locked medals are greyed behind a padlock with a progress ring. Points are a gold coin (`Coin`); categories and rows use glossy gradient tiles (`IconTile`).
@@ -26,6 +26,19 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Add transaction: voice banner with a pulsing mic, Expense / Credit segments, a large amount with the currency symbol at the same weight and a money keypad that stays open, Yesterday / Today / Tomorrow chips, Paid by chips, four payment-mode tiles, group split (equal or custom) and a note. Saving floods the screen with the accent colour and a tick springs in, then a points toast with the coin floats up on Home.
 - Celebrations for level-ups, badges, streak milestones and festivals are a card over looping confetti (or the festival's own particle show): the badge's medal, the flame or the dressed avatar on rotating rays, with the household sound and haptics. They wait until no sheet or pushed page is on top.
 - Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 16 themes.
+
+### Added in 1.5.0
+- **Full-body avatars:** `AvatarView(full: true)` draws the whole standing figure (100 x 190 canvas in `_paintFull`): legs, shoes, arms, a full-length outfit per cut (tee, collar, hoodie, jacket, long kurta over light trousers, saree / dress skirt, one-piece suit) under the portrait's own head, hair, beard, accessories and mood marks. Jump, spin, dance, wave and cheer animate the whole body. Used for the avatar studio preview, outfit tiles in the studio and the shop, and the festival celebration; small round portraits stay everywhere else.
+- **Receipt photo** on an expense: camera or gallery through `image_picker`, stored as a JPEG in the app's documents folder with its file name on the expense (`Expense.photo`); tap to view, replace or remove. Photos are not inside the backup file.
+- **Accessibility:** icon-only buttons announce a label (`RoundIcon` maps its icons to strings; the centre + is labelled), switches announce their state, tappable surfaces are marked as buttons, decorative stickers and medals are hidden from screen readers, and text follows the phone's font size up to 130%.
+- **Unit tests** in `test/core_test.dart` for the split calculator, the payment-message and voice parsers, PIN hashing and CSV. CI runs `flutter test` after analysis; the step reports but does not block the build until it has passed once on CI.
+
+### Added in 1.4.0
+- **Designed share cards** (`screens/cards.dart`): a settle-up reminder (both avatars, amount, group, the payee's UPI ID), a group summary (total and every member's balance), an expense receipt and an earned-badge card, all on the shared `ShareCard` frame. `shareCard` in `screens/export.dart` previews any card and shares it as a PNG with a text caption; the weekly card uses the same path. Remind and the group share button now send a card through the share sheet instead of plain text.
+- **Split by percent or by shares** next to Equally and Amounts (`SplitType.percent`, `SplitType.weights`). Shares are still stored as amounts; the type records how they were entered so the form reopens the same way.
+- **Across all groups:** the Groups tab opens with who owes you and whom you owe, summed over every group's settle-up plan (`AppState.myDues`).
+- **Backup and restore** (Settings → Your data): Back up shares one JSON file holding every record and the settings; Restore replaces everything from such a file after a confirmation (`Store.dump` / `Store.restore`, ids preserved).
+- **Performance:** badge progress is computed once per change instead of on every read; notification rescheduling is debounced to one pass two seconds after the last change. Lists were already built lazily by `ListView`, so no change was needed there.
 
 ### Added in 1.3.0
 - **Edit a group:** the pencil on a group's page reopens the group sheet to rename it, change its sticker or its members. Saving re-splits the group's equal splits; custom splits are left alone.
@@ -43,7 +56,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - **Notification tone** (Me → Notifications): Spicy (the roast pools), Mild (one plain line per kind, `plain_*` strings) or Quiet (plain wording and no comeback, weekly or streak-in-danger nudges). `AppState._copy` picks the wording.
 - **Monthly income** (Budgets): with income set, Budgets shows spent-against-income and "Saved so far", and Home gets a "Saved this month" tile.
 - **Repeat every month** switch on Add transaction: saving also creates a monthly auto-logging bill reminder for that day of the month.
-- **Paste a payment message:** the paste button on Add transaction reads the clipboard and fills amount, payee, payment mode, category and credit/debit (`MessageParser` in `core/parsers.dart`; falls back to the voice parser).
+- **Paste a payment message:** the "Paste a bank or UPI message" row under the voice banner on Add transaction (a labelled row since 1.5.1; the bare icon was not understood) reads the clipboard and fills amount, payee, payment mode, category and credit/debit (`MessageParser` in `core/parsers.dart`; falls back to the voice parser).
 - **Settle up:** each settle-up card has Mark paid, plus **Pay by UPI** when you are the payer (opens the phone's UPI app through a `upi://pay` link using the payee's UPI ID, a new optional field on a member; INR households only) and **Remind** when you are owed (WhatsApp link, falling back to the share sheet).
 - **Visible delete with undo:** groups have a delete button on their page (with confirmation, because their splits and settlements go too); gold items, chits and expenses delete from a visible button with a 5-second Undo bar. No delete is hidden behind a long-press any more.
 - **App shortcuts:** long-press the launcher icon for Add transaction and Voice entry (`quick_actions`).
@@ -83,7 +96,6 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 | Bills auto-log in the background | Changed | They are logged the next time the app opens, back-dated to the due day. |
 | Share-to-Gharcha from a bank or UPI app | Replaced by paste | Receiving a share needs native code in both platform folders, which are generated at build time and cannot be compiled on the authoring side. Copy the message and tap paste instead. |
 | Home-screen widget | Replaced by app shortcuts | A widget needs a native widget provider on Android and a WidgetKit extension on iOS. Long-press shortcuts cover quick add without native code; a real widget is a candidate once builds can be tested on a device loop. |
-| Backup and restore file | Not built | Deliberately left out of 1.2.0 at the owner's request; CSV export / import remains the only way to move data. |
 | Custom notification sounds on iOS | Android only | iOS needs the sounds bundled into the Xcode project. |
 | PDF in Hindi / Gujarati script | Limited | The PDF is a plain Courier table written by the app itself (no PDF package); non-Latin text prints as ? and amounts use the currency code instead of ₹. |
 
@@ -146,6 +158,9 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.5.1 | 2026-11-19 | Fixes from device testing: the Undo message closes itself after five seconds (it no longer uses a `SnackBarAction`, which newer Flutter keeps on screen) and Undo is a solid yellow button on a dark bar; a swiped expense row's red / blue strip fills the row with no gap above or below; the selected category in the picker has a matching rounded outline and a tick instead of a circle around a square; paste is a labelled row with an explanation instead of an icon in the header. |
+| 1.5.0 | 2026-11-19 | Full-body avatars; receipt photos (`image_picker`); screen-reader labels and capped text scaling; first unit tests and a non-blocking `flutter test` step in CI. |
+| 1.4.0 | 2026-11-19 | Designed share cards (reminder, group, receipt, badge); percent and shares splits; cross-group dues on the Groups tab; backup and restore file; cached badge progress and debounced notification scheduling. No new packages. |
 | 1.3.0 | 2026-11-19 | Edit group; duplicate-name checks; expense filters; swipe to delete / duplicate; fingerprint or face unlock (`local_auth`, native patches for FragmentActivity and AppCompat theme); Me split into a short page plus a Settings screen. |
 | 1.2.1 | 2026-11-19 | Fixes from device testing of 1.2.0. Sheets that stayed open on Save and added a record per tap: every save / delete handler now closes the sheet before writing, and notification rescheduling runs in the background and cannot throw into a save. Tab pages (Home, Expenses, Groups, Me) cleared the tab bar by too little, hiding the last item; they now use the bar's real height. Long sheets (category, reminder, family member, service) keep Save / Delete pinned below a scrolling body (`KSheetForm`). Release builds no longer minify (`isMinifyEnabled = false`), because the notification plugin's stored schedules are known to break under code shrinking. |
 | 1.2.0 | 2026-11-19 | First-expense step after setup; shorter Home; current-month Insights free and export free; notification tone (Spicy / Mild / Quiet); monthly income and savings; repeat-monthly expenses; paste a payment message; Pay by UPI and Remind on settle-up cards (member UPI ID); visible delete with undo; launcher shortcuts; privacy sheet and website privacy page. New packages: `url_launcher`, `quick_actions`. |

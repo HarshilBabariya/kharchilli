@@ -23,7 +23,7 @@ import 'lock.dart';
 import 'reminders.dart';
 import 'rewards.dart';
 
-const appVersion = '1.3.0';
+const appVersion = '1.5.1';
 
 class MeTab extends StatelessWidget {
   const MeTab({super.key});
@@ -207,6 +207,8 @@ class SettingsScreen extends StatelessWidget {
           ]),
         _section(context, tr('your_data'), [
           NavRow(icon: Icons.ios_share_rounded, title: tr('export_data'), subtitle: tr('export_sub'), onTap: () => _export(context)),
+          NavRow(icon: Icons.backup_rounded, color: const Color(0xFF039BE5), title: tr('backup'), subtitle: tr('backup_sub'), onTap: () => shareBackup(app)),
+          NavRow(icon: Icons.settings_backup_restore_rounded, color: const Color(0xFF039BE5), title: tr('restore'), subtitle: tr('restore_sub'), onTap: () => restoreBackupFile(context)),
           NavRow(icon: Icons.file_download_rounded, title: tr('import_csv'), subtitle: tr('import_sub'), onTap: () => importCsvFile(context)),
           NavRow(
             icon: Icons.delete_forever_rounded,

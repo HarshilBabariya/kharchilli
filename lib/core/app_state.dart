@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart' show DateTimeComponents;
+import 'package:path_provider/path_provider.dart';
 
 import 'catalogs.dart';
 import 'format.dart';
@@ -65,7 +66,11 @@ class AppState extends ChangeNotifier {
   final pointsToast = ValueNotifier<int>(0);
   final festiveMoment = ValueNotifier<int>(0);
 
+  /// Where receipt photos are kept.
+  String photosDir = '';
+
   Future<void> load() async {
+    photosDir = (await getApplicationDocumentsDirectory()).path;
     settings = _store.loadSettings();
     members = await _store.load('member', Member.fromJson);
     categories = await _store.load('category', Category.fromJson);
@@ -364,15 +369,27 @@ class AppState extends ChangeNotifier {
       ..languageChanged = settings.languageChanged;
   }
 
+  /// Worked out once per change: [notifyListeners] drops the cached list.
   List<BadgeStatus> get badgeStatuses {
+    final cached = _badgeStatuses;
+    if (cached != null) return cached;
     final s = _snapshot;
-    return [for (final b in BadgeCatalog.badges) BadgeStatus(b, settings.badges[b.id], BadgeCatalog.progress(b.id, s))];
+    return _badgeStatuses = [for (final b in BadgeCatalog.badges) BadgeStatus(b, settings.badges[b.id], BadgeCatalog.progress(b.id, s))];
+  }
+
+  List<BadgeStatus>? _badgeStatuses;
+
+  @override
+  void notifyListeners() {
+    _badgeStatuses = null;
+    super.notifyListeners();
   }
 
   Future<void> _checkBadges() async {
     var again = true;
     while (again) {
       again = false;
+      _badgeStatuses = null;
       for (final status in badgeStatuses.where((s) => !s.earned && s.progress >= s.badge.target)) {
         final b = status.badge;
         settings.badges[b.id] = DateTime.now().millisecondsSinceEpoch;
@@ -387,8 +404,11 @@ class AppState extends ChangeNotifier {
   Future<void> _afterChange() async {
     await _checkBadges();
     await _persist();
-    unawaited(syncNotifications());
+    _syncSoon?.cancel();
+    _syncSoon = Timer(const Duration(seconds: 2), syncNotifications);
   }
+
+  Timer? _syncSoon;
 
   Future<bool> unlock(RewardItem item) async {
     if (isUnlocked(item.id)) return true;
@@ -557,6 +577,22 @@ class AppState extends ChangeNotifier {
       nets[s.to] = (nets[s.to] ?? 0.0) - s.amount;
     }
     return [for (final e in nets.entries) MemberBalance(e.key, memberName(e.key), e.value)];
+  }
+
+  /// What each other member owes the active member across every group's settle-up plan; negative when the active member owes them.
+  Map<Member, double> get myDues {
+    final id = settings.activeMemberId;
+    final dues = <int, double>{};
+    for (final g in groups) {
+      for (final t in SplitCalculator.settlements(balances(g))) {
+        if (t.toId == id) dues[t.fromId] = (dues[t.fromId] ?? 0) + t.amount;
+        if (t.fromId == id) dues[t.toId] = (dues[t.toId] ?? 0) - t.amount;
+      }
+    }
+    return {
+      for (final d in dues.entries)
+        if (member(d.key) != null && d.value.abs() >= 0.005) member(d.key)!: d.value,
+    };
   }
 
   double get myGroupBalance {
@@ -772,6 +808,18 @@ class AppState extends ChangeNotifier {
   }
 
   // ---- Data
+
+  Future<String> exportBackup() => _store.dump();
+
+  /// Replaces all data with a backup file's. Returns false when the file is not a Gharcha backup.
+  Future<bool> restoreBackup(String backup) async {
+    if (!await _store.restore(backup)) return false;
+    celebrations.clear();
+    await load();
+    notifyListeners();
+    unawaited(syncNotifications());
+    return true;
+  }
 
   String exportCsv({DateTime? month}) {
     final list = (month == null ? [...expenses] : inMonth(month))..sort((a, b) => a.day.compareTo(b.day));

@@ -409,7 +409,7 @@ class _CelebrationScreenState extends State<_CelebrationScreen> with SingleTicke
       CelebrationKind.badge => Medal(c.badgeId ?? 'badge_first_step', size: 140),
       CelebrationKind.streak => const Flame(size: 128),
       CelebrationKind.level => const Medal('badge_level_5', size: 140),
-      CelebrationKind.festival => AvatarView(pack == null ? app.myLook : RewardCatalog.dressFor(pack, app.myLook), size: 140, animate: true, action: AvatarAction.cheer),
+      CelebrationKind.festival => AvatarView(pack == null ? app.myLook : RewardCatalog.dressFor(pack, app.myLook), size: 84, animate: true, action: AvatarAction.cheer, full: true),
     };
     return Scaffold(
       backgroundColor: Colors.transparent,

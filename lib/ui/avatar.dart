@@ -37,7 +37,7 @@ const _outfits = <String, (int, int, int)>{
 };
 
 class AvatarView extends StatefulWidget {
-  const AvatarView(this.config, {super.key, this.size = 56, this.animate = false, this.action, this.ring = true});
+  const AvatarView(this.config, {super.key, this.size = 56, this.animate = false, this.action, this.ring = true, this.full = false});
   final AvatarConfig config;
   final double size;
   final bool animate;
@@ -45,6 +45,9 @@ class AvatarView extends StatefulWidget {
   /// Plays once whenever it changes to a non-null value.
   final AvatarAction? action;
   final bool ring;
+
+  /// Draws the whole standing figure, [size] wide and 1.9 times as tall, instead of the round portrait.
+  final bool full;
 
   @override
   State<AvatarView> createState() => _AvatarViewState();
@@ -91,21 +94,22 @@ class _AvatarViewState extends State<AvatarView> with TickerProviderStateMixin {
     return AnimatedBuilder(
       animation: Listenable.merge([_idle, _act]),
       builder: (_, __) => CustomPaint(
-        size: Size.square(widget.size),
-        painter: _AvatarPainter(widget.config, _idle.value, _playing, _act.value, [cs.primary, cs.secondary], widget.ring),
+        size: Size(widget.size, widget.full ? widget.size * 1.9 : widget.size),
+        painter: _AvatarPainter(widget.config, _idle.value, _playing, _act.value, [cs.primary, cs.secondary], widget.ring, widget.full),
       ),
     );
   }
 }
 
 class _AvatarPainter extends CustomPainter {
-  _AvatarPainter(this.c, this.idle, this.action, this.t, this.tints, this.ring);
+  _AvatarPainter(this.c, this.idle, this.action, this.t, this.tints, this.ring, this.full);
   final AvatarConfig c;
   final double idle;
   final AvatarAction? action;
   final double t;
   final List<Color> tints;
   final bool ring;
+  final bool full;
 
   static const _head = Rect.fromLTRB(30, 20, 70, 68);
   static const _ink = Color(0xFF2B1B17);
@@ -155,6 +159,10 @@ class _AvatarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (full) {
+      _paintFull(canvas, size);
+      return;
+    }
     canvas.save();
     canvas.scale(size.width / 100);
     final frame = Path()..addOval(const Rect.fromLTWH(0, 0, 100, 100));
@@ -224,6 +232,128 @@ class _AvatarPainter extends CustomPainter {
     }
     if (action == AvatarAction.wink) _sparkle(canvas, Offset(76, 40 - 8 * pulse), 4 * pulse + 1, const Color(0xFFFFC531));
     if (ring) canvas.drawCircle(const Offset(50, 50), 48.5, _line(Colors.white.withValues(alpha: 0.85), 3));
+    canvas.restore();
+  }
+
+  /// The standing figure on a 100 x 190 canvas: legs, arms and a full-length outfit under the portrait's own head.
+  void _paintFull(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / 100);
+    canvas.translate(0, 12);
+    final pulse = sin(t * pi);
+    var dy = sin(idle * 2 * pi) * 0.6, tilt = 0.0, squashX = 1.0;
+    switch (action) {
+      case AvatarAction.jump || AvatarAction.cheer:
+        dy -= 14 * pulse;
+      case AvatarAction.spin:
+        squashX = cos(t * 2 * pi);
+      case AvatarAction.dance:
+        tilt = sin(t * 6 * pi) * 0.08;
+      case AvatarAction.laugh:
+        dy += sin(t * 14 * pi) * 1.2;
+      default:
+        break;
+    }
+    canvas.drawOval(Rect.fromCenter(center: const Offset(50, 171), width: 52 - dy.abs(), height: 10), _fill(Colors.black.withValues(alpha: 0.12)));
+    canvas.translate(50, 168 + dy);
+    canvas.rotate(tilt);
+    canvas.scale(squashX.abs() < 0.08 ? 0.08 : squashX, 1);
+    canvas.translate(-50, -168);
+
+    final skin = Color(skinTones[c.skinTone % skinTones.length]);
+    final shade = Color.lerp(skin, const Color(0xFF7A3E12), 0.2)!;
+    final hair = Color(hairColors[c.hairColor % hairColors.length]);
+    final look = _outfits[c.outfitId] ?? _outfits['outfit_tee']!;
+    final base = Color(look.$1), accent = Color(look.$2), cut = look.$3;
+    final deep = Color.lerp(base, Colors.black, 0.3)!;
+    void onHead(VoidCallback draw) {
+      canvas.save();
+      canvas.translate(50, 0);
+      canvas.scale(0.94);
+      canvas.translate(-50, -11);
+      draw();
+      canvas.restore();
+    }
+
+    onHead(() => _hairBack(canvas, hair));
+
+    final shoe = _fill(cut == 4 ? const Color(0xFF8A5A2B) : const Color(0xFF1F2430));
+    if (cut == 5) {
+      for (final x in [41.0, 52.0]) {
+        canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x, 140, 7, 24), const Radius.circular(3.5)), _fill(skin));
+      }
+    } else {
+      final pants = switch (cut) { 1 => const Color(0xFF3B3F4A), 3 => const Color(0xFF22252E), 4 => const Color(0xFFF3EBDD), 6 => base, _ => const Color(0xFF2B3A67) };
+      canvas.drawPath(Path()..moveTo(37, 104)..lineTo(63, 104)..lineTo(61, 162)..lineTo(52, 162)..lineTo(50, 122)..lineTo(48, 162)..lineTo(39, 162)..close(), _fill(pants));
+    }
+    for (final x in [35.0, 51.0]) {
+      canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(x, 160, 14, 8), const Radius.circular(4)), shoe);
+    }
+
+    final waving = action == AvatarAction.wave || action == AvatarAction.cheer;
+    final swing = waving ? sin(t * 8 * pi) * 4 : 0.0;
+    canvas.drawPath(Path()..moveTo(35, 62)..quadraticBezierTo(27, 66, 26, 96), _line(base, 9));
+    canvas.drawCircle(const Offset(26, 100), 4.6, _fill(skin));
+    if (waving) {
+      canvas.drawPath(Path()..moveTo(65, 62)..quadraticBezierTo(76, 58, 80 + swing, 38), _line(base, 9));
+      canvas.drawCircle(Offset(80.5 + swing, 34), 4.6, _fill(skin));
+    } else {
+      canvas.drawPath(Path()..moveTo(65, 62)..quadraticBezierTo(73, 66, 74, 96), _line(base, 9));
+      canvas.drawCircle(const Offset(74, 100), 4.6, _fill(skin));
+    }
+
+    final hem = switch (cut) { 4 => 128.0, 5 => 148.0, _ => 110.0 };
+    final cloth = Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color.lerp(base, Colors.white, 0.2)!, base, Color.lerp(base, Colors.black, 0.16)!], stops: const [0, 0.4, 1]).createShader(const Rect.fromLTWH(26, 56, 48, 94));
+    if (cut == 5) {
+      canvas.drawPath(Path()..moveTo(36, 60)..quadraticBezierTo(50, 56, 64, 60)..lineTo(66, 96)..lineTo(74, hem)..quadraticBezierTo(50, hem + 6, 26, hem)..lineTo(34, 96)..close(), cloth);
+      canvas.drawPath(Path()..moveTo(27, hem - 6)..quadraticBezierTo(50, hem, 73, hem - 6), _line(accent, 3));
+      canvas.drawPath(Path()..moveTo(36, 62)..lineTo(64, 100)..lineTo(66, 108)..lineTo(34, 70)..close(), _fill(accent));
+    } else {
+      canvas.drawPath(Path()..moveTo(36, 60)..quadraticBezierTo(50, 56, 64, 60)..lineTo(66, hem - 4)..quadraticBezierTo(66, hem, 62, hem)..lineTo(38, hem)..quadraticBezierTo(34, hem, 34, hem - 4)..close(), cloth);
+    }
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(46, 50, 8, 12), const Radius.circular(3)), _fill(shade));
+    switch (cut) {
+      case 1:
+        canvas.drawPath(Path()..moveTo(44, 59)..lineTo(50, 66)..lineTo(46, 69)..close(), _fill(accent));
+        canvas.drawPath(Path()..moveTo(56, 59)..lineTo(50, 66)..lineTo(54, 69)..close(), _fill(accent));
+      case 2:
+        canvas.drawPath(Path()..moveTo(42, 60)..quadraticBezierTo(50, 70, 58, 60), _line(accent, 3));
+        canvas.drawLine(const Offset(47, 68), const Offset(47, 78), _line(accent, 1.2));
+        canvas.drawLine(const Offset(53, 68), const Offset(53, 78), _line(accent, 1.2));
+        canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(42, 92, 16, 9), const Radius.circular(3)), _fill(deep.withValues(alpha: 0.35)));
+      case 3:
+        canvas.drawPath(Path()..moveTo(44, 59)..lineTo(50, 108)..lineTo(56, 59)..quadraticBezierTo(50, 64, 44, 59)..close(), _fill(accent));
+        canvas.drawLine(const Offset(44, 59), const Offset(48, 108), _line(deep, 1.3));
+        canvas.drawLine(const Offset(56, 59), const Offset(52, 108), _line(deep, 1.3));
+      case 4:
+        canvas.drawPath(Path()..moveTo(44, 59)..quadraticBezierTo(50, 66, 56, 59), _line(accent, 2.2));
+        canvas.drawLine(const Offset(50, 64), const Offset(50, 100), _line(accent, 1.8));
+        for (final y in [70.0, 78.0, 86.0, 94.0]) {
+          canvas.drawCircle(Offset(50, y), 1.1, _fill(Colors.white.withValues(alpha: 0.7)));
+        }
+        canvas.drawLine(Offset(34, hem - 5), Offset(66, hem - 5), _line(accent, 2.4));
+      case 5:
+        break;
+      case 6:
+        canvas.drawPath(Path()..moveTo(43, 59)..quadraticBezierTo(50, 67, 57, 59), _line(accent, 2.6));
+        canvas.drawCircle(const Offset(50, 80), 6, _fill(accent));
+        canvas.drawCircle(const Offset(50, 80), 3, _fill(base));
+        canvas.drawRect(const Rect.fromLTWH(36, 100, 28, 5), _fill(accent));
+      default:
+        canvas.drawPath(Path()..moveTo(44, 59)..quadraticBezierTo(50, 66, 56, 59), _line(deep, 2));
+        if (c.outfitId == 'outfit_jersey') _text(canvas, '7', const Offset(50, 84), 12, accent);
+    }
+
+    onHead(() {
+      canvas.drawOval(const Rect.fromLTWH(25.9, 42, 7.2, 10), _fill(shade));
+      canvas.drawOval(const Rect.fromLTWH(66.9, 42, 7.2, 10), _fill(shade));
+      canvas.drawPath(_face(), Paint()..shader = RadialGradient(center: const Alignment(-0.25, -0.4), radius: 0.95, colors: [Color.lerp(skin, Colors.white, 0.2)!, skin, shade], stops: const [0, 0.62, 1]).createShader(_head));
+      _beard(canvas, hair);
+      _features(canvas, c.gender == Gender.female);
+      _hairFront(canvas, hair);
+      _accessory(canvas, _head);
+      if (action == null) _moodExtra(canvas);
+    });
     canvas.restore();
   }
 

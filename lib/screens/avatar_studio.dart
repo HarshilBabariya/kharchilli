@@ -97,10 +97,10 @@ class _AvatarStudioScreenState extends State<AvatarStudioScreen> {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: 0.78,
+          childAspectRatio: kind == RewardKind.outfit ? 0.7 : 0.78,
           children: [
             for (final item in RewardCatalog.ofKind(kind).where((i) => i.pack == null || i.pack == app.festival?.festival.pack || app.isUnlocked(i.id)))
-              RewardTile(item, preview: AvatarView(apply(item.id).copyWith(mood: Mood.happy), size: 62), active: current == item.id, activeLabel: tr('wearing'), onTap: () => _choose(item, apply(item.id))),
+              RewardTile(item, preview: AvatarView(apply(item.id).copyWith(mood: Mood.happy), size: kind == RewardKind.outfit ? 36 : 62, full: kind == RewardKind.outfit), active: current == item.id, activeLabel: tr('wearing'), onTap: () => _choose(item, apply(item.id))),
           ],
         );
 
@@ -148,7 +148,7 @@ class _AvatarStudioScreenState extends State<AvatarStudioScreen> {
               ]),
             ),
             const SizedBox(height: 8),
-            AvatarView(_look.copyWith(mood: _look.mood ?? app.mood), key: ValueKey(_plays), size: 168, animate: true, action: _action),
+            AvatarView(_look.copyWith(mood: _look.mood ?? app.mood), key: ValueKey(_plays), size: 104, animate: true, action: _action, full: true),
             const SizedBox(height: 10),
             SizedBox(
               height: 40,

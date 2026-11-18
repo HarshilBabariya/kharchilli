@@ -99,6 +99,8 @@ if plist_path.exists():
         'CFBundleDisplayName': 'Gharcha',
         'NSMicrophoneUsageDescription': 'Gharcha listens when you tap the mic so you can add an expense by saying it.',
         'NSSpeechRecognitionUsageDescription': 'Gharcha turns what you say into an expense: amount, category and payment mode.',
+        'NSCameraUsageDescription': 'Gharcha uses the camera when you attach a photo of a receipt to an expense.',
+        'NSPhotoLibraryUsageDescription': 'Gharcha opens your photos when you attach a receipt picture to an expense.',
         'NSFaceIDUsageDescription': 'Gharcha can use Face ID instead of your PIN to open your profile.',
         'ITSAppUsesNonExemptEncryption': False,
     })

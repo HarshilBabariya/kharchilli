@@ -89,7 +89,7 @@ ThemeData buildTheme(String themeId, Brightness brightness) {
     ),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: surface, surfaceTintColor: Colors.transparent, shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(32)))),
     dialogTheme: DialogThemeData(backgroundColor: surface, surfaceTintColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28))),
-    snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, backgroundColor: onSurface, contentTextStyle: TextStyle(color: background, fontWeight: FontWeight.w600), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+    snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, backgroundColor: const Color(0xFF2A2024), contentTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
     dividerTheme: DividerThemeData(color: scheme.outlineVariant, thickness: 1, space: 1),
     pageTransitionsTheme: const PageTransitionsTheme(builders: {
       TargetPlatform.android: ZoomPageTransitionsBuilder(),

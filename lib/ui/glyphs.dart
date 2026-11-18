@@ -12,7 +12,7 @@ class Sticker extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) => Image.asset('assets/art/icons/$name.png', width: size, height: size, filterQuality: FilterQuality.medium);
+  Widget build(BuildContext context) => Image.asset('assets/art/icons/$name.png', width: size, height: size, filterQuality: FilterQuality.medium, excludeFromSemantics: true);
 }
 
 /// The points coin.
@@ -47,7 +47,7 @@ class Medal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final art = Image.asset('assets/art/badges/$badgeId.png', width: size, height: size * 1.18, filterQuality: FilterQuality.medium);
+    final art = Image.asset('assets/art/badges/$badgeId.png', width: size, height: size * 1.18, filterQuality: FilterQuality.medium, excludeFromSemantics: true);
     if (!locked) return art;
     return SizedBox(
       width: size,

@@ -7,7 +7,7 @@ import json, pathlib, re, sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LANGS = ('en', 'hi', 'gu')
 # Keys built at runtime from an enum or id: any key starting with one of these counts as used.
-DYNAMIC = ('mood_', 'act_', 'rel_', 'gender_', 'face_', 'mode_', 'period_', 'fest_', 'rw_', 'b_', 'unit_', 'lvl_', 'pay_', 'repeat_', 'beard_', 'kind_', 'cat_', 'channel_', 'faq_', 'preset_', 'svc_', 'pack_tiranga', 'notif_', 'plain_', 'tone_', 'range_')
+DYNAMIC = ('mood_', 'act_', 'rel_', 'gender_', 'face_', 'mode_', 'period_', 'fest_', 'rw_', 'b_', 'unit_', 'lvl_', 'pay_', 'repeat_', 'beard_', 'kind_', 'cat_', 'channel_', 'faq_', 'preset_', 'svc_', 'pack_tiranga', 'notif_', 'plain_', 'tone_', 'range_', 'split_', 'a11y_')
 
 source = '\n'.join(p.read_text() for p in (ROOT / 'lib').rglob('*.dart'))
 used = set(re.findall(r"\btr(?:Pick|Plural)?\(\s*'([a-z0-9_]+)'", source)) | set(re.findall(r"'((?:[a-z0-9]+_)+[a-z0-9]+)'", source))

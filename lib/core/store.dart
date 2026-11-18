@@ -51,6 +51,35 @@ class Store {
 
   Future<void> saveSettings(Settings settings) => _prefs.setString(_settingsKey, jsonEncode(settings.toJson()));
 
+  /// Everything in the store as one JSON document, for a backup file.
+  Future<String> dump() async => jsonEncode({
+        'app': 'gharcha',
+        'version': 1,
+        'settings': _prefs.getString(_settingsKey),
+        'docs': await _db.query('docs', orderBy: 'id'),
+      });
+
+  /// Replaces everything with a document made by [dump]. Returns false, changing nothing, when it is not one.
+  Future<bool> restore(String backup) async {
+    final Object? data;
+    try {
+      data = jsonDecode(backup);
+    } on FormatException {
+      return false;
+    }
+    if (data is! Map || data['app'] != 'gharcha' || data['docs'] is! List || data['settings'] is! String) return false;
+    final rows = [for (final row in data['docs'] as List) (row as Map).cast<String, Object?>()];
+    if (rows.any((r) => r['id'] is! int || r['kind'] is! String || r['body'] is! String)) return false;
+    await _db.transaction((txn) async {
+      await txn.delete('docs');
+      for (final row in rows) {
+        await txn.insert('docs', {'id': row['id'], 'kind': row['kind'], 'body': row['body']});
+      }
+    });
+    await _prefs.setString(_settingsKey, data['settings'] as String);
+    return true;
+  }
+
   Future<void> wipe() async {
     await _db.delete('docs');
     await _prefs.remove(_settingsKey);

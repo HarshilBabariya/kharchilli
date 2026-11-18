@@ -205,7 +205,7 @@ class _AddButtonState extends State<_AddButton> with SingleTickerProviderStateMi
           ),
           child: child,
         ),
-        child: AnimatedRotation(turns: _turns, duration: const Duration(milliseconds: 420), curve: Curves.easeOutBack, child: const Icon(Icons.add_rounded, color: Colors.white, size: 34)),
+        child: AnimatedRotation(turns: _turns, duration: const Duration(milliseconds: 420), curve: Curves.easeOutBack, child: Icon(Icons.add_rounded, color: Colors.white, size: 34, semanticLabel: tr('add_transaction'))),
       ),
     );
   }

@@ -93,8 +93,8 @@ Future<void> importCsvFile(BuildContext context) async {
   );
 }
 
-/// Previews the weekly summary card and shares it as an image.
-Future<void> shareWeeklyCard(BuildContext context) async {
+/// Previews [card] and shares it as an image named [file], with [text] as the caption.
+Future<void> shareCard(BuildContext context, Widget card, {required String file, required String text}) async {
   final boundary = GlobalKey();
   await showDialog<void>(
     context: context,
@@ -102,18 +102,36 @@ Future<void> shareWeeklyCard(BuildContext context) async {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(24),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        RepaintBoundary(key: boundary, child: const _WeeklyCard()),
+        Flexible(child: RepaintBoundary(key: boundary, child: card)),
         const SizedBox(height: 14),
         KButton(tr('share'), icon: Icons.ios_share_rounded, onTap: () async {
           final render = boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
           final image = await render.toImage(pixelRatio: 3);
           final data = await image.toByteData(format: ui.ImageByteFormat.png);
-          final file = await _temp('gharcha-week.png', data!.buffer.asUint8List());
-          await Share.shareXFiles([XFile(file.path, mimeType: 'image/png')], text: tr('weekly_card_footer'));
+          final png = await _temp('$file.png', data!.buffer.asUint8List());
+          await Share.shareXFiles([XFile(png.path, mimeType: 'image/png')], text: text);
         }),
       ]),
     ),
   );
+}
+
+Future<void> shareWeeklyCard(BuildContext context) => shareCard(context, const _WeeklyCard(), file: 'gharcha-week', text: tr('weekly_card_footer'));
+
+Future<void> shareBackup(AppState app) async {
+  final now = DateTime.now();
+  final file = await _temp('gharcha-backup-${Csv.isoDate(now)}.json', utf8.encode(await app.exportBackup()));
+  await Share.shareXFiles([XFile(file.path, mimeType: 'application/json')]);
+}
+
+Future<void> restoreBackupFile(BuildContext context) async {
+  final app = AppScope.read(context);
+  if (!await confirm(context, title: tr('restore_q'), body: tr('restore_body'), action: tr('restore'))) return;
+  final picked = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json'], withData: true);
+  final bytes = picked?.files.single.bytes;
+  if (bytes == null) return;
+  final ok = await app.restoreBackup(utf8.decode(bytes, allowMalformed: true));
+  if (context.mounted) toast(context, ok ? tr('restore_done') : tr('restore_failed'));
 }
 
 class _WeeklyCard extends StatelessWidget {

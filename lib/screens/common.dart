@@ -87,12 +87,22 @@ Future<String?> pickCategory(BuildContext context, {String? selected}) {
                 scale: 0.9,
                 onTap: () => Navigator.of(sheet).pop(c.key),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: c.key == selected ? c.tint : Colors.transparent, width: 2.5)),
-                    child: IconTile(c.icon, color: c.tint, size: 52),
-                  ),
+                  Stack(clipBehavior: Clip.none, children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), border: Border.all(color: c.key == selected ? sheet.cs.onSurface : Colors.transparent, width: 2.5)),
+                      child: IconTile(c.icon, color: c.tint, size: 52),
+                    ),
+                    if (c.key == selected)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          decoration: BoxDecoration(color: sheet.cs.surface, shape: BoxShape.circle),
+                          child: Icon(Icons.check_circle_rounded, size: 22, color: sheet.cs.onSurface),
+                        ),
+                      ),
+                  ]),
                   const SizedBox(height: 6),
                   Text(c.name, maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: sheet.tt.labelSmall!.copyWith(color: sheet.cs.onSurface)),
                 ]),

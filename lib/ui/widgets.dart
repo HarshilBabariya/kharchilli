@@ -47,7 +47,10 @@ class _PressableState extends State<Pressable> {
               HapticFeedback.mediumImpact();
               widget.onLongPress!();
             },
-      child: AnimatedScale(scale: _down ? widget.scale : 1, duration: Duration(milliseconds: _down ? 90 : 260), curve: _down ? Curves.easeOut : Curves.elasticOut, child: widget.child),
+      child: Semantics(
+        button: widget.onTap != null,
+        child: AnimatedScale(scale: _down ? widget.scale : 1, duration: Duration(milliseconds: _down ? 90 : 260), curve: _down ? Curves.easeOut : Curves.elasticOut, child: widget.child),
+      ),
     );
   }
 }
@@ -469,6 +472,22 @@ class RoundIcon extends StatelessWidget {
   final VoidCallback onTap;
   final bool filled;
 
+  /// What a screen reader says for each icon used on a round button.
+  static final _labels = <IconData, String>{
+    Icons.add_rounded: 'a11y_add',
+    Icons.arrow_back_rounded: 'a11y_back',
+    Icons.calendar_month_rounded: 'calendar',
+    Icons.chevron_left_rounded: 'a11y_previous',
+    Icons.chevron_right_rounded: 'a11y_next',
+    Icons.close_rounded: 'a11y_close',
+    Icons.delete_outline_rounded: 'delete',
+    Icons.edit_rounded: 'a11y_edit',
+    Icons.filter_list_rounded: 'filters',
+    Icons.ios_share_rounded: 'share',
+    Icons.mic_rounded: 'shortcut_voice',
+    Icons.remove_rounded: 'a11y_less',
+  };
+
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
@@ -479,7 +498,7 @@ class RoundIcon extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(color: filled ? cs.primary : cs.surface, shape: BoxShape.circle, border: filled ? null : Border.all(color: cs.outlineVariant)),
-        child: Icon(icon, size: 22, color: filled ? Colors.white : cs.onSurface),
+        child: Icon(icon, size: 22, color: filled ? Colors.white : cs.onSurface, semanticLabel: _labels.containsKey(icon) ? tr(_labels[icon]!) : null),
       ),
     );
   }
@@ -525,7 +544,9 @@ class KSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    return Pressable(
+    return Semantics(
+      toggled: value,
+      child: Pressable(
       onTap: () => onChanged(!value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 240),
@@ -539,6 +560,7 @@ class KSwitch extends StatelessWidget {
           alignment: value ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(width: 26, height: 26, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 4, offset: Offset(0, 2))])),
         ),
+      ),
       ),
     );
   }
@@ -639,18 +661,35 @@ Future<bool> confirm(BuildContext context, {required String title, required Stri
   return ok ?? false;
 }
 
-/// A short message at the bottom; with [onUndo] it stays longer and offers to take the action back.
+/// A short message at the bottom. With [onUndo] it carries an Undo button and stays five seconds instead of two.
 void toast(BuildContext context, String message, {VoidCallback? onUndo}) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(
-      content: Text(message),
-      duration: Duration(seconds: onUndo == null ? 2 : 5),
-      action: onUndo == null ? null : SnackBarAction(label: tr('undo'), textColor: const Color(0xFFFFC531), onPressed: onUndo),
-    ));
+  final messenger = ScaffoldMessenger.of(context)..hideCurrentSnackBar();
+  messenger.showSnackBar(SnackBar(
+    duration: Duration(seconds: onUndo == null ? 2 : 5),
+    padding: EdgeInsets.fromLTRB(18, onUndo == null ? 14 : 8, onUndo == null ? 18 : 8, onUndo == null ? 14 : 8),
+    content: Row(children: [
+      Expanded(child: Text(message, maxLines: 2, overflow: TextOverflow.ellipsis)),
+      if (onUndo != null)
+        Pressable(
+          onTap: () {
+            messenger.hideCurrentSnackBar();
+            onUndo();
+          },
+          child: Container(
+            margin: const EdgeInsets.only(left: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(color: const Color(0xFFFFC531), borderRadius: BorderRadius.circular(12)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.undo_rounded, size: 18, color: Color(0xFF2A2024)),
+              const SizedBox(width: 6),
+              Text(tr('undo'), style: const TextStyle(color: Color(0xFF2A2024), fontWeight: FontWeight.w800)),
+            ]),
+          ),
+        ),
+    ]),
+  ));
 }
 
-/// The big number pad used wherever money is typed.
 class AmountKeypad extends StatelessWidget {
   const AmountKeypad({super.key, required this.value, required this.onChanged});
   final String value;

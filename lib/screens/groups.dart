@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_state.dart';
@@ -14,7 +13,9 @@ import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'add_expense.dart';
+import 'cards.dart';
 import 'common.dart';
+import 'export.dart';
 
 class GroupsTab extends StatelessWidget {
   const GroupsTab({super.key});
@@ -30,6 +31,26 @@ class GroupsTab extends StatelessWidget {
           EmptyState(art: 'friends', title: tr('no_groups_title'), body: tr('no_groups_body')),
           KButton(tr('new_group'), icon: Icons.add_rounded, onTap: () => editGroup(context)),
         ],
+        if (app.myDues.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: KCard(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(tr('across_groups'), style: context.tt.titleLarge),
+                const SizedBox(height: 6),
+                for (final d in app.myDues.entries)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(children: [
+                      AvatarView(d.key.avatar, size: 36),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(d.value > 0 ? tr('owes_you', [d.key.name]) : tr('you_owe_name', [d.key.name]), maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall)),
+                      Text(Fmt.money(d.value.abs()), style: context.tt.titleMedium!.copyWith(fontWeight: FontWeight.w700, color: d.value > 0 ? good : bad)),
+                    ]),
+                  ),
+              ]),
+            ),
+          ),
         for (final g in app.groups)
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
@@ -151,7 +172,7 @@ class GroupDetailScreen extends StatelessWidget {
       title: group.name,
       actions: [
         RoundIcon(Icons.edit_rounded, onTap: () => editGroup(context, group)),
-        RoundIcon(Icons.ios_share_rounded, onTap: () => Share.share(app.groupSummary(group))),
+        RoundIcon(Icons.ios_share_rounded, onTap: () => shareCard(context, GroupCard(group), file: 'gharcha-group', text: app.groupSummary(group))),
         RoundIcon(Icons.delete_outline_rounded, onTap: () async {
           final nav = Navigator.of(context);
           if (await confirm(context, title: tr('delete_group_q', [group.name]), body: tr('delete_group_body'), action: tr('delete'))) {
@@ -263,10 +284,7 @@ class _SettleCard extends StatelessWidget {
           ],
           if (t.toId == me) ...[
             Expanded(
-              child: KButton(tr('remind'), tonal: true, icon: Icons.send_rounded, onTap: () async {
-                final message = tr('remind_message', [t.fromName, Fmt.money(t.amount), group.name]);
-                if (!await _launch(Uri.https('wa.me', '/', {'text': message}))) await Share.share(message);
-              }),
+              child: KButton(tr('remind'), tonal: true, icon: Icons.send_rounded, onTap: () => shareCard(context, ReminderCard(group, t), file: 'gharcha-reminder', text: tr('remind_message', [t.fromName, Fmt.money(t.amount), group.name]))),
             ),
             const SizedBox(width: 10),
           ],

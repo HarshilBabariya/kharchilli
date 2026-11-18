@@ -22,6 +22,9 @@ Steps for Google Play (upload key and four repo secrets) and the App Store (Appl
 ## Version history
 | Version | Date | Notes |
 |---|---|---|
+| 1.5.1 | 2026-11-19 | Fixes: Undo bar closes itself and is readable, swipe strip fills the row, clearer selected category, paste explained |
+| 1.5.0 | 2026-11-19 | Full-body avatars, receipt photos, accessibility, unit tests |
+| 1.4.0 | 2026-11-19 | Designed share cards, percent / shares splits, cross-group dues, backup and restore, performance |
 | 1.3.0 | 2026-11-19 | Edit group, duplicate-name checks, expense filters, swipe actions, fingerprint / face unlock, Settings screen |
 | 1.2.1 | 2026-11-19 | Fixes: sheets close on Save without duplicate records, last item no longer hidden behind the tab bar, Save buttons pinned on long sheets |
 | 1.2.0 | 2026-11-19 | First-expense step, shorter Home, free export and basic Insights, notification tone, income and savings, repeat monthly, paste a payment message, Pay by UPI / Remind, undo on delete, app shortcuts, privacy policy |

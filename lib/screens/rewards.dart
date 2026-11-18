@@ -12,7 +12,9 @@ import '../ui/effects.dart';
 import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import 'cards.dart';
 import 'common.dart';
+import 'export.dart';
 
 class RewardsScreen extends StatefulWidget {
   const RewardsScreen({super.key, this.initialTab = 0});
@@ -215,12 +217,12 @@ class _RewardsScreenState extends State<RewardsScreen> {
           padding: EdgeInsets.zero,
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: _kind == RewardKind.theme ? 0.92 : 0.78,
+          childAspectRatio: switch (_kind) { RewardKind.theme => 0.92, RewardKind.outfit => 0.7, _ => 0.78 },
           children: [
             for (final item in items)
               RewardTile(
                 item,
-                preview: _kind == RewardKind.theme ? ThemePreview(item.id) : AvatarView(wearing(me.avatar, item).copyWith(mood: Mood.happy), size: 62),
+                preview: _kind == RewardKind.theme ? ThemePreview(item.id) : AvatarView(wearing(me.avatar, item).copyWith(mood: Mood.happy), size: _kind == RewardKind.outfit ? 36 : 62, full: _kind == RewardKind.outfit),
                 active: active(item),
                 activeLabel: _kind == RewardKind.theme ? tr('active') : tr('wearing'),
                 onTap: () => act(item),
@@ -248,8 +250,11 @@ class _BadgeTile extends StatelessWidget {
           const SizedBox(height: 14),
           Text(b.description, textAlign: TextAlign.center, style: sheet.tt.titleMedium),
           const SizedBox(height: 12),
-          if (status.earned)
-            Pill(tr('earned_on', [Fmt.date(DateTime.fromMillisecondsSinceEpoch(status.earnedAt!), 'd MMM yyyy'), b.bonus]), color: good, icon: const Icon(Icons.verified_rounded, size: 15, color: good))
+          if (status.earned) ...[
+            Pill(tr('earned_on', [Fmt.date(DateTime.fromMillisecondsSinceEpoch(status.earnedAt!), 'd MMM yyyy'), b.bonus]), color: good, icon: const Icon(Icons.verified_rounded, size: 15, color: good)),
+            const SizedBox(height: 12),
+            KButton(tr('share'), tonal: true, expand: false, icon: Icons.ios_share_rounded, onTap: () => shareCard(sheet, BadgeCard(b), file: 'gharcha-badge', text: tr('card_badge_text', [b.name]))),
+          ]
           else ...[
             KProgress(status.fraction, height: 9),
             const SizedBox(height: 8),

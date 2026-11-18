@@ -151,9 +151,7 @@ class _ExpensesTabState extends State<ExpensesTab> {
             padding: EdgeInsets.zero,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(26),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Column(children: [
+              child: Column(children: [
                 for (final e in day.value)
                   Dismissible(
                     key: ValueKey('expense${e.id}'),
@@ -170,10 +168,9 @@ class _ExpensesTabState extends State<ExpensesTab> {
                       app.deleteExpense(e);
                       setState(() {});
                     },
-                    child: Padding(padding: const EdgeInsets.symmetric(horizontal: 14), child: ExpenseTile(e)),
+                    child: Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4), child: ExpenseTile(e)),
                   ),
               ]),
-              ),
             ),
           ),
         ],

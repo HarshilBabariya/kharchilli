@@ -56,7 +56,7 @@ class GharchaApp extends StatelessWidget {
           statusBarIconBrightness: context.isDark ? Brightness.light : Brightness.dark,
           systemNavigationBarIconBrightness: context.isDark ? Brightness.light : Brightness.dark,
         ),
-        child: child!,
+        child: MediaQuery.withClampedTextScaling(maxScaleFactor: 1.3, child: child!),
       ),
       home: Intro(child: AnimatedSwitcher(duration: const Duration(milliseconds: 450), child: KeyedSubtree(key: ValueKey('${home.runtimeType}${s.language}'), child: home))),
     );

@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../core/app_state.dart';
@@ -11,7 +14,9 @@ import '../core/parsers.dart';
 import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import 'cards.dart';
 import 'common.dart';
+import 'export.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key, this.editing, this.startWithVoice = false, this.firstTime = false, this.groupId});
@@ -39,6 +44,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
   bool _noteFromVoice = false;
   bool _saved = false;
   bool _repeat = false;
+  String _photo = '';
   String _heard = '';
   String _category = BuiltInCategories.other;
   DateTime _day = Days.today();
@@ -64,13 +70,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
       _keypad = false;
       _title.text = e.title;
       _note.text = e.note;
+      _photo = e.photo;
       _category = e.category;
       _day = e.date;
       _paidBy = e.paidBy;
       _mode = e.mode;
       _groupId = e.groupId;
-      _split = e.splitType == SplitType.custom ? SplitType.custom : SplitType.equal;
-      e.shares.forEach((id, share) => _custom[id] = Fmt.number(share).replaceAll(',', ''));
+      _split = e.splitType == SplitType.none ? SplitType.equal : e.splitType;
+      e.shares.forEach((id, share) => _custom[id] = Fmt.number(_split == SplitType.percent && e.amount != 0 ? share / e.amount * 100 : share).replaceAll(',', ''));
     }
     if (widget.startWithVoice) WidgetsBinding.instance.addPostFrameCallback((_) => _listen());
   }
@@ -158,10 +165,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
   Map<int, double>? _shares(Group? group) {
     if (group == null || _credit) return {};
     if (_split == SplitType.equal) return SplitCalculator.equalShares(_value, group.memberIds);
-    final shares = {for (final id in group.memberIds) id: double.tryParse(_custom[id] ?? '') ?? 0.0};
-    final total = shares.values.fold(0.0, (a, b) => a + b);
-    return (total - _value).abs() < 0.005 ? shares : null;
+    final typed = {for (final id in group.memberIds) id: double.tryParse(_custom[id] ?? '') ?? 0.0};
+    final total = typed.values.fold(0.0, (a, b) => a + b);
+    return switch (_split) {
+      SplitType.percent => (total - 100).abs() < 0.005 ? typed.map((id, v) => MapEntry(id, _value * v / 100)) : null,
+      SplitType.weights => total > 0 ? typed.map((id, v) => MapEntry(id, _value * v / total)) : null,
+      _ => (total - _value).abs() < 0.005 ? typed : null,
+    };
   }
+
+  double _typedTotal(Group group) => group.memberIds.fold(0.0, (a, id) => a + (double.tryParse(_custom[id] ?? '') ?? 0));
 
   Future<void> _save(Group? group) async {
     final app = AppScope.read(context);
@@ -178,7 +191,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
       ..groupId = _credit ? null : group?.id
       ..splitType = group == null || _credit ? SplitType.none : _split
       ..shares = shares
-      ..note = _note.text;
+      ..note = _note.text
+      ..photo = _photo;
     HapticFeedback.heavyImpact();
     setState(() => _saved = true);
     await app.saveExpense(e, voice: _voiceUsed && widget.editing == null);
@@ -193,6 +207,47 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
     Navigator.of(context).pop();
     toast(context, tr('deleted_msg', [e.title]), onUndo: () => app.restoreExpense(e));
     await app.deleteExpense(e);
+  }
+
+  Future<void> _photoSheet() async {
+    final app = AppScope.read(context);
+    await showKSheet<void>(
+      context,
+      title: tr('receipt_photo'),
+      builder: (sheet) {
+        Future<void> pick(ImageSource source) async {
+          Navigator.of(sheet).pop();
+          try {
+            final shot = await ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 80);
+            if (shot == null) return;
+            final name = 'receipt_${DateTime.now().millisecondsSinceEpoch}.jpg';
+            await File(shot.path).copy('${app.photosDir}/$name');
+            if (mounted) setState(() => _photo = name);
+          } catch (_) {
+            if (mounted) toast(context, tr('photo_failed'));
+          }
+        }
+
+        return Column(children: [
+          if (_photo.isNotEmpty) ...[
+            ClipRRect(borderRadius: BorderRadius.circular(18), child: InteractiveViewer(child: Image.file(File('${app.photosDir}/$_photo'), height: 320, fit: BoxFit.contain))),
+            const SizedBox(height: 14),
+          ],
+          Row(children: [
+            Expanded(child: KButton(tr('photo_camera'), icon: Icons.photo_camera_rounded, onTap: () => pick(ImageSource.camera))),
+            const SizedBox(width: 10),
+            Expanded(child: KButton(tr('photo_gallery'), tonal: true, icon: Icons.photo_library_rounded, onTap: () => pick(ImageSource.gallery))),
+          ]),
+          if (_photo.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            KButton(tr('remove'), tonal: true, danger: true, onTap: () {
+              Navigator.of(sheet).pop();
+              setState(() => _photo = '');
+            }),
+          ],
+        ]);
+      },
+    );
   }
 
   Future<void> _pickDate() async {
@@ -244,7 +299,11 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                   RoundIcon(Icons.close_rounded, onTap: () => Navigator.of(context).pop()),
                   const SizedBox(width: 12),
                   Expanded(child: Text(editing ? tr('edit_expense') : _credit ? tr('add_credit') : tr('add_transaction'), style: context.tt.headlineSmall)),
-                  if (editing) RoundIcon(Icons.delete_outline_rounded, onTap: _delete) else RoundIcon(Icons.content_paste_rounded, onTap: _paste),
+                  if (editing) ...[
+                    RoundIcon(Icons.ios_share_rounded, onTap: () => shareCard(context, ReceiptCard(widget.editing!), file: 'gharcha-expense', text: '${widget.editing!.title} · ${Fmt.ledger(widget.editing!.amount)}')),
+                    const SizedBox(width: 8),
+                    RoundIcon(Icons.delete_outline_rounded, onTap: _delete),
+                  ],
                 ]),
               ),
               Expanded(
@@ -289,6 +348,28 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                         ),
                       ),
                     ),
+                    if (!editing) ...[
+                      const SizedBox(height: 10),
+                      Entrance(
+                        child: Pressable(
+                          onTap: _paste,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), border: Border.all(color: cs.outlineVariant)),
+                            child: Row(children: [
+                              Icon(Icons.content_paste_go_rounded, size: 20, color: cs.primary),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Text(tr('paste_title'), style: context.tt.titleSmall),
+                                  Text(tr('paste_sub'), maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall),
+                                ]),
+                              ),
+                            ]),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     Entrance(
                       index: 1,
@@ -425,36 +506,40 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                             NavRow(icon: Icons.groups_rounded, color: const Color(0xFF7C4DFF), title: tr('split_with_group'), subtitle: group == null ? tr('not_shared') : group.name, onTap: () => _pickGroup(app)),
                             if (group != null) ...[
                               const SizedBox(height: 8),
-                              Row(children: [
-                                KChip(tr('split_equally'), selected: _split == SplitType.equal, onTap: () => setState(() => _split = SplitType.equal)),
-                                const SizedBox(width: 8),
-                                KChip(tr('split_custom'), selected: _split == SplitType.custom, onTap: () => setState(() => _split = SplitType.custom)),
+                              Wrap(spacing: 8, runSpacing: 8, children: [
+                                for (final type in const [SplitType.equal, SplitType.custom, SplitType.percent, SplitType.weights])
+                                  KChip(tr('split_${type.name}'), selected: _split == type, onTap: () => setState(() {
+                                        _split = type;
+                                        _custom.clear();
+                                      })),
                               ]),
                               const SizedBox(height: 10),
                               for (final id in group.memberIds)
                                 Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 4),
                                   child: Row(children: [
-                                    Expanded(child: Text(app.memberName(id), style: context.tt.titleSmall)),
-                                    if (_split == SplitType.equal)
-                                      Text(Fmt.money(SplitCalculator.equalShares(_value, group.memberIds)[id] ?? 0), style: context.tt.titleSmall)
-                                    else
+                                    Expanded(child: Text(app.memberName(id), maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall)),
+                                    if (_split == SplitType.equal || _split == SplitType.percent || _split == SplitType.weights)
+                                      Padding(padding: const EdgeInsets.only(right: 10), child: Text(shares == null ? '' : Fmt.money(shares[id] ?? 0), style: _split == SplitType.equal ? context.tt.titleSmall : context.tt.bodySmall)),
+                                    if (_split != SplitType.equal)
                                       SizedBox(
-                                        width: 110,
+                                        width: 104,
                                         child: TextFormField(
-                                          key: ValueKey('share$id'),
+                                          key: ValueKey('share${_split.name}$id'),
                                           initialValue: _custom[id] ?? '',
                                           textAlign: TextAlign.end,
                                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                                           onTap: () => setState(() => _keypad = false),
                                           onChanged: (v) => setState(() => _custom[id] = v),
-                                          decoration: InputDecoration(isDense: true, prefixText: Fmt.symbol, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+                                          decoration: InputDecoration(isDense: true, prefixText: _split == SplitType.custom ? Fmt.symbol : null, suffixText: _split == SplitType.percent ? '%' : null, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
                                         ),
                                       ),
                                   ]),
                                 ),
-                              if (_split == SplitType.custom) _SharesStatus(_value - group.memberIds.fold(0.0, (a, id) => a + (double.tryParse(_custom[id] ?? '') ?? 0))),
+                              if (_split == SplitType.custom) _SharesStatus(_value - _typedTotal(group), Fmt.money),
+                              if (_split == SplitType.percent) _SharesStatus(100 - _typedTotal(group), (v) => '${Fmt.number(v)}%'),
+                              if (_split == SplitType.weights) Padding(padding: const EdgeInsets.only(top: 8), child: Text(tr('weights_hint'), style: context.tt.bodySmall)),
                             ],
                           ]),
                         ),
@@ -470,6 +555,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                         ),
                       ),
                     ],
+                    const SizedBox(height: 16),
+                    Entrance(
+                      index: 6,
+                      child: KCard(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        child: NavRow(
+                          icon: Icons.receipt_long_rounded,
+                          color: const Color(0xFF8D6E63),
+                          title: tr('receipt_photo'),
+                          subtitle: _photo.isEmpty ? tr('receipt_photo_add') : tr('receipt_photo_added'),
+                          onTap: _photoSheet,
+                          trailing: _photo.isEmpty ? null : ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.file(File('${app.photosDir}/$_photo'), width: 44, height: 44, fit: BoxFit.cover)),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Entrance(
                       index: 6,
@@ -492,15 +592,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
 }
 
 class _SharesStatus extends StatelessWidget {
-  const _SharesStatus(this.left);
+  const _SharesStatus(this.left, this.format);
   final double left;
+  final String Function(num value) format;
 
   @override
   Widget build(BuildContext context) {
     final ok = left.abs() < 0.005;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
-      child: Text(ok ? tr('shares_ok') : left > 0 ? tr('shares_left', [Fmt.money(left)]) : tr('shares_over', [Fmt.money(-left)]), style: context.tt.labelMedium!.copyWith(color: ok ? good : bad)),
+      child: Text(ok ? tr('shares_ok') : left > 0 ? tr('shares_left', [format(left)]) : tr('shares_over', [format(-left)]), style: context.tt.labelMedium!.copyWith(color: ok ? good : bad)),
     );
   }
 }

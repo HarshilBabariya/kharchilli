@@ -26,7 +26,8 @@ enum PaymentMode {
   String get label => tr(labelKey);
 }
 
-enum SplitType { none, equal, custom }
+/// How a shared expense was divided. Shares are always stored as amounts; the type only records how they were entered.
+enum SplitType { none, equal, custom, percent, weights }
 
 enum RepeatRule {
   once('repeat_once'),
@@ -302,6 +303,7 @@ class Expense extends Doc {
     this.splitType = SplitType.none,
     Map<int, double>? shares,
     this.note = '',
+    this.photo = '',
     int? createdAt,
   })  : shares = shares ?? {},
         createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch;
@@ -318,6 +320,9 @@ class Expense extends Doc {
   SplitType splitType;
   Map<int, double> shares;
   String note;
+
+  /// File name of the receipt photo inside the app's documents folder; empty when there is none.
+  String photo;
   final int createdAt;
 
   bool get isCredit => amount < 0;
@@ -338,6 +343,7 @@ class Expense extends Doc {
         'splitType': splitType.name,
         'shares': shares.map((k, v) => MapEntry('$k', v)),
         'note': note,
+        'photo': photo,
         'createdAt': createdAt,
       };
 
@@ -352,6 +358,7 @@ class Expense extends Doc {
         splitType: _enum(SplitType.values, j['splitType'], SplitType.none),
         shares: ((j['shares'] ?? const {}) as Map).map((k, v) => MapEntry(int.parse('$k'), (v as num).toDouble())),
         note: j['note'] as String? ?? '',
+        photo: j['photo'] as String? ?? '',
         createdAt: j['createdAt'] as int?,
       );
 }
