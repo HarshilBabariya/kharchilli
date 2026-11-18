@@ -8,6 +8,7 @@ import '../core/format.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
 import '../ui/charts.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'rewards.dart';
@@ -50,7 +51,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
     final app = AppScope.of(context);
     if (!app.isUnlocked(RewardCatalog.insights)) {
       return KPage(title: tr('insights'), children: [
-        EmptyState(emoji: '🔒', title: tr('insights_locked_title'), body: tr('insights_locked_body')),
+        EmptyState(art: 'lock', title: tr('insights_locked_title'), body: tr('insights_locked_body')),
         KButton(tr('shop'), icon: Icons.storefront_rounded, onTap: () => open(context, const RewardsScreen(initialTab: 2))),
       ]);
     }
@@ -86,27 +87,13 @@ class _InsightsScreenState extends State<InsightsScreen> {
     return KPage(
       title: tr('insights'),
       children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(color: context.cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(18)),
-          child: Row(children: [
-            for (final p in _Period.values)
-              Expanded(
-                child: Pressable(
-                  onTap: () => setState(() {
-                    _period = p;
-                    _back = 0;
-                  }),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(color: _period == p ? context.cs.primary : Colors.transparent, borderRadius: BorderRadius.circular(14)),
-                    child: Text(tr('period_${p.name}'), style: TextStyle(fontWeight: FontWeight.w700, color: _period == p ? Colors.white : context.cs.onSurfaceVariant)),
-                  ),
-                ),
-              ),
-          ]),
+        Segmented<_Period>(
+          options: {for (final p in _Period.values) p: tr('period_${p.name}')},
+          value: _period,
+          onChanged: (p) => setState(() {
+            _period = p;
+            _back = 0;
+          }),
         ),
         const SizedBox(height: 12),
         Row(children: [
@@ -125,7 +112,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
           gradient: context.heroGradient,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(tr('spending'), style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
-            CountUp(total, style: context.tt.displaySmall!.copyWith(color: Colors.white)),
+            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: CountUp(total, style: context.tt.displaySmall!.copyWith(color: Colors.white))),
             if (change != null) Padding(padding: const EdgeInsets.only(top: 4), child: Pill(tr(change >= 0 ? 'change_up' : 'change_down', [change.abs().round()]), onDark: true)),
             const SizedBox(height: 14),
             Row(children: [
@@ -139,8 +126,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
         KCard(
           padding: const EdgeInsets.all(14),
           child: Row(children: [
-            const Text('💡', style: TextStyle(fontSize: 22)),
-            const SizedBox(width: 10),
+            const Sticker('idea', size: 44),
+            const SizedBox(width: 12),
             Expanded(child: Text(categories.isEmpty ? tr('insight_quiet') : tr('insight_top_category', [categories.first.key.name, (categories.first.value / categoryTotal * 100).round()]), style: context.tt.bodyMedium)),
           ]),
         ),

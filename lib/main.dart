@@ -23,11 +23,11 @@ Future<void> main() async {
   final app = AppState(await Store.open());
   await Notifier.init();
   await app.load();
-  runApp(AppScope(state: app, child: const KharchiliApp()));
+  runApp(AppScope(state: app, child: const GharchaApp()));
 }
 
-class KharchiliApp extends StatelessWidget {
-  const KharchiliApp({super.key});
+class GharchaApp extends StatelessWidget {
+  const GharchaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class KharchiliApp extends StatelessWidget {
             ? const LockScreen()
             : const Shell();
     return MaterialApp(
-      title: 'Kharchili',
+      title: 'Gharcha',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(app.activeThemeId, Brightness.light),
       darkTheme: buildTheme(app.activeThemeId, Brightness.dark),
@@ -47,6 +47,16 @@ class KharchiliApp extends StatelessWidget {
       locale: Locale(s.language),
       supportedLocales: const [Locale('en'), Locale('hi'), Locale('gu')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarContrastEnforced: false,
+          statusBarIconBrightness: context.isDark ? Brightness.light : Brightness.dark,
+          systemNavigationBarIconBrightness: context.isDark ? Brightness.light : Brightness.dark,
+        ),
+        child: child!,
+      ),
       home: Intro(child: AnimatedSwitcher(duration: const Duration(milliseconds: 450), child: KeyedSubtree(key: ValueKey('${home.runtimeType}${s.language}'), child: home))),
     );
   }
@@ -62,7 +72,7 @@ class Intro extends StatefulWidget {
 }
 
 class _IntroState extends State<Intro> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1900))
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 2100))
     ..forward().whenComplete(() {
       if (mounted) setState(() => _done = true);
     });
@@ -88,7 +98,14 @@ class _IntroState extends State<Intro> with SingleTickerProviderStateMixin {
               opacity: (1 - (_c.value - 0.8) / 0.2).clamp(0.0, 1.0).toDouble(),
               child: DecoratedBox(
                 decoration: const BoxDecoration(gradient: RadialGradient(radius: 1.1, colors: [Color(0xFFFF4D4D), Color(0xFFE8203F), Color(0xFF8E0F45)])),
-                child: Center(child: CustomPaint(size: const Size.square(230), painter: _MarkPainter(_c.value))),
+                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  CustomPaint(size: const Size.square(210), painter: _MarkPainter(_c.value)),
+                  const SizedBox(height: 6),
+                  Opacity(
+                    opacity: ((_c.value - 0.45) / 0.2).clamp(0.0, 1.0).toDouble(),
+                    child: const Text('Gharcha', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 38, color: Colors.white, letterSpacing: -0.5, decoration: TextDecoration.none)),
+                  ),
+                ]),
               ),
             ),
           ),
@@ -123,27 +140,48 @@ class _MarkPainter extends CustomPainter {
       canvas.restore();
     }
     canvas.save();
-    canvas.translate(c.dx - size.width * 0.5, c.dy - size.height * 0.5);
     canvas.scale(size.width / 1024);
+    final rise = Curves.easeOutBack.transform((t / 0.3).clamp(0.0, 1.0).toDouble());
+    canvas.save();
+    canvas.translate(512, 512);
+    canvas.scale(rise);
+    canvas.translate(-512, -512);
+    final house = Path()
+      ..moveTo(512, 236)
+      ..lineTo(792, 468)
+      ..lineTo(792, 716)
+      ..quadraticBezierTo(792, 788, 720, 788)
+      ..lineTo(304, 788)
+      ..quadraticBezierTo(232, 788, 232, 716)
+      ..lineTo(232, 468)
+      ..close();
+    canvas.drawPath(house, Paint()..color = Colors.white);
+    canvas.drawPath(house, Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 72
+      ..strokeJoin = StrokeJoin.round
+      ..color = Colors.white);
+    canvas.restore();
     final stroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 112
+      ..strokeWidth = 54
       ..strokeCap = StrokeCap.round
-      ..color = Colors.white;
+      ..strokeJoin = StrokeJoin.round
+      ..color = const Color(0xFFE8203F);
     final parts = [
-      Path()..moveTo(372, 262)..lineTo(372, 762),
-      Path()..moveTo(372, 598)..cubicTo(470, 560, 560, 500, 628, 410),
-      Path()..moveTo(486, 548)..cubicTo(540, 640, 590, 712, 664, 762),
+      Path()..moveTo(410, 452)..lineTo(614, 452),
+      Path()..moveTo(410, 540)..lineTo(614, 540),
+      Path()..moveTo(410, 452)..lineTo(486, 452)..quadraticBezierTo(576, 452, 576, 540)..quadraticBezierTo(576, 628, 486, 628)..lineTo(410, 628)..lineTo(560, 760),
     ];
     for (var i = 0; i < parts.length; i++) {
-      final local = ((t - i * 0.16) / 0.3).clamp(0.0, 1.0).toDouble();
+      final local = ((t - 0.25 - i * 0.08) / 0.25).clamp(0.0, 1.0).toDouble();
       if (local <= 0) continue;
       for (final PathMetric m in parts[i].computeMetrics()) {
         canvas.drawPath(m.extractPath(0, m.length * Curves.easeOutCubic.transform(local)), stroke);
       }
     }
     final pop = ((t - 0.5) / 0.2).clamp(0.0, 1.0).toDouble();
-    if (pop > 0) canvas.drawCircle(const Offset(726, 296), 58 * Curves.elasticOut.transform(pop), Paint()..color = const Color(0xFFFFC531));
+    if (pop > 0) canvas.drawCircle(const Offset(770, 268), 58 * Curves.elasticOut.transform(pop), Paint()..color = const Color(0xFFFFC531));
     canvas.restore();
   }
 

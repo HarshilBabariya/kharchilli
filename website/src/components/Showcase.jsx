@@ -132,7 +132,7 @@ export default function Showcase() {
   return (
     <section className="section showcase" id="showcase" ref={ref}>
       <div className="section-head">
-        <span className="eyebrow">Why Kharchili</span>
+        <span className="eyebrow">Why Gharcha</span>
         <h2>Built for an Indian household, not a spreadsheet.</h2>
         <p>Three things it does differently from every expense tracker you've abandoned.</p>
       </div>

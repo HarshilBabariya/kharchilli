@@ -1,7 +1,7 @@
 export const REPO_URL = `https://github.com/${__REPO__}`
 export const APP_VERSION = __APP_VERSION__
 
-export const download = { file: 'Kharchili.apk', url: `${import.meta.env.BASE_URL}downloads/Kharchili.apk` }
+export const download = { file: 'Gharcha.apk', url: `${import.meta.env.BASE_URL}downloads/Gharcha.apk` }
 
 export const stats = [
   { value: 33, label: 'badges to earn' },
@@ -13,91 +13,76 @@ export const stats = [
 export const features = [
   {
     key: 'log',
-    emoji: '⚡',
     title: 'Log in seconds',
     body: 'Centre + button, amount hero, Yesterday / Today / Tomorrow chips, inline Paid by and Cash · UPI · Card · Bank tiles. Credits (cashback, refunds) subtract from every total.'
   },
   {
     key: 'voice',
-    emoji: '🎙️',
     title: 'Say it out loud',
     body: '“250 groceries by UPI” or “paid 120 for pani puri cash” — amount, category, mode and note are filled for you, in English, Hindi or Gujarati.'
   },
   {
     key: 'budgets',
-    emoji: '🎯',
     title: 'Budgets & forecast',
     body: 'Monthly and per-category limits, 80% / 100% alerts, and a plain-words forecast: “At this pace you’ll overspend by ₹4,200 around 24 Nov”.'
   },
   {
     key: 'groups',
-    emoji: '🤝',
     title: 'Groups & splitting',
     body: 'Home, trip, party — split equally or with custom amounts, see who owes whom, settle up with a minimal plan and share the summary to WhatsApp.'
   },
   {
     key: 'family',
-    emoji: '👨‍👩‍👧',
     title: 'Family accounts',
     body: 'Every member has a profile, mobile number, optional PIN and their own avatar. App lock keeps the ledger private; everyone shares one household ledger.'
   },
   {
     key: 'insights',
-    emoji: '📈',
     title: 'Insights & calendar',
     body: 'Week / Month / Year trends, category donut with ▲▼ change, payment-mode split, who paid, and a calendar that colours each day green or red against your daily budget.'
   },
   {
     key: 'khata',
-    emoji: '🏪',
     title: 'Kirana khata & services',
     body: 'Shop credit tallies, milk / maid / newspaper month grids with the maths spelt out, gold and chit funds valued at today’s rate.'
   },
   {
     key: 'reminders',
-    emoji: '🔔',
     title: 'Reminders & bills',
     body: 'A 30-day strip of what’s due, sassy nudges that never repeat themselves, and bills that log themselves on the due date. Tap a notification and it opens the right screen.'
   },
   {
     key: 'rewards',
-    emoji: '🏆',
     title: 'Points, levels & badges',
     body: '+10 per expense, streak bonuses, 10 levels from Rookie to Legend and 33 badges with full-screen celebrations and a cash-register ka-ching.'
   },
   {
     key: 'avatar',
-    emoji: '🧑‍🎨',
     title: 'Your avatar',
     body: '16 hairstyles, 18 outfits, 13 accessories, 10 moods that react to your budget and streak, and seven actions — wave, jump, spin, dance, wink, cheer, laugh.'
   },
   {
     key: 'sounds',
-    emoji: '🔊',
     title: 'Sounds of a home',
     body: 'A cooker seeti for the daily nudge, a doorbell for bills, a debit ting for money out, microwave beeps at 80% of a budget, and a POS buzz when you cross it.'
   },
   {
     key: 'data',
-    emoji: '🔒',
     title: 'Local-first, yours',
     body: 'No account, no server, no tracking. Everything lives in the phone’s own database. Import and export CSV, export a PDF, or erase it all in one tap.'
   },
   {
     key: 'share',
-    emoji: '🖼️',
     title: 'Weekly share card',
     body: 'A 1080×1350 card in your theme colours — week total, ▲▼ vs last week, top three categories, who paid, streak and points — made for the family group.'
   },
   {
     key: 'categories',
-    emoji: '🏷️',
     title: 'Categories your way',
     body: 'Add your own with one of 26 icons, 40 preset colours or a custom hue; recolour the built-in ones. Voice entry learns your custom names too.'
   },
   {
     key: 'languages',
-    emoji: '🗣️',
     title: 'English · हिन्दी · ગુજરાતી',
     body: 'Switch from onboarding or Me → Language. Dates, badges, rewards, mood lines and every notification follow — and the Polyglot badge lands when you do.'
   }
@@ -119,7 +104,7 @@ export const festivalPerks = [
   'Themes and decorations switch on 3 days before the festival and stay for 3 days after',
   'A full-screen celebration on first open, with the festival’s own sound and your avatar already dressed up',
   'Tap the festival banner on Home any time to replay the celebration: fireworks, colour clouds, kites, tricolour confetti, petal showers or snow',
-  'Claim my gifts: the pack, +50 ⭐ and the outfit — free during the window, yours for good',
+  'Claim my gifts: the pack, +50 points and the outfit — free during the window, yours for good',
   'A festival banner on Home with its own looping particle show and a countdown from a week before'
 ]
 
@@ -136,7 +121,41 @@ export const points = [
 
 export const levels = ['Rookie', 'Saver', 'Planner', 'Tracker', 'Strategist', 'Accountant', 'Treasurer', 'Guardian', 'Master', 'Legend']
 
-export const badges = ['🥇 First step', '🔟 Getting serious', '💯 Century', '🚀 Half a thousand', '🔥 Week warrior', '🏆 Month master', '⚡ Iron streak', '🐉 Legendary streak', '🌅 Early bird', '🦉 Night owl', '🎙️ Say it out loud', '📝 Note taker', '🧭 Explorer', '🏷️ Make it yours', '💳 Payment pro', '💎 Big spender', '🪙 Penny counter', '🤝 Team player', '🧑‍🤝‍🧑 Group guru', '⚖️ Fair share', '🏦 Settler', '👨‍👩‍👧 Family first', '🏠 Full house', '📅 Bill planner', '🎯 Budget boss', '🥉 Budget hat-trick', '🧵 Stylist', '💍 Accessorized', '🎨 New look', '🗂️ Collector', '🗣️ Polyglot', '🎖️ Rising star', '👑 Legend']
+export const badges = [
+  ['badge_first_step', 'First step'],
+  ['badge_ten_logged', 'Getting serious'],
+  ['badge_century', 'Century'],
+  ['badge_half_k', 'Half a thousand'],
+  ['badge_week_warrior', 'Week warrior'],
+  ['badge_month_master', 'Month master'],
+  ['badge_streak_60', 'Iron streak'],
+  ['badge_streak_100', 'Legendary streak'],
+  ['badge_early_bird', 'Early bird'],
+  ['badge_night_owl', 'Night owl'],
+  ['badge_voice', 'Say it out loud'],
+  ['badge_notes', 'Note taker'],
+  ['badge_explorer', 'Explorer'],
+  ['badge_custom_cat', 'Make it yours'],
+  ['badge_payment_pro', 'Payment pro'],
+  ['badge_big_spender', 'Big spender'],
+  ['badge_penny', 'Penny counter'],
+  ['badge_team_player', 'Team player'],
+  ['badge_group_guru', 'Group guru'],
+  ['badge_fair_share', 'Fair share'],
+  ['badge_settler', 'Settler'],
+  ['badge_family_first', 'Family first'],
+  ['badge_full_house', 'Full house'],
+  ['badge_bill_planner', 'Bill planner'],
+  ['badge_budget_boss', 'Budget boss'],
+  ['badge_budget_hattrick', 'Budget hat-trick'],
+  ['badge_stylist', 'Stylist'],
+  ['badge_accessorized', 'Accessorized'],
+  ['badge_new_look', 'New look'],
+  ['badge_collector', 'Collector'],
+  ['badge_polyglot', 'Polyglot'],
+  ['badge_level_5', 'Rising star'],
+  ['badge_level_10', 'Legend']
+]
 
 export const platforms = [
   {
@@ -166,7 +185,7 @@ export const installSteps = [
   ['Download', 'Tap Download for Android. The APK is the build this page was published with, so it is always the latest one that passed.'],
   ['Allow the install', 'Open the file; Android asks once to allow installs from your browser or file manager. Later builds install over it and keep your data.'],
   ['Set up', 'Pick a language, your name and mobile, a currency and an optional budget. A daily 8:30 PM nudge is ready for you; App lock is a switch on Me whenever you want it.'],
-  ['Moving from HomeQuest?', 'Kharchili is a new app with its own id. Export a CSV from HomeQuest (Me → Your data) and import it in Kharchili (Me → Your data → Import CSV).']
+  ['Moving from HomeQuest?', 'Gharcha is a new app with its own id. Export a CSV from HomeQuest (Me → Your data) and import it in Gharcha (Me → Your data → Import CSV).']
 ]
 
 export const languages = ['English', 'हिन्दी', 'ગુજરાતી']

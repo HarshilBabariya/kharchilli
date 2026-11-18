@@ -49,7 +49,7 @@ class RemindersScreen extends StatelessWidget {
             Text(tr('rem_bills_ahead', [Fmt.money(billsAhead), upcoming.length]), style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12.5)),
           ]),
         ),
-        if (app.reminders.isEmpty) EmptyState(emoji: '🔔', title: tr('nothing_scheduled_title'), body: tr('nothing_scheduled_body')),
+        if (app.reminders.isEmpty) EmptyState(art: 'bell', title: tr('nothing_scheduled_title'), body: tr('nothing_scheduled_body')),
         for (final g in groups.entries)
           if (g.value.isNotEmpty) ...[
             SectionTitle(g.key),

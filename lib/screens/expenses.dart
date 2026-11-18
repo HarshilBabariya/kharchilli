@@ -49,7 +49,7 @@ class _ExpensesTabState extends State<ExpensesTab> {
         Row(children: [
           Expanded(child: _Tile(tr('this_month'), Fmt.money(spent), context.cs.primary)),
           const SizedBox(width: 12),
-          Expanded(child: _Tile(tr('vs_last_month'), previous <= 0 ? '—' : '${spent <= previous ? '▼' : '▲'} ${((spent - previous).abs() / previous * 100).round()}%', spent <= previous ? good : bad)),
+          Expanded(child: _Tile(tr('vs_last_month'), previous <= 0 ? tr('no_data_yet') : '${spent <= previous ? '-' : '+'}${((spent - previous).abs() / previous * 100).round()}%', spent <= previous ? good : bad)),
         ]),
         const SizedBox(height: 14),
         TextField(controller: _search, onChanged: (_) => setState(() {}), decoration: InputDecoration(hintText: '${tr('search')} · ${tr('search_hint')}', prefixIcon: const Icon(Icons.search_rounded))),
@@ -62,7 +62,7 @@ class _ExpensesTabState extends State<ExpensesTab> {
               Padding(padding: const EdgeInsets.only(right: 8), child: KChip(c.name, icon: c.icon, color: c.tint, selected: _category == c.key, onTap: () => setState(() => _category = c.key))),
           ]),
         ),
-        if (list.isEmpty) EmptyState(emoji: '🧾', title: tr('no_expenses_title'), body: tr('no_expenses_body')),
+        if (list.isEmpty) EmptyState(art: 'receipt', title: tr('no_expenses_title'), body: tr('no_expenses_body')),
         for (final day in days.entries) ...[
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),

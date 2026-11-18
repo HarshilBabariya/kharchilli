@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer-brand">
         <Logo size={28} id="footer-logo" />
-        <span>Kharchili {APP_VERSION}</span>
+        <span>Gharcha {APP_VERSION}</span>
       </div>
       <p>One Flutter codebase for Android and iOS. Your data never leaves the phone.</p>
       <nav>

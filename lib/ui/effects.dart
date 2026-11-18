@@ -9,6 +9,7 @@ import '../core/l10n.dart';
 import '../core/models.dart';
 import '../core/notifier.dart';
 import 'avatar.dart';
+import 'glyphs.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -315,13 +316,17 @@ class _CelebrationHostState extends State<CelebrationHost> {
   Future<void> _next() async {
     final app = _app;
     if (!mounted || _showing || app == null || app.locked || app.celebrations.isEmpty) return;
+    if (!(ModalRoute.of(context)?.isCurrent ?? true)) {
+      Future.delayed(const Duration(milliseconds: 350), _next);
+      return;
+    }
     _showing = true;
     final c = app.celebrations.removeAt(0);
     HapticFeedback.heavyImpact();
     Sfx.play(c.sound);
     await Navigator.of(context, rootNavigator: true).push(PageRouteBuilder<void>(
       opaque: false,
-      barrierColor: Colors.black.withValues(alpha: 0.72),
+      barrierColor: Colors.black.withValues(alpha: 0.78),
       transitionDuration: const Duration(milliseconds: 320),
       pageBuilder: (_, __, ___) => _CelebrationScreen(c),
       transitionsBuilder: (_, a, __, child) => FadeTransition(opacity: a, child: child),
@@ -361,7 +366,7 @@ class _CelebrationHostState extends State<CelebrationHost> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                   decoration: BoxDecoration(color: const Color(0xFF1D1517), borderRadius: BorderRadius.circular(999), boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 18, offset: Offset(0, 8))]),
-                  child: Text('⭐ ${tr('toast_points', [app.pointsToast.value])}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [const Coin(size: 22), const SizedBox(width: 8), Text(tr('toast_points', [app.pointsToast.value]), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15))]),
                 ),
               ),
             ),
@@ -371,61 +376,120 @@ class _CelebrationHostState extends State<CelebrationHost> {
   }
 }
 
-class _CelebrationScreen extends StatelessWidget {
+class _CelebrationScreen extends StatefulWidget {
   const _CelebrationScreen(this.c);
   final Celebration c;
 
   @override
+  State<_CelebrationScreen> createState() => _CelebrationScreenState();
+}
+
+class _CelebrationScreenState extends State<_CelebrationScreen> with SingleTickerProviderStateMixin {
+  late final AnimationController _spin = AnimationController(vsync: this, duration: const Duration(seconds: 14))..repeat();
+
+  @override
+  void dispose() {
+    _spin.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
+    final c = widget.c;
+    final cs = context.cs;
     final pack = c.festival?.festival.pack;
-    final look = pack == null ? app.myLook : RewardCatalog.dressFor(pack, app.myLook);
+    final glow = switch (c.kind) {
+      CelebrationKind.badge => const Color(0xFFFFB627),
+      CelebrationKind.streak => const Color(0xFFFF8A1F),
+      CelebrationKind.level => const Color(0xFFFFB627),
+      CelebrationKind.festival => cs.primary,
+    };
+    final Widget art = switch (c.kind) {
+      CelebrationKind.badge => Medal(c.badgeId ?? 'badge_first_step', size: 140),
+      CelebrationKind.streak => const Flame(size: 128),
+      CelebrationKind.level => const Medal('badge_level_5', size: 140),
+      CelebrationKind.festival => AvatarView(pack == null ? app.myLook : RewardCatalog.dressFor(pack, app.myLook), size: 140, animate: true, action: AvatarAction.cheer),
+    };
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(children: [
         Positioned.fill(child: ParticleField(kind: pack == null ? Burst.confetti : burstFor(pack), colours: pack == null ? partyColours : coloursFor(pack), loop: true, duration: const Duration(milliseconds: 4200))),
-        SafeArea(
+        Center(
           child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Spacer(),
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 900),
-                curve: Curves.elasticOut,
-                builder: (_, v, child) => Transform.scale(scale: v, child: child),
-                child: Stack(alignment: Alignment.center, clipBehavior: Clip.none, children: [
-                  Container(width: 190, height: 190, decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: [Colors.white.withValues(alpha: 0.35), Colors.white.withValues(alpha: 0)]))),
-                  if (c.kind == CelebrationKind.streak) const Flame(size: 130) else if (pack != null) AvatarView(look, size: 150, animate: true, action: AvatarAction.cheer) else Text(c.emoji, style: const TextStyle(fontSize: 104)),
-                  if (pack != null) Positioned(right: -6, bottom: -6, child: Text(pack.emoji, style: const TextStyle(fontSize: 46))),
-                ]),
-              ),
-              const SizedBox(height: 28),
-              Entrance(index: 3, child: Text(c.title, textAlign: TextAlign.center, style: context.tt.headlineMedium!.copyWith(color: Colors.white))),
-              const SizedBox(height: 12),
-              Entrance(index: 5, child: Text(c.body, textAlign: TextAlign.center, style: context.tt.bodyLarge!.copyWith(color: Colors.white.withValues(alpha: 0.88)))),
-              if (pack != null) ...[
-                const SizedBox(height: 12),
-                Entrance(index: 6, child: Text(tr('fest_gift_hint', [RewardCatalog.find(pack.themeId)?.name ?? '', PointsRules.festivalGift]), textAlign: TextAlign.center, style: context.tt.bodySmall!.copyWith(color: Colors.white70))),
-              ],
-              const Spacer(),
-              if (pack != null && !app.festivalClaimed) ...[
-                Entrance(
-                  index: 7,
-                  child: KButton(tr('fest_claim', [PointsRules.festivalGift]), onTap: () async {
-                    final nav = Navigator.of(context);
-                    await app.claimFestival();
-                    nav.pop();
-                  }),
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: const Duration(milliseconds: 620),
+              curve: Curves.easeOutBack,
+              builder: (_, v, child) => Transform.scale(scale: 0.7 + 0.3 * v, child: Opacity(opacity: v.clamp(0.0, 1.0).toDouble(), child: child)),
+              child: Stack(alignment: Alignment.topCenter, clipBehavior: Clip.none, children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 84),
+                  padding: const EdgeInsets.fromLTRB(24, 96, 24, 24),
+                  constraints: const BoxConstraints(maxWidth: 380),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(36),
+                    border: Border.all(color: glow.withValues(alpha: 0.5), width: 1.5),
+                    boxShadow: [BoxShadow(color: glow.withValues(alpha: 0.45), blurRadius: 60, spreadRadius: 2)],
+                  ),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(c.title, textAlign: TextAlign.center, style: context.tt.headlineSmall),
+                    const SizedBox(height: 10),
+                    Text(c.body, textAlign: TextAlign.center, style: context.tt.bodyLarge!.copyWith(color: cs.onSurfaceVariant)),
+                    if (pack != null) ...[
+                      const SizedBox(height: 10),
+                      Text(tr('fest_gift_hint', [RewardCatalog.find(pack.themeId)?.name ?? '', PointsRules.festivalGift]), textAlign: TextAlign.center, style: context.tt.bodySmall),
+                    ],
+                    const SizedBox(height: 22),
+                    if (pack != null && !app.festivalClaimed) ...[
+                      KButton(tr('fest_claim', [PointsRules.festivalGift]), onTap: () async {
+                        final nav = Navigator.of(context);
+                        await app.claimFestival();
+                        nav.pop();
+                      }),
+                      const SizedBox(height: 8),
+                      KButton(tr('later'), tonal: true, onTap: () => Navigator.of(context).pop()),
+                    ] else
+                      KButton(tr('celebrate_keep_going'), onTap: () => Navigator.of(context).pop()),
+                  ]),
                 ),
-                const SizedBox(height: 6),
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(tr('later'), style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600))),
-              ] else
-                Entrance(index: 7, child: KButton(tr('celebrate_keep_going'), onTap: () => Navigator.of(context).pop())),
-            ]),
+                SizedBox(
+                  width: 190,
+                  height: 170,
+                  child: Stack(alignment: Alignment.center, children: [
+                    AnimatedBuilder(animation: _spin, builder: (_, __) => CustomPaint(size: const Size.square(190), painter: _RaysPainter(_spin.value, glow))),
+                    art,
+                  ]),
+                ),
+              ]),
+            ),
           ),
         ),
       ]),
     );
   }
+}
+
+/// The slowly turning sunburst behind a celebration's artwork.
+class _RaysPainter extends CustomPainter {
+  _RaysPainter(this.turn, this.color);
+  final double turn;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final r = size.width / 2;
+    canvas.drawCircle(c, r, Paint()..shader = RadialGradient(colors: [color.withValues(alpha: 0.55), color.withValues(alpha: 0)]).createShader(Rect.fromCircle(center: c, radius: r)));
+    final ray = Paint()..shader = RadialGradient(colors: [Colors.white.withValues(alpha: 0.5), Colors.white.withValues(alpha: 0)]).createShader(Rect.fromCircle(center: c, radius: r));
+    for (var i = 0; i < 12; i++) {
+      final a = turn * 2 * pi + i * pi / 6;
+      canvas.drawPath(Path()..moveTo(c.dx, c.dy)..lineTo(c.dx + cos(a - 0.09) * r, c.dy + sin(a - 0.09) * r)..lineTo(c.dx + cos(a + 0.09) * r, c.dy + sin(a + 0.09) * r)..close(), ray);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RaysPainter old) => old.turn != turn;
 }

@@ -4,6 +4,7 @@ import '../core/app_state.dart';
 import '../core/format.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'common.dart';
@@ -46,14 +47,14 @@ class KhataScreen extends StatelessWidget {
           ]),
         ),
         const SizedBox(height: 14),
-        if (app.shops.isEmpty) EmptyState(emoji: '🏪', title: tr('khata_empty'), body: tr('khata_empty_body')),
+        if (app.shops.isEmpty) EmptyState(art: 'shop', title: tr('khata_empty'), body: tr('khata_empty_body')),
         for (final shop in app.shops)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: KCard(
               onTap: () => _shop(context, shop),
               child: Row(children: [
-                const IconTile(Icons.storefront_rounded, color: Color(0xFF8D6E63), size: 50),
+                const Sticker('shop', size: 52),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -131,12 +132,12 @@ class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
   static const _presets = <(String, String, ServiceBilling, String)>[
-    ('svc_milk', '🥛', ServiceBilling.perUnit, BuiltInCategories.groceries),
-    ('svc_newspaper', '📰', ServiceBilling.perUnit, BuiltInCategories.other),
-    ('svc_water_can', '💧', ServiceBilling.perUnit, BuiltInCategories.other),
-    ('svc_maid', '🧹', ServiceBilling.monthly, BuiltInCategories.other),
-    ('svc_cook', '👩‍🍳', ServiceBilling.monthly, BuiltInCategories.other),
-    ('svc_driver', '🚗', ServiceBilling.monthly, BuiltInCategories.other),
+    ('svc_milk', 'milk', ServiceBilling.perUnit, BuiltInCategories.groceries),
+    ('svc_newspaper', 'paper', ServiceBilling.perUnit, BuiltInCategories.other),
+    ('svc_water_can', 'water', ServiceBilling.perUnit, BuiltInCategories.other),
+    ('svc_maid', 'maid', ServiceBilling.monthly, BuiltInCategories.other),
+    ('svc_cook', 'cook', ServiceBilling.monthly, BuiltInCategories.other),
+    ('svc_driver', 'driver', ServiceBilling.monthly, BuiltInCategories.other),
   ];
 
   @override
@@ -158,14 +159,14 @@ class ServicesScreen extends StatelessWidget {
           ]),
         ),
         const SizedBox(height: 14),
-        if (app.services.isEmpty) EmptyState(emoji: '🥛', title: tr('services_empty'), body: tr('services_empty_body')),
+        if (app.services.isEmpty) EmptyState(art: 'svc_milk', title: tr('services_empty'), body: tr('services_empty_body')),
         for (final s in app.services)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: KCard(
               onTap: () => open(context, ServiceDetailScreen(s)),
               child: Row(children: [
-                IconTile(null, emoji: s.emoji, size: 50, color: const Color(0xFF29B6F6)),
+                serviceSticker(s.icon),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -190,7 +191,7 @@ class ServicesScreen extends StatelessWidget {
     final rate = TextEditingController();
     final qty = TextEditingController(text: '1');
     final deduction = TextEditingController();
-    var emoji = '🧾';
+    var icon = 'other';
     var billing = ServiceBilling.perUnit;
     var category = BuiltInCategories.other;
     await showKSheet<void>(
@@ -198,22 +199,38 @@ class ServicesScreen extends StatelessWidget {
       title: tr('add_service'),
       builder: (sheet) => StatefulBuilder(
         builder: (_, setState) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final p in _presets)
-              KChip('${p.$2} ${tr(p.$1)}', selected: name.text == tr(p.$1), onTap: () => setState(() {
+          SizedBox(
+            height: 92,
+            child: ListView(scrollDirection: Axis.horizontal, clipBehavior: Clip.none, children: [
+              for (final p in _presets)
+                Pressable(
+                  scale: 0.9,
+                  onTap: () => setState(() {
                     name.text = tr(p.$1);
-                    emoji = p.$2;
+                    icon = p.$2;
                     billing = p.$3;
                     category = p.$4;
-                  })),
-          ]),
+                  }),
+                  child: SizedBox(
+                    width: 76,
+                    child: Column(children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(22), border: Border.all(color: icon == p.$2 ? sheet.cs.primary : Colors.transparent, width: 2.5)),
+                        child: serviceSticker(p.$2, size: 54),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(tr(p.$1), maxLines: 1, overflow: TextOverflow.ellipsis, style: sheet.tt.labelSmall!.copyWith(color: sheet.cs.onSurface)),
+                    ]),
+                  ),
+                ),
+            ]),
+          ),
           const SizedBox(height: 12),
           KField(controller: name, label: tr('service_name'), hint: tr('service_name_hint'), onChanged: (_) => setState(() {})),
           const SizedBox(height: 10),
-          Row(children: [
-            for (final b in ServiceBilling.values)
-              Padding(padding: const EdgeInsets.only(right: 8), child: KChip(b == ServiceBilling.perUnit ? tr('billing_per_unit') : tr('billing_monthly'), selected: billing == b, onTap: () => setState(() => billing = b))),
-          ]),
+          Segmented<ServiceBilling>(options: {ServiceBilling.perUnit: tr('billing_per_unit'), ServiceBilling.monthly: tr('billing_monthly')}, value: billing, onChanged: (b) => setState(() => billing = b)),
           const SizedBox(height: 10),
           KField(controller: rate, label: billing == ServiceBilling.perUnit ? tr('rate_per_unit') : tr('monthly_salary'), number: true, onChanged: (_) => setState(() {})),
           const SizedBox(height: 10),
@@ -225,7 +242,7 @@ class ServicesScreen extends StatelessWidget {
                   final nav = Navigator.of(sheet);
                   await app.saveService(HomeService(
                     name: name.text,
-                    emoji: emoji,
+                    icon: icon,
                     billing: billing,
                     rate: double.parse(rate.text),
                     defaultQty: billing == ServiceBilling.perUnit ? double.tryParse(qty.text) ?? 1.0 : 1.0,
@@ -275,7 +292,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     }
 
     return KPage(
-      title: '${s.emoji} ${s.name}',
+      title: s.name,
       actions: [
         RoundIcon(Icons.delete_outline_rounded, onTap: () async {
           final nav = Navigator.of(context);
@@ -339,7 +356,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                             opacity: future ? 0.35 : 1,
                             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                               Text('${d.day}', style: TextStyle(fontSize: 11, color: on ? Colors.white70 : cs.onSurfaceVariant)),
-                              Text(perUnit ? Fmt.number(qty) : (qty == 0 ? '✕' : '✓'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: on ? Colors.white : (!perUnit && qty == 0 ? bad : cs.onSurface))),
+                              if (perUnit) Text(Fmt.number(qty), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: on ? Colors.white : cs.onSurface)) else Icon(qty == 0 ? Icons.close_rounded : Icons.check_rounded, size: 16, color: qty == 0 ? bad : good),
                             ]),
                           ),
                         ),
@@ -424,7 +441,7 @@ class SavingsScreen extends StatelessWidget {
               child: KCard(
                 padding: const EdgeInsets.all(14),
                 child: Row(children: [
-                  const IconTile(null, emoji: '🪙', size: 46, color: Color(0xFFFFB300)),
+                  const Sticker('gold', size: 48),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

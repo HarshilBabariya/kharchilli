@@ -49,7 +49,7 @@ class Notifier {
       tz.setLocalLocation(tz.getLocation(await FlutterTimezone.getLocalTimezone()));
       await _plugin.initialize(
         const InitializationSettings(
-          android: AndroidInitializationSettings('ic_stat_kharchili'),
+          android: AndroidInitializationSettings('ic_stat_gharcha'),
           iOS: DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false),
         ),
         onDidReceiveNotificationResponse: (response) => _open(response.payload),

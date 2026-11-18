@@ -14,9 +14,9 @@ import 'store.dart';
 enum CelebrationKind { level, badge, streak, festival }
 
 class Celebration {
-  const Celebration(this.kind, {required this.emoji, required this.title, required this.body, required this.sound, this.festival});
+  const Celebration(this.kind, {this.badgeId, required this.title, required this.body, required this.sound, this.festival});
   final CelebrationKind kind;
-  final String emoji;
+  final String? badgeId;
   final String title;
   final String body;
   final String sound;
@@ -213,8 +213,8 @@ class AppState extends ChangeNotifier {
 
   // ---- Onboarding, members, session
 
-  Future<void> completeOnboarding({required String name, required String phone, required Gender gender, required String currency, required double budget}) async {
-    final owner = Member(name: name.trim().capitalised, relation: 'me', isOwner: true, phone: phone, avatar: _randomLook(gender));
+  Future<void> completeOnboarding({required String name, required Gender gender, required String currency, required double budget}) async {
+    final owner = Member(name: name.trim().capitalised, relation: 'me', isOwner: true, avatar: _randomLook(gender));
     await _store.save(owner);
     members = [owner];
     final nudge = Reminder(title: tr('preset_daily_nudge'), hour: 20, minute: 30, repeat: RepeatRule.daily);
@@ -248,8 +248,8 @@ class AppState extends ChangeNotifier {
     );
   }
 
-  Future<Member> addMember({required String name, required String relation, required String phone, required Gender gender, required bool joinGroups, required bool resplit}) async {
-    final m = Member(name: name.trim().capitalised, relation: relation, phone: phone, avatar: _randomLook(gender));
+  Future<Member> addMember({required String name, required String relation, required Gender gender, required bool joinGroups, required bool resplit}) async {
+    final m = Member(name: name.trim().capitalised, relation: relation, avatar: _randomLook(gender));
     await _store.save(m);
     members.add(m);
     if (joinGroups) {
@@ -323,7 +323,7 @@ class AppState extends ChangeNotifier {
     final after = level;
     if (after.level > before) {
       celebrations.add(Celebration(CelebrationKind.level,
-          emoji: '⭐', title: tr('toast_level', [after.level, after.title]), body: trPick('notif_level_bodies', [after.title]), sound: Channel.levels.sound));
+          title: tr('toast_level', [after.level, after.title]), body: trPick('notif_level_bodies', [after.title]), sound: Channel.levels.sound));
       if (settings.rewardNotifs) Notifier.show(Channel.levels, trPick('notif_level_titles', [after.level]), trPick('notif_level_bodies', [after.title]), route: 'rewards');
     }
   }
@@ -369,7 +369,7 @@ class AppState extends ChangeNotifier {
       for (final status in badgeStatuses.where((s) => !s.earned && s.progress >= s.badge.target)) {
         final b = status.badge;
         settings.badges[b.id] = DateTime.now().millisecondsSinceEpoch;
-        celebrations.add(Celebration(CelebrationKind.badge, emoji: b.emoji, title: tr('toast_badge', [b.name]), body: trPick('notif_badge_bodies', [b.name, b.bonus]), sound: Channel.badges.sound));
+        celebrations.add(Celebration(CelebrationKind.badge, badgeId: b.id, title: tr('toast_badge', [b.name]), body: trPick('notif_badge_bodies', [b.name, b.bonus]), sound: Channel.badges.sound));
         if (settings.rewardNotifs) Notifier.show(Channel.badges, trPick('notif_badge_titles', [b.emoji]), trPick('notif_badge_bodies', [b.name, b.bonus]), route: 'badges');
         await _award(b.bonus, PointReasons.encode(PointReasons.badge, b.id));
         again = true;
@@ -435,7 +435,7 @@ class AppState extends ChangeNotifier {
       if (StreakMilestones.reached(settings.streakDays)) {
         final name = me?.name ?? '';
         celebrations.add(Celebration(CelebrationKind.streak,
-            emoji: '🔥', title: tr('celebrate_streak_title', [settings.streakDays]), body: trPick('celebrate_streak_lines', [name, settings.streakDays]), sound: Channel.streakWin.sound));
+            title: tr('celebrate_streak_title', [settings.streakDays]), body: trPick('celebrate_streak_lines', [name, settings.streakDays]), sound: Channel.streakWin.sound));
         if (settings.rewardNotifs) Notifier.show(Channel.streakWin, trPick('notif_streak_win_titles', [settings.streakDays]), trPick('notif_streak_win_bodies'), route: 'rewards');
       }
     }
@@ -552,7 +552,7 @@ class AppState extends ChangeNotifier {
   }
 
   String groupSummary(Group g) {
-    final lines = <String>['${g.emoji} ${g.name}', tr('share_total_spent', [Fmt.money(max(net(groupExpenses(g)), 0.0))]), ''];
+    final lines = <String>[g.name, tr('share_total_spent', [Fmt.money(max(net(groupExpenses(g)), 0.0))]), ''];
     for (final b in balances(g)) {
       final status = b.net > 0.005
           ? tr('share_is_owed', [Fmt.money(b.net)])
@@ -591,12 +591,12 @@ class AppState extends ChangeNotifier {
     if (budget <= 0) return null;
     final today = Days.today();
     final spent = max(net(inMonth(today).where((e) => e.day <= Days.key(today))), 0.0);
-    if (spent > budget) return tr('forecast_already_over', [Fmt.money(spent - budget)]);
+    if (spent > budget) return tr('forecast_already_over', [Fmt.money((spent - budget).round())]);
     final daily = spent / today.day;
     final projected = daily * Days.inMonth(today);
-    if (projected <= budget || daily <= 0) return tr('forecast_on_track', [Fmt.money(budget - projected)]);
+    if (projected <= budget || daily <= 0) return tr('forecast_on_track', [Fmt.money((budget - projected).round())]);
     final crossing = today.add(Duration(days: ((budget - spent) / daily).ceil()));
-    return tr('forecast_over', [Fmt.money(projected - budget), Fmt.date(crossing)]);
+    return tr('forecast_over', [Fmt.money((projected - budget).round()), Fmt.date(crossing)]);
   }
 
   double get projectedMonth {
@@ -830,7 +830,7 @@ class AppState extends ChangeNotifier {
     final f = festival;
     if (f != null && settings.festiveMode && !settings.festivalsSeen.contains(f.key)) {
       celebrations.add(Celebration(CelebrationKind.festival,
-          emoji: f.festival.pack.emoji, title: f.festival.title(me?.name ?? ''), body: f.festival.line, sound: f.festival.pack.sound, festival: f));
+          title: f.festival.title(me?.name ?? ''), body: f.festival.line, sound: f.festival.pack.sound, festival: f));
     }
     await _checkBadges();
     await _store.saveSettings(settings);

@@ -36,8 +36,6 @@ const _outfits = <String, (int, int, int)>{
   'outfit_sequin': (0xFF7C3AED, 0xFFF5C451, 3),
 };
 
-const _moodExtras = <Mood, String>{Mood.love: '💕', Mood.excited: '✨', Mood.confused: '❓', Mood.sleepy: '💤', Mood.sad: '💧', Mood.worried: '💦', Mood.angry: '💢'};
-
 class AvatarView extends StatefulWidget {
   const AvatarView(this.config, {super.key, this.size = 56, this.animate = false, this.action, this.ring = true});
   final AvatarConfig config;
@@ -109,16 +107,50 @@ class _AvatarPainter extends CustomPainter {
   final List<Color> tints;
   final bool ring;
 
+  static const _head = Rect.fromLTRB(30, 20, 70, 68);
+  static const _ink = Color(0xFF2B1B17);
+
   Paint _fill(Color color) => Paint()..color = color;
   Paint _line(Color color, double w) => Paint()
     ..color = color
     ..style = PaintingStyle.stroke
     ..strokeWidth = w
-    ..strokeCap = StrokeCap.round;
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round;
 
-  void _emoji(Canvas canvas, String text, Offset at, double size) {
-    final tp = TextPainter(text: TextSpan(text: text, style: TextStyle(fontSize: size)), textDirection: TextDirection.ltr)..layout();
+  void _text(Canvas canvas, String text, Offset at, double size, Color color) {
+    final tp = TextPainter(text: TextSpan(text: text, style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: size, color: color)), textDirection: TextDirection.ltr)..layout();
     tp.paint(canvas, at - Offset(tp.width / 2, tp.height / 2));
+  }
+
+  void _heart(Canvas canvas, Offset o, double s, Color color) {
+    canvas.drawPath(
+      Path()
+        ..moveTo(o.dx, o.dy + s * 0.9)
+        ..cubicTo(o.dx - s * 1.4, o.dy - s * 0.1, o.dx - s * 0.6, o.dy - s * 1.1, o.dx, o.dy - s * 0.3)
+        ..cubicTo(o.dx + s * 0.6, o.dy - s * 1.1, o.dx + s * 1.4, o.dy - s * 0.1, o.dx, o.dy + s * 0.9)
+        ..close(),
+      _fill(color),
+    );
+  }
+
+  void _sparkle(Canvas canvas, Offset o, double s, Color color) {
+    final path = Path()..moveTo(o.dx, o.dy - s);
+    for (final p in [Offset(s * 0.25, -s * 0.25), Offset(s, 0), Offset(s * 0.25, s * 0.25), Offset(0, s), Offset(-s * 0.25, s * 0.25), Offset(-s, 0), Offset(-s * 0.25, -s * 0.25)]) {
+      path.lineTo(o.dx + p.dx, o.dy + p.dy);
+    }
+    canvas.drawPath(path..close(), _fill(color));
+  }
+
+  void _drop(Canvas canvas, Offset o, double s) {
+    canvas.drawPath(
+      Path()
+        ..moveTo(o.dx, o.dy - s * 1.3)
+        ..quadraticBezierTo(o.dx + s * 1.1, o.dy + s * 0.2, o.dx, o.dy + s)
+        ..quadraticBezierTo(o.dx - s * 1.1, o.dy + s * 0.2, o.dx, o.dy - s * 1.3)
+        ..close(),
+      _fill(const Color(0xFF5BB8FF)),
+    );
   }
 
   @override
@@ -126,264 +158,304 @@ class _AvatarPainter extends CustomPainter {
     canvas.save();
     canvas.scale(size.width / 100);
     final frame = Path()..addOval(const Rect.fromLTWH(0, 0, 100, 100));
-    canvas.drawPath(frame, Paint()..shader = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [tints[0].withValues(alpha: 0.28), tints[1].withValues(alpha: 0.34)]).createShader(const Rect.fromLTWH(0, 0, 100, 100)));
+    canvas.drawPath(frame, Paint()..shader = LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.lerp(tints[0], Colors.white, 0.62)!, Color.lerp(tints[1], Colors.white, 0.38)!]).createShader(const Rect.fromLTWH(0, 0, 100, 100)));
     canvas.clipPath(frame);
+    canvas.drawCircle(const Offset(50, 98), 46, _fill(Colors.white.withValues(alpha: 0.3)));
 
     final wave = sin(idle * 2 * pi);
     final pulse = sin(t * pi);
-    var dx = wave * 0.8, dy = 0.0, tilt = wave * 0.012, squashX = 1.0, squashY = 1 + sin(idle * 4 * pi) * 0.008;
+    var dx = wave * 0.7, dy = 0.0, tilt = wave * 0.012, squashX = 1.0, squashY = 1 + sin(idle * 4 * pi) * 0.008;
     switch (action) {
       case AvatarAction.jump || AvatarAction.cheer:
-        dy = -16 * pulse;
+        dy = -14 * pulse;
         squashY = 1 + 0.06 * sin(t * 2 * pi);
       case AvatarAction.spin:
         squashX = cos(t * 2 * pi);
       case AvatarAction.dance:
-        tilt = sin(t * 6 * pi) * 0.12;
+        tilt = sin(t * 6 * pi) * 0.11;
         dx = sin(t * 6 * pi) * 5;
       case AvatarAction.wave:
-        tilt = sin(t * 4 * pi) * 0.05;
+        tilt = sin(t * 4 * pi) * 0.04;
       case AvatarAction.laugh:
-        dy = sin(t * 14 * pi) * 1.6;
+        dy = sin(t * 14 * pi) * 1.5;
       default:
         break;
     }
-    canvas.translate(50 + dx, 58 + dy);
+    canvas.translate(50 + dx, 60 + dy);
     canvas.rotate(tilt);
     canvas.scale(squashX.abs() < 0.08 ? 0.08 : squashX, squashY);
-    canvas.translate(-50, -58);
+    canvas.translate(-50, -60);
 
     final skin = Color(skinTones[c.skinTone % skinTones.length]);
-    final shade = Color.lerp(skin, Colors.black, 0.14)!;
+    final shade = Color.lerp(skin, const Color(0xFF7A3E12), 0.2)!;
     final hair = Color(hairColors[c.hairColor % hairColors.length]);
     final female = c.gender == Gender.female;
-    final head = _headRect();
 
-    _hairBack(canvas, hair, head);
-    _body(canvas, skin, shade, female);
-    canvas.drawOval(Rect.fromCenter(center: Offset(head.left, 50), width: 7, height: 10), _fill(shade));
-    canvas.drawOval(Rect.fromCenter(center: Offset(head.right, 50), width: 7, height: 10), _fill(shade));
-    final face = RRect.fromRectAndRadius(head, Radius.elliptical(head.width * _roundness().$1, head.height * _roundness().$2));
-    canvas.drawRRect(face, Paint()..shader = RadialGradient(center: const Alignment(-0.3, -0.4), radius: 1, colors: [Color.lerp(skin, Colors.white, 0.12)!, skin, shade]).createShader(head));
-    _beard(canvas, hair, head);
-    _face(canvas, female);
-    _hairFront(canvas, hair, head);
-    _accessory(canvas, head);
+    _hairBack(canvas, hair);
+    _body(canvas, shade);
+    canvas.drawOval(const Rect.fromLTWH(25.9, 42, 7.2, 10), _fill(shade));
+    canvas.drawOval(const Rect.fromLTWH(66.9, 42, 7.2, 10), _fill(shade));
+    final face = _face();
+    canvas.drawPath(face, Paint()..shader = RadialGradient(center: const Alignment(-0.25, -0.4), radius: 0.95, colors: [Color.lerp(skin, Colors.white, 0.2)!, skin, shade], stops: const [0, 0.62, 1]).createShader(_head));
+    _beard(canvas, hair);
+    _features(canvas, female);
+    _hairFront(canvas, hair);
+    _accessory(canvas, _head);
     canvas.restore();
 
     canvas.save();
     canvas.scale(size.width / 100);
-    final extra = _moodExtras[c.mood];
-    if (extra != null && action == null) _emoji(canvas, extra, Offset(80, 22 - sin(idle * 2 * pi) * 2), 15);
-    if (action == AvatarAction.wave) _emoji(canvas, '👋', Offset(82 + sin(t * 8 * pi) * 3, 52), 20);
-    if (action == AvatarAction.cheer) _emoji(canvas, '🙌', Offset(50, 14 - 6 * pulse), 18);
-    if (action == AvatarAction.wink) _emoji(canvas, '✨', Offset(74, 40 - 8 * pulse), 12);
-    if (ring) canvas.drawCircle(const Offset(50, 50), 48.5, _line(Colors.white.withValues(alpha: 0.75), 3));
+    if (action == null) _moodExtra(canvas);
+    if (action == AvatarAction.wave) {
+      canvas.save();
+      canvas.translate(82, 62);
+      canvas.rotate(-0.3 + sin(t * 8 * pi) * 0.35);
+      canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(-7, -16, 14, 17), const Radius.circular(6.5)), _fill(skin));
+      canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(-7, -16, 14, 17), const Radius.circular(6.5)), _line(shade, 1));
+      canvas.drawLine(const Offset(-2.4, -13), const Offset(-2.4, -8), _line(shade, 0.9));
+      canvas.drawLine(const Offset(2.4, -13), const Offset(2.4, -8), _line(shade, 0.9));
+      canvas.restore();
+    }
+    if (action == AvatarAction.cheer) {
+      for (var i = 0; i < 8; i++) {
+        final a = i * pi / 4 + t;
+        _sparkle(canvas, Offset(50 + cos(a) * 40 * pulse, 30 + sin(a) * 24 * pulse), 2.6, [const Color(0xFFFFC531), const Color(0xFF2EC4B6), const Color(0xFFFF6FB5)][i % 3]);
+      }
+    }
+    if (action == AvatarAction.wink) _sparkle(canvas, Offset(76, 40 - 8 * pulse), 4 * pulse + 1, const Color(0xFFFFC531));
+    if (ring) canvas.drawCircle(const Offset(50, 50), 48.5, _line(Colors.white.withValues(alpha: 0.85), 3));
     canvas.restore();
   }
 
-  Rect _headRect() {
-    switch (c.faceShape) {
-      case FaceShape.round:
-        return const Rect.fromLTWH(27, 25, 46, 46);
-      case FaceShape.square:
-        return const Rect.fromLTWH(28, 25, 44, 46);
-      case FaceShape.heart:
-        return const Rect.fromLTWH(28, 24, 44, 47);
-      case FaceShape.long:
-        return const Rect.fromLTWH(30, 21, 40, 52);
-      case FaceShape.oval:
-        return const Rect.fromLTWH(29, 23, 42, 49);
-    }
-  }
-
-  (double, double) _roundness() => switch (c.faceShape) { FaceShape.square => (0.3, 0.3), FaceShape.heart => (0.5, 0.42), _ => (0.5, 0.5) };
-
-  void _body(Canvas canvas, Color skin, Color shade, bool female) {
-    final look = _outfits[c.outfitId] ?? _outfits['outfit_tee']!;
-    final base = Color(look.$1), accent = Color(look.$2);
-    final w = female ? 30.0 : 34.0;
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(43, 62, 14, 16), const Radius.circular(6)), _fill(shade));
-    final torso = Path()
-      ..moveTo(50 - w, 104)
-      ..quadraticBezierTo(50 - w, 76, 50 - 10, 73)
-      ..quadraticBezierTo(50, 80, 50 + 10, 73)
-      ..quadraticBezierTo(50 + w, 76, 50 + w, 104)
+  Path _face() {
+    final (jx, jy, cy) = switch (c.faceShape) {
+      FaceShape.round => (66.0, 58.0, 67.0),
+      FaceShape.square => (68.0, 62.0, 67.0),
+      FaceShape.heart => (57.0, 54.0, 69.0),
+      FaceShape.long => (61.0, 58.0, 71.0),
+      FaceShape.oval => (62.0, 56.0, 68.0),
+    };
+    return Path()
+      ..moveTo(30, 42)
+      ..cubicTo(30, 26, 38, 20, 50, 20)
+      ..cubicTo(62, 20, 70, 26, 70, 42)
+      ..cubicTo(70, jy, jx, cy, 50, cy)
+      ..cubicTo(100 - jx, cy, 30, jy, 30, 42)
       ..close();
-    canvas.drawPath(torso, Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color.lerp(base, Colors.white, 0.12)!, Color.lerp(base, Colors.black, 0.12)!]).createShader(const Rect.fromLTWH(10, 70, 80, 34)));
-    switch (look.$3) {
-      case 1:
-        canvas.drawPath(Path()..moveTo(40, 73)..lineTo(50, 84)..lineTo(44, 88)..close(), _fill(accent));
-        canvas.drawPath(Path()..moveTo(60, 73)..lineTo(50, 84)..lineTo(56, 88)..close(), _fill(accent));
-      case 2:
-        canvas.drawArc(const Rect.fromLTWH(34, 66, 32, 22), 0, pi, false, _line(accent, 4));
-        canvas.drawLine(const Offset(46, 86), const Offset(46, 96), _line(accent, 1.4));
-        canvas.drawLine(const Offset(54, 86), const Offset(54, 96), _line(accent, 1.4));
-      case 3:
-        canvas.drawPath(Path()..moveTo(41, 73)..lineTo(50, 100)..lineTo(59, 73)..lineTo(50, 80)..close(), _fill(accent));
-        canvas.drawLine(const Offset(41, 73), const Offset(47, 100), _line(Color.lerp(base, Colors.black, 0.3)!, 1.6));
-        canvas.drawLine(const Offset(59, 73), const Offset(53, 100), _line(Color.lerp(base, Colors.black, 0.3)!, 1.6));
-      case 4:
-        canvas.drawLine(const Offset(50, 79), const Offset(50, 100), _line(accent, 2.2));
-        for (final y in [84.0, 90.0, 96.0]) {
-          canvas.drawCircle(Offset(50, y), 1.3, _fill(Color.lerp(accent, Colors.white, 0.4)!));
-        }
-        canvas.drawArc(const Rect.fromLTWH(40, 68, 20, 14), 0, pi, false, _line(accent, 2.4));
-      case 5:
-        canvas.drawPath(Path()..moveTo(24, 100)..quadraticBezierTo(48, 84, 66, 72)..lineTo(72, 76)..quadraticBezierTo(54, 92, 36, 104)..close(), _fill(accent));
-      case 6:
-        canvas.drawCircle(const Offset(50, 90), 6, _fill(accent));
-        canvas.drawCircle(const Offset(50, 90), 3, _fill(base));
-        canvas.drawArc(const Rect.fromLTWH(38, 67, 24, 14), 0, pi, false, _line(accent, 3));
-      default:
-        canvas.drawArc(const Rect.fromLTWH(40, 67, 20, 14), 0, pi, false, _line(Color.lerp(base, Colors.black, 0.25)!, 2));
-        if (c.outfitId == 'outfit_jersey') _emoji(canvas, '7', const Offset(50, 92), 9);
-    }
   }
 
-  void _hairBack(Canvas canvas, Color hair, Rect head) {
-    final p = _fill(Color.lerp(hair, Colors.black, 0.18)!);
-    switch (c.hairId) {
-      case 'hair_long' || 'hair_braids':
-        canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(head.left - 6, head.top + 4, head.right + 6, 88), const Radius.circular(18)), p);
-      case 'hair_wavy':
-        canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(head.left - 7, head.top + 4, head.right + 7, 80), const Radius.circular(22)), p);
-        for (final x in [head.left - 5, head.right + 5]) {
-          canvas.drawCircle(Offset(x, 78), 6, p);
+  void _moodExtra(Canvas canvas) {
+    final bob = sin(idle * 2 * pi) * 1.6;
+    switch (c.mood) {
+      case Mood.sleepy:
+        for (final (i, z) in const [(72.0, 26.0, 7.0), (79.0, 18.0, 9.0), (87.0, 9.0, 11.0)].indexed) {
+          _text(canvas, 'z', Offset(z.$1, z.$2 - bob * (i + 1) * 0.5), z.$3, const Color(0xFF5B7BFF));
         }
-      case 'hair_bob':
-        canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(head.left - 6, head.top + 2, head.right + 6, 70), const Radius.circular(16)), p);
-      case 'hair_afro':
-        canvas.drawCircle(Offset(50, head.top + 14), 33, p);
-      case 'hair_ponytail':
-        canvas.drawOval(Rect.fromLTWH(head.right - 2, head.top + 10, 14, 34), p);
-      case 'hair_bun' || 'hair_man_bun':
-        canvas.drawCircle(Offset(50, head.top - 4), c.hairId == 'hair_bun' ? 10 : 7, p);
+      case Mood.love:
+        _heart(canvas, Offset(80, 20 - bob), 4.6, const Color(0xFFFF4D6D));
+        _heart(canvas, Offset(88, 31 + bob * 0.6), 2.8, const Color(0xFFFF8FA3));
+      case Mood.excited:
+        _sparkle(canvas, Offset(80, 18 - bob), 5.5, const Color(0xFFFFC531));
+        _sparkle(canvas, Offset(89, 30), 3, const Color(0xFFFFC531));
+        _sparkle(canvas, Offset(18, 22 + bob), 3.6, const Color(0xFFFFC531));
+      case Mood.confused:
+        _text(canvas, '?', Offset(81, 18 - bob), 16, const Color(0xFF7C4DFF));
+      case Mood.sad:
+        _drop(canvas, Offset(37.5, 55 + (idle * 6) % 6), 2.2);
+      case Mood.worried:
+        _drop(canvas, Offset(72, 30 + bob), 2.8);
+      case Mood.angry:
+        for (final d in const [Offset(1, 1), Offset(-1, 1), Offset(1, -1), Offset(-1, -1)]) {
+          canvas.drawLine(Offset(80, 20) + d * 1.6, Offset(80, 20) + d * 5.2, _line(const Color(0xFFE5484D), 2.2));
+        }
       default:
         break;
     }
   }
 
-  void _hairFront(Canvas canvas, Color hair, Rect head) {
-    final p = Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color.lerp(hair, Colors.white, 0.18)!, hair]).createShader(Rect.fromLTWH(head.left - 6, head.top - 12, head.width + 12, 30));
-    Path cap(double drop, [double lift = 5]) => Path()
-      ..moveTo(head.left - 2, head.top + drop)
-      ..quadraticBezierTo(head.left - 4, head.top - lift - 4, 50, head.top - lift)
-      ..quadraticBezierTo(head.right + 4, head.top - lift - 4, head.right + 2, head.top + drop)
-      ..quadraticBezierTo(head.right - 6, head.top + 6, 50, head.top + 8)
-      ..quadraticBezierTo(head.left + 6, head.top + 6, head.left - 2, head.top + drop)
+  void _body(Canvas canvas, Color shade) {
+    final look = _outfits[c.outfitId] ?? _outfits['outfit_tee']!;
+    final base = Color(look.$1), accent = Color(look.$2);
+    final deep = Color.lerp(base, Colors.black, 0.3)!;
+    final torso = Path()
+      ..moveTo(10, 104)
+      ..cubicTo(10, 82, 26, 76, 40, 74)
+      ..quadraticBezierTo(50, 82, 60, 74)
+      ..cubicTo(74, 76, 90, 82, 90, 104)
       ..close();
-    switch (c.hairId) {
-      case 'hair_buzz':
-        canvas.drawPath(cap(10, 2), _fill(hair.withValues(alpha: 0.75)));
-      case 'hair_curly':
-        for (var i = 0; i < 9; i++) {
-          final a = pi + i * pi / 8;
-          canvas.drawCircle(Offset(50 + cos(a) * (head.width / 2 + 1), head.top + 15 + sin(a) * 17), 7.5, p);
+    canvas.drawPath(torso, Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color.lerp(base, Colors.white, 0.2)!, base, Color.lerp(base, Colors.black, 0.14)!]).createShader(const Rect.fromLTWH(10, 72, 80, 30)));
+    canvas.drawPath(Path()..moveTo(43, 62)..lineTo(57, 62)..lineTo(57, 74)..quadraticBezierTo(50, 80, 43, 74)..close(), _fill(shade));
+    switch (look.$3) {
+      case 1:
+        canvas.drawPath(Path()..moveTo(40, 74)..lineTo(50, 85)..lineTo(43, 89)..close(), _fill(accent));
+        canvas.drawPath(Path()..moveTo(60, 74)..lineTo(50, 85)..lineTo(57, 89)..close(), _fill(accent));
+      case 2:
+        canvas.drawPath(Path()..moveTo(38, 75)..quadraticBezierTo(50, 90, 62, 75), _line(accent, 4));
+        canvas.drawLine(const Offset(46, 86), const Offset(46, 97), _line(accent, 1.4));
+        canvas.drawLine(const Offset(54, 86), const Offset(54, 97), _line(accent, 1.4));
+      case 3:
+        canvas.drawPath(Path()..moveTo(40, 74)..lineTo(50, 101)..lineTo(60, 74)..quadraticBezierTo(50, 82, 40, 74)..close(), _fill(accent));
+        canvas.drawLine(const Offset(40, 74), const Offset(47, 101), _line(deep, 1.6));
+        canvas.drawLine(const Offset(60, 74), const Offset(53, 101), _line(deep, 1.6));
+      case 4:
+        canvas.drawPath(Path()..moveTo(40, 74)..quadraticBezierTo(50, 84, 60, 74), _line(accent, 2.6));
+        canvas.drawLine(const Offset(50, 80), const Offset(50, 101), _line(accent, 2.2));
+        for (final y in [85.0, 91.0, 97.0]) {
+          canvas.drawCircle(Offset(50, y), 1.3, _fill(Color.lerp(accent, Colors.white, 0.45)!));
         }
-        canvas.drawPath(cap(12), p);
-      case 'hair_mohawk':
-        canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(44, head.top - 14, 56, head.top + 10), const Radius.circular(6)), p);
-      case 'hair_spiky':
-        canvas.drawPath(cap(12, 3), p);
-        for (var i = 0; i < 5; i++) {
-          final x = head.left + 4 + i * (head.width - 8) / 4;
-          canvas.drawPath(Path()..moveTo(x - 5, head.top + 3)..lineTo(x, head.top - 12)..lineTo(x + 5, head.top + 3)..close(), p);
-        }
-      case 'hair_side_part':
-        canvas.drawPath(cap(16), p);
-        canvas.drawPath(Path()..moveTo(head.left - 2, head.top + 16)..quadraticBezierTo(head.left + 12, head.top + 2, head.right - 6, head.top + 12)..quadraticBezierTo(head.left + 16, head.top + 12, head.left - 2, head.top + 16)..close(), p);
-      case 'hair_quiff':
-        canvas.drawPath(cap(14), p);
-        canvas.drawOval(Rect.fromLTWH(head.left + 6, head.top - 13, head.width - 14, 18), p);
-      case 'hair_pixie':
-        canvas.drawPath(cap(18), p);
-        canvas.drawPath(Path()..moveTo(head.left, head.top + 8)..quadraticBezierTo(50, head.top + 20, head.right - 4, head.top + 6)..lineTo(head.right - 2, head.top)..lineTo(head.left, head.top)..close(), p);
-      case 'hair_braids':
-        canvas.drawPath(cap(16), p);
-        for (final x in [head.left - 4, head.right + 4]) {
-          for (var i = 0; i < 5; i++) {
-            canvas.drawCircle(Offset(x, 56 + i * 7.0), 4.2, p);
-          }
-        }
-      case 'hair_afro':
-        canvas.drawPath(cap(12, 8), p);
+      case 5:
+        canvas.drawPath(Path()..moveTo(22, 102)..quadraticBezierTo(48, 86, 64, 74)..lineTo(72, 78)..quadraticBezierTo(54, 94, 36, 104)..close(), _fill(accent));
+        canvas.drawPath(Path()..moveTo(40, 74)..quadraticBezierTo(50, 84, 60, 74), _line(deep, 2));
+      case 6:
+        canvas.drawPath(Path()..moveTo(39, 74)..quadraticBezierTo(50, 85, 61, 74), _line(accent, 3.2));
+        canvas.drawCircle(const Offset(50, 92), 6, _fill(accent));
+        canvas.drawCircle(const Offset(50, 92), 3, _fill(base));
       default:
-        canvas.drawPath(cap(c.hairId == 'hair_short' ? 14 : 18), p);
+        canvas.drawPath(Path()..moveTo(40, 74)..quadraticBezierTo(50, 84, 60, 74), _line(deep, 2.4));
+        if (c.outfitId == 'outfit_jersey') _text(canvas, '7', const Offset(50, 93), 10, accent);
     }
   }
 
-  void _beard(Canvas canvas, Color hair, Rect head) {
-    if (c.gender == Gender.female) return;
-    final p = _fill(hair.withValues(alpha: 0.9));
+  void _hairBack(Canvas canvas, Color hair) {
+    final p = _fill(Color.lerp(hair, Colors.black, 0.22)!);
+    switch (c.hairId) {
+      case 'hair_long' || 'hair_braids':
+        canvas.drawPath(Path()..moveTo(26, 44)..cubicTo(24, 22, 38, 13, 50, 13)..cubicTo(62, 13, 76, 22, 74, 44)..lineTo(76, 80)..quadraticBezierTo(64, 86, 62, 70)..lineTo(38, 70)..quadraticBezierTo(36, 86, 24, 80)..close(), p);
+      case 'hair_wavy':
+        canvas.drawPath(Path()..moveTo(26, 44)..cubicTo(24, 22, 38, 13, 50, 13)..cubicTo(62, 13, 76, 22, 74, 44)..quadraticBezierTo(82, 56, 74, 66)..quadraticBezierTo(80, 76, 68, 76)..lineTo(32, 76)..quadraticBezierTo(20, 76, 26, 66)..quadraticBezierTo(18, 56, 26, 44)..close(), p);
+      case 'hair_bob':
+        canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(24, 14, 76, 66), const Radius.circular(22)), p);
+      case 'hair_afro':
+        canvas.drawCircle(const Offset(50, 31), 31, p);
+      case 'hair_ponytail':
+        canvas.drawPath(Path()..moveTo(68, 26)..quadraticBezierTo(90, 30, 82, 66)..quadraticBezierTo(74, 58, 72, 44)..close(), p);
+      case 'hair_bun':
+        canvas.drawCircle(const Offset(50, 11), 9, p);
+      case 'hair_man_bun':
+        canvas.drawCircle(const Offset(52, 12), 6.5, p);
+      default:
+        break;
+    }
+  }
+
+  void _hairFront(Canvas canvas, Color hair) {
+    final p = Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color.lerp(hair, Colors.white, 0.16)!, hair]).createShader(const Rect.fromLTWH(24, 8, 52, 38));
+    final shine = _line(Colors.white.withValues(alpha: 0.2), 2);
+    final crop = Path()..moveTo(29, 44)..cubicTo(27, 24, 38, 15, 51, 15)..cubicTo(64, 15, 73, 24, 71, 44)..cubicTo(69, 36, 66, 31, 61, 29)..cubicTo(54, 33, 42, 33, 35, 30)..cubicTo(32, 33, 30, 38, 29, 44)..close();
+    final swept = Path()..moveTo(29, 44)..cubicTo(27, 24, 38, 15, 50, 15)..cubicTo(62, 15, 73, 24, 71, 44)..cubicTo(68, 34, 62, 28, 52, 26)..cubicTo(46, 32, 36, 34, 29, 44)..close();
+    switch (c.hairId) {
+      case 'hair_buzz':
+        canvas.drawPath(Path()..moveTo(29, 42)..cubicTo(28, 24, 38, 16, 50, 16)..cubicTo(62, 16, 72, 24, 71, 42)..cubicTo(69, 34, 64, 27, 50, 27)..cubicTo(36, 27, 31, 34, 29, 42)..close(), _fill(hair.withValues(alpha: 0.82)));
+      case 'hair_long' || 'hair_wavy' || 'hair_bob' || 'hair_ponytail' || 'hair_bun' || 'hair_braids':
+        canvas.drawPath(swept, p);
+        if (c.hairId == 'hair_braids') {
+          for (final x in [25.5, 74.5]) {
+            for (var i = 0; i < 5; i++) {
+              canvas.drawCircle(Offset(x, 52 + i * 7.0), 4.3, p);
+            }
+          }
+        }
+      case 'hair_side_part':
+        canvas.drawPath(Path()..moveTo(29, 44)..cubicTo(27, 24, 38, 15, 51, 15)..cubicTo(64, 15, 73, 24, 71, 44)..cubicTo(70, 36, 66, 30, 60, 27)..cubicTo(50, 35, 38, 35, 31, 38)..close(), p);
+      case 'hair_pixie':
+        canvas.drawPath(Path()..moveTo(29, 44)..cubicTo(27, 24, 38, 15, 50, 15)..cubicTo(62, 15, 73, 24, 71, 44)..cubicTo(70, 38, 68, 34, 64, 31)..cubicTo(56, 40, 40, 38, 33, 30)..cubicTo(31, 34, 30, 38, 29, 44)..close(), p);
+      case 'hair_quiff':
+        canvas.drawPath(crop, p);
+        canvas.drawPath(Path()..moveTo(36, 26)..cubicTo(34, 8, 62, 6, 66, 24)..cubicTo(58, 20, 46, 20, 36, 26)..close(), p);
+      case 'hair_spiky':
+        canvas.drawPath(crop, p);
+        for (var i = 0; i < 5; i++) {
+          final x = 34 + i * 8.0;
+          canvas.drawPath(Path()..moveTo(x - 5, 22)..lineTo(x + (i - 2) * 1.5, 7)..lineTo(x + 5, 22)..close(), p);
+        }
+      case 'hair_curly' || 'hair_afro':
+        for (var i = 0; i < 9; i++) {
+          final a = pi + i * pi / 8;
+          canvas.drawCircle(Offset(50 + cos(a) * 20.5, 33 + sin(a) * 17), 7.6, p);
+        }
+        canvas.drawPath(crop, p);
+      case 'hair_mohawk':
+        canvas.drawPath(Path()..moveTo(44, 30)..cubicTo(42, 8, 58, 8, 56, 30)..quadraticBezierTo(50, 26, 44, 30)..close(), p);
+      default:
+        canvas.drawPath(crop, p);
+    }
+    canvas.drawPath(Path()..moveTo(39, 22)..quadraticBezierTo(48, 17, 58, 20), shine);
+  }
+
+  void _beard(Canvas canvas, Color hair) {
+    if (c.gender == Gender.female || c.beard == Beard.none) return;
+    final p = _fill(hair.withValues(alpha: 0.92));
     final jaw = Path()
-      ..moveTo(head.left + 2, 54)
-      ..quadraticBezierTo(head.left + 4, head.bottom + 1, 50, head.bottom + 1)
-      ..quadraticBezierTo(head.right - 4, head.bottom + 1, head.right - 2, 54)
-      ..quadraticBezierTo(head.right - 8, 66, 50, 66)
-      ..quadraticBezierTo(head.left + 8, 66, head.left + 2, 54)
+      ..moveTo(31.5, 50)
+      ..cubicTo(32, 62, 40, 69, 50, 69)
+      ..cubicTo(60, 69, 68, 62, 68.5, 50)
+      ..cubicTo(64, 60, 58, 62.5, 50, 62.5)
+      ..cubicTo(42, 62.5, 36, 60, 31.5, 50)
       ..close();
+    final mustache = Path()..moveTo(42.5, 57.2)..quadraticBezierTo(50, 53.6, 57.5, 57.2)..quadraticBezierTo(50, 56.2, 42.5, 57.2)..close();
     switch (c.beard) {
       case Beard.stubble:
-        canvas.drawPath(jaw, _fill(hair.withValues(alpha: 0.28)));
+        canvas.drawPath(jaw, _fill(hair.withValues(alpha: 0.26)));
       case Beard.mustache:
-        canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(42, 58.5, 16, 3.4), const Radius.circular(2)), p);
+        canvas.drawPath(mustache, _line(hair, 2.2));
       case Beard.goatee:
-        canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(42, 58.5, 16, 3), const Radius.circular(2)), p);
-        canvas.drawOval(Rect.fromLTWH(45, 65, 10, head.bottom - 63), p);
+        canvas.drawPath(mustache, _line(hair, 2));
+        canvas.drawOval(const Rect.fromLTWH(45.5, 62.5, 9, 6.5), p);
       case Beard.chinStrap:
-        canvas.drawPath(jaw, _line(hair, 3));
+        canvas.drawPath(Path()..moveTo(32, 50)..cubicTo(33, 62, 41, 68, 50, 68)..cubicTo(59, 68, 67, 62, 68, 50), _line(hair, 2.6));
       case Beard.full:
         canvas.drawPath(jaw, p);
-        canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(42, 58.5, 16, 3.4), const Radius.circular(2)), p);
+        canvas.drawPath(mustache, _line(hair, 2.2));
       case Beard.none:
         break;
     }
   }
 
-  void _face(Canvas canvas, bool female) {
+  void _features(Canvas canvas, bool female) {
     final mood = c.mood ?? Mood.happy;
-    const ink = Color(0xFF2B1B17);
     final blinking = idle > 0.94 && idle < 0.985;
     final laughing = action == AvatarAction.laugh;
-    final blush = _fill(const Color(0xFFFF6B8A).withValues(alpha: female ? 0.34 : 0.2));
-    canvas.drawOval(const Rect.fromLTWH(33, 53, 9, 5.5), blush);
-    canvas.drawOval(const Rect.fromLTWH(58, 53, 9, 5.5), blush);
+    final blush = _fill(const Color(0xFFFF6B8A).withValues(alpha: female ? 0.32 : 0.22));
+    canvas.drawOval(const Rect.fromLTWH(31.9, 50, 9.2, 6), blush);
+    canvas.drawOval(const Rect.fromLTWH(58.9, 50, 9.2, 6), blush);
 
-    final browTilt = switch (mood) { Mood.angry => 2.6, Mood.sad || Mood.worried => -2.2, Mood.smart => -1.0, _ => 0.0 };
-    final browW = female ? 1.5 : 2.2;
-    canvas.drawLine(Offset(36, 41 - browTilt), Offset(44, 41 + browTilt), _line(ink, browW));
-    canvas.drawLine(Offset(56, 41 + browTilt - (mood == Mood.smart ? 2.5 : 0)), Offset(64, 41 - browTilt - (mood == Mood.smart ? 2.5 : 0)), _line(ink, browW));
+    final lift = switch (mood) { Mood.angry => 2.2, Mood.sad || Mood.worried => -2.0, _ => 0.0 };
+    final raise = mood == Mood.smart || mood == Mood.confused ? 2.4 : 0.0;
+    final brow = _line(_ink, female ? 1.5 : 2);
+    canvas.drawPath(Path()..moveTo(36, 38.5 - lift)..quadraticBezierTo(40.5, 36 - lift.abs() * 0.2, 45, 38.5 + lift), brow);
+    canvas.drawPath(Path()..moveTo(55, 38.5 + lift - raise)..quadraticBezierTo(59.5, 36 - raise - lift.abs() * 0.2, 64, 38.5 - lift - raise), brow);
 
-    for (final x in [40.0, 60.0]) {
-      final winking = action == AvatarAction.wink && x == 60.0 && t > 0.2 && t < 0.8;
+    for (final x in [40.5, 59.5]) {
+      final winking = action == AvatarAction.wink && x > 50 && t > 0.2 && t < 0.8;
       if (mood == Mood.love && !blinking) {
-        _emoji(canvas, '❤️', Offset(x, 47.5), 7.5);
+        _heart(canvas, Offset(x, 45.6), 3.4, const Color(0xFFFF4D6D));
       } else if (blinking || winking || laughing || mood == Mood.sleepy) {
-        canvas.drawArc(Rect.fromCenter(center: Offset(x, 47), width: 7, height: 5), laughing ? pi : 0, pi, false, _line(ink, 1.8));
+        canvas.drawArc(Rect.fromCenter(center: Offset(x, 45.5), width: 7, height: 5), laughing ? pi : 0, pi, false, _line(_ink, 1.9));
       } else {
-        final open = mood == Mood.excited || mood == Mood.worried ? 4.2 : 3.4;
-        canvas.drawCircle(Offset(x, 47.5), open, _fill(ink));
-        canvas.drawCircle(Offset(x + 1.1, 46.3), 1.1, _fill(Colors.white));
-        if (female) canvas.drawLine(Offset(x + (x < 50 ? -3.4 : 3.4), 45), Offset(x + (x < 50 ? -5.2 : 5.2), 43.4), _line(ink, 1));
+        final wide = mood == Mood.excited || mood == Mood.worried ? 1.15 : 1.0;
+        canvas.drawOval(Rect.fromCenter(center: Offset(x, 45.5), width: 6 * wide, height: 7.6 * wide), _fill(_ink));
+        canvas.drawCircle(Offset(x + 1.1, 44), 1.25, _fill(Colors.white));
+        canvas.drawCircle(Offset(x - 0.9, 47), 0.6, _fill(Colors.white.withValues(alpha: 0.8)));
+        if (female) canvas.drawLine(Offset(x + (x < 50 ? -3 : 3), 42.6), Offset(x + (x < 50 ? -4.8 : 4.8), 41), _line(_ink, 1));
       }
     }
-    canvas.drawArc(const Rect.fromLTWH(47.5, 50, 5, 5), 0.3, pi - 0.6, false, _line(Colors.black.withValues(alpha: 0.18), 1.2));
+    canvas.drawPath(Path()..moveTo(48.4, 52.5)..quadraticBezierTo(50, 54.2, 51.6, 52.5), _line(Colors.black.withValues(alpha: 0.22), 1.2));
 
-    final mouth = _line(const Color(0xFF8C2F39), 2.1);
+    const lip = Color(0xFF8C2F39);
+    final mouth = _line(lip, 2.2);
     if (laughing || mood == Mood.excited || mood == Mood.love) {
-      canvas.drawPath(Path()..moveTo(43.5, 59.5)..quadraticBezierTo(50, 69, 56.5, 59.5)..close(), _fill(const Color(0xFF8C2F39)));
-      canvas.drawPath(Path()..moveTo(46, 63.6)..quadraticBezierTo(50, 66.6, 54, 63.6)..quadraticBezierTo(50, 62, 46, 63.6)..close(), _fill(const Color(0xFFFF8FA3)));
+      canvas.drawPath(Path()..moveTo(43.5, 57.5)..quadraticBezierTo(50, 67, 56.5, 57.5)..close(), _fill(lip));
+      canvas.drawPath(Path()..moveTo(46.2, 61.4)..quadraticBezierTo(50, 64.6, 53.8, 61.4)..quadraticBezierTo(50, 59.8, 46.2, 61.4)..close(), _fill(const Color(0xFFFF8FA3)));
     } else if (mood == Mood.sad || mood == Mood.angry) {
-      canvas.drawArc(const Rect.fromLTWH(44, 60.5, 12, 7), pi, pi, false, mouth);
+      canvas.drawPath(Path()..moveTo(44.5, 61.5)..quadraticBezierTo(50, 56.5, 55.5, 61.5), mouth);
     } else if (mood == Mood.worried || mood == Mood.confused) {
-      canvas.drawPath(Path()..moveTo(44, 62)..quadraticBezierTo(47, 59.5, 50, 62)..quadraticBezierTo(53, 64.5, 56, 62), mouth);
+      canvas.drawPath(Path()..moveTo(44, 60)..quadraticBezierTo(47, 57.5, 50, 60)..quadraticBezierTo(53, 62.5, 56, 60), mouth);
     } else if (mood == Mood.sleepy || mood == Mood.neutral) {
-      canvas.drawLine(const Offset(45.5, 62), const Offset(54.5, 62), mouth);
+      canvas.drawLine(const Offset(45.5, 60), const Offset(54.5, 60), mouth);
     } else if (mood == Mood.smart) {
-      canvas.drawPath(Path()..moveTo(44.5, 61.5)..quadraticBezierTo(51, 64.5, 56.5, 59.5), mouth);
+      canvas.drawPath(Path()..moveTo(44.5, 59.5)..quadraticBezierTo(51, 62.5, 56.5, 57.5), mouth);
     } else {
-      canvas.drawArc(const Rect.fromLTWH(43.5, 55, 13, 9), 0.15, pi - 0.3, false, mouth);
+      canvas.drawPath(Path()..moveTo(44, 58)..quadraticBezierTo(50, 64, 56, 58), mouth);
     }
   }
 
@@ -391,20 +463,20 @@ class _AvatarPainter extends CustomPainter {
     const gold = Color(0xFFF5B301);
     switch (c.accessoryId) {
       case 'acc_bindi':
-        canvas.drawCircle(const Offset(50, 38.5), 1.7, _fill(const Color(0xFFD60036)));
+        canvas.drawCircle(const Offset(50, 33.5), 1.7, _fill(const Color(0xFFD60036)));
       case 'acc_earrings':
-        canvas.drawCircle(Offset(head.left, 56), 2.2, _fill(gold));
-        canvas.drawCircle(Offset(head.right, 56), 2.2, _fill(gold));
+        canvas.drawCircle(Offset(head.left - 0.5, 53.5), 2.2, _fill(gold));
+        canvas.drawCircle(Offset(head.right + 0.5, 53.5), 2.2, _fill(gold));
       case 'acc_nose_ring':
-        canvas.drawCircle(const Offset(47.4, 54.6), 1.6, _line(gold, 0.9));
+        canvas.drawCircle(const Offset(47.4, 53.2), 1.6, _line(gold, 0.9));
       case 'acc_glasses' || 'acc_sunglasses':
         final dark = c.accessoryId == 'acc_sunglasses';
         for (final x in [40.0, 60.0]) {
-          final lens = RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(x, 47.5), width: 13, height: 10), const Radius.circular(4.5));
+          final lens = RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(x, 45.5), width: 13, height: 10.5), const Radius.circular(4.5));
           if (dark) canvas.drawRRect(lens, _fill(const Color(0xEE101014)));
           canvas.drawRRect(lens, _line(const Color(0xFF1F2937), 1.5));
         }
-        canvas.drawLine(const Offset(46.5, 47), const Offset(53.5, 47), _line(const Color(0xFF1F2937), 1.5));
+        canvas.drawLine(const Offset(46.5, 45), const Offset(53.5, 45), _line(const Color(0xFF1F2937), 1.5));
       case 'acc_cap':
         canvas.drawArc(Rect.fromLTRB(head.left - 3, head.top - 9, head.right + 3, head.top + 27), pi, pi, true, _fill(const Color(0xFF2563EB)));
         canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(head.left + 6, head.top + 7, head.width + 6, 5), const Radius.circular(3)), _fill(const Color(0xFF1E40AF)));
@@ -415,7 +487,7 @@ class _AvatarPainter extends CustomPainter {
       case 'acc_headphones':
         canvas.drawArc(Rect.fromLTRB(head.left - 3, head.top - 7, head.right + 3, head.top + 50), pi, pi, false, _line(const Color(0xFF111827), 3.4));
         for (final x in [head.left - 2, head.right + 2]) {
-          canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(x, 49), width: 8, height: 15), const Radius.circular(4)), _fill(const Color(0xFFEF4444)));
+          canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(x, 47), width: 8, height: 15), const Radius.circular(4)), _fill(const Color(0xFFEF4444)));
         }
       case 'acc_crown':
         final crown = Path()..moveTo(36, head.top + 3);

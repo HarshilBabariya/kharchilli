@@ -5,11 +5,16 @@ import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/catalogs.dart';
+import '../core/format.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
 import '../ui/avatar.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import 'common.dart';
+
+enum _Tab { face, hair, outfit, extras }
 
 class AvatarStudioScreen extends StatefulWidget {
   const AvatarStudioScreen(this.member, {super.key});
@@ -21,6 +26,7 @@ class AvatarStudioScreen extends StatefulWidget {
 
 class _AvatarStudioScreenState extends State<AvatarStudioScreen> {
   late AvatarConfig _look = widget.member.avatar;
+  _Tab _tab = _Tab.face;
   AvatarAction? _action = AvatarAction.wave;
   int _plays = 0;
   late final Timer _idle;
@@ -46,6 +52,8 @@ class _AvatarStudioScreenState extends State<AvatarStudioScreen> {
     }
   }
 
+  void _set(AvatarConfig next) => setState(() => _look = next);
+
   Future<void> _choose(RewardItem item, AvatarConfig next) async {
     final app = AppScope.read(context);
     if (!app.isUnlocked(item.id)) {
@@ -55,9 +63,9 @@ class _AvatarStudioScreenState extends State<AvatarStudioScreen> {
         toast(context, item.pack != null ? tr('pack_only', [item.pack!.label]) : tr('need_more_points', [item.cost - app.settings.points, item.name]));
         return;
       }
-      toast(context, tr('unlocked_msg', [item.emoji, item.name]));
+      toast(context, tr('unlocked_msg', [item.name]));
     }
-    setState(() => _look = next);
+    _set(next);
     _play(AvatarAction.spin);
   }
 
@@ -65,89 +73,116 @@ class _AvatarStudioScreenState extends State<AvatarStudioScreen> {
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final cs = context.cs;
-    Widget title(String text) => Padding(padding: const EdgeInsets.fromLTRB(4, 20, 4, 10), child: Text(text, style: context.tt.labelMedium));
-    Widget dots(List<int> colours, int selected, ValueChanged<int> pick) => Wrap(spacing: 12, children: [
+    final inset = MediaQuery.viewPaddingOf(context).bottom;
+
+    Widget heading(String text) => Padding(padding: const EdgeInsets.fromLTRB(4, 18, 4, 10), child: Text(text, style: context.tt.labelMedium));
+    Widget swatches(List<int> colours, int selected, ValueChanged<int> pick) => Wrap(spacing: 12, runSpacing: 12, children: [
           for (var i = 0; i < colours.length; i++)
             Pressable(
               scale: 0.8,
               onTap: () => pick(i),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(color: Color(colours[i]), shape: BoxShape.circle, border: Border.all(color: selected == i ? cs.primary : cs.outlineVariant, width: selected == i ? 3.5 : 1)),
+                width: 44,
+                height: 44,
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: selected == i ? cs.primary : Colors.transparent, width: 2.5)),
+                child: DecoratedBox(decoration: BoxDecoration(color: Color(colours[i]), shape: BoxShape.circle)),
               ),
             ),
         ]);
-    Widget items(RewardKind kind, String current, AvatarConfig Function(String id) apply) => SizedBox(
-          height: 132,
-          child: ListView(scrollDirection: Axis.horizontal, clipBehavior: Clip.none, children: [
+    Widget items(RewardKind kind, String current, AvatarConfig Function(String id) apply) => GridView.count(
+          crossAxisCount: 3,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          childAspectRatio: 0.78,
+          children: [
             for (final item in RewardCatalog.ofKind(kind).where((i) => i.pack == null || i.pack == app.festival?.festival.pack || app.isUnlocked(i.id)))
-              Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: Pressable(
-                  scale: 0.92,
-                  onTap: () => _choose(item, apply(item.id)),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 96,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(20), border: Border.all(color: current == item.id ? cs.primary : cs.outlineVariant, width: current == item.id ? 2.5 : 1)),
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      AvatarView(apply(item.id).copyWith(mood: Mood.happy), size: 58),
-                      const SizedBox(height: 6),
-                      Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.labelSmall!.copyWith(color: cs.onSurface)),
-                      Text(app.isUnlocked(item.id) ? (current == item.id ? tr('wearing') : tr('owned')) : item.pack != null ? tr('claim_free') : tr('cost_tap', [item.cost]),
-                          maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.labelSmall!.copyWith(fontSize: 10, color: app.isUnlocked(item.id) ? good : cs.primary)),
-                    ]),
-                  ),
-                ),
-              ),
-          ]),
+              RewardTile(item, preview: AvatarView(apply(item.id).copyWith(mood: Mood.happy), size: 62), active: current == item.id, activeLabel: tr('wearing'), onTap: () => _choose(item, apply(item.id))),
+          ],
         );
 
-    return KPage(
-      title: tr('avatar_studio'),
-      subtitle: tr('avatar_of', [widget.member.name]),
-      bottom: KButton(tr('save_look'), icon: Icons.check_rounded, onTap: () async {
-        final nav = Navigator.of(context);
-        widget.member.avatar = _look;
-        await app.updateMember(widget.member);
-        nav.pop();
-      }),
-      children: [
-        Center(child: AvatarView(_look.copyWith(mood: _look.mood ?? app.mood), key: ValueKey(_plays), size: 190, animate: true, action: _action)),
-        const SizedBox(height: 14),
-        SizedBox(
-          height: 42,
-          child: ListView(scrollDirection: Axis.horizontal, clipBehavior: Clip.none, children: [
-            for (final a in AvatarAction.values) Padding(padding: const EdgeInsets.only(right: 8), child: KChip('${a.emoji} ${a.label}', selected: false, onTap: () => _play(a))),
+    final List<Widget> panel = switch (_tab) {
+      _Tab.face => [
+          heading(tr('gender')),
+          Segmented<Gender>(options: {for (final g in Gender.values) g: tr('gender_${g.name}')}, value: _look.gender, onChanged: (g) => _set(_look.copyWith(gender: g))),
+          heading(tr('skin_tone')),
+          swatches(skinTones, _look.skinTone, (i) => _set(_look.copyWith(skinTone: i))),
+          heading(tr('face_shape')),
+          Wrap(spacing: 8, runSpacing: 8, children: [for (final f in FaceShape.values) KChip(tr('face_${f.name}'), selected: _look.faceShape == f, onTap: () => _set(_look.copyWith(faceShape: f)))]),
+          heading(tr('mood_auto_hint')),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            KChip(tr('mood_auto'), icon: Icons.auto_mode_rounded, selected: _look.mood == null, onTap: () => _set(_look.copyWith(autoMood: true))),
+            for (final m in Mood.values) KChip(m.label, icon: moodIcon(m), selected: _look.mood == m, onTap: () => _set(_look.copyWith(mood: m))),
+          ]),
+        ],
+      _Tab.hair => [
+          heading(tr('hair_colour')),
+          swatches(hairColors, _look.hairColor, (i) => _set(_look.copyWith(hairColor: i))),
+          if (_look.gender == Gender.male) ...[
+            heading(tr('beard')),
+            Wrap(spacing: 8, runSpacing: 8, children: [for (final b in Beard.values) KChip(tr(b.labelKey), selected: _look.beard == b, onTap: () => _set(_look.copyWith(beard: b)))]),
+          ],
+          heading(tr('hair_style')),
+          items(RewardKind.hair, _look.hairId, (id) => _look.copyWith(hairId: id)),
+        ],
+      _Tab.outfit => [const SizedBox(height: 14), items(RewardKind.outfit, _look.outfitId, (id) => _look.copyWith(outfitId: id))],
+      _Tab.extras => [const SizedBox(height: 14), items(RewardKind.accessory, _look.accessoryId, (id) => _look.copyWith(accessoryId: id))],
+    };
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Backdrop(
+        child: SafeArea(
+          bottom: false,
+          child: Column(children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              child: Row(children: [
+                RoundIcon(Icons.arrow_back_rounded, onTap: () => Navigator.of(context).maybePop()),
+                const SizedBox(width: 12),
+                Expanded(child: Text(tr('avatar_of', [widget.member.name]), maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.headlineSmall)),
+                Pill(Fmt.number(app.settings.points), icon: const Coin(size: 16)),
+              ]),
+            ),
+            const SizedBox(height: 8),
+            AvatarView(_look.copyWith(mood: _look.mood ?? app.mood), key: ValueKey(_plays), size: 168, animate: true, action: _action),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 40,
+              child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 20), children: [
+                for (final a in AvatarAction.values) Padding(padding: const EdgeInsets.only(right: 8), child: KChip(a.label, icon: actionIcon(a), selected: _action == a, onTap: () => _play(a))),
+              ]),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Segmented<_Tab>(
+                options: {_Tab.face: tr('look_face'), _Tab.hair: tr('kind_hair'), _Tab.outfit: tr('kind_outfits'), _Tab.extras: tr('kind_accessories')},
+                value: _tab,
+                onChanged: (t) => setState(() => _tab = t),
+              ),
+            ),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: ListView(key: ValueKey(_tab), padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), physics: const BouncingScrollPhysics(), children: panel),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(20, 8, 20, inset + 16),
+              child: KButton(tr('save_look'), icon: Icons.check_rounded, onTap: () async {
+                final nav = Navigator.of(context);
+                widget.member.avatar = _look;
+                nav.pop();
+                await app.updateMember(widget.member);
+              }),
+            ),
           ]),
         ),
-        title(tr('gender')),
-        Row(children: [for (final g in Gender.values) Padding(padding: const EdgeInsets.only(right: 8), child: KChip(tr('gender_${g.name}'), selected: _look.gender == g, onTap: () => setState(() => _look = _look.copyWith(gender: g))))]),
-        title('${tr('mood_auto')} · ${tr('mood_auto_hint')}'),
-        Wrap(spacing: 8, runSpacing: 8, children: [
-          KChip(tr('mood_auto'), selected: _look.mood == null, onTap: () => setState(() => _look = _look.copyWith(autoMood: true))),
-          for (final m in Mood.values) KChip('${m.emoji} ${m.label}', selected: _look.mood == m, onTap: () => setState(() => _look = _look.copyWith(mood: m))),
-        ]),
-        title(tr('skin_tone')),
-        dots(skinTones, _look.skinTone, (i) => setState(() => _look = _look.copyWith(skinTone: i))),
-        title(tr('hair_colour')),
-        dots(hairColors, _look.hairColor, (i) => setState(() => _look = _look.copyWith(hairColor: i))),
-        title(tr('face_shape')),
-        Wrap(spacing: 8, runSpacing: 8, children: [for (final f in FaceShape.values) KChip(tr('face_${f.name}'), selected: _look.faceShape == f, onTap: () => setState(() => _look = _look.copyWith(faceShape: f)))]),
-        if (_look.gender == Gender.male) ...[
-          title(tr('beard')),
-          Wrap(spacing: 8, runSpacing: 8, children: [for (final b in Beard.values) KChip(tr(b.labelKey), selected: _look.beard == b, onTap: () => setState(() => _look = _look.copyWith(beard: b)))]),
-        ],
-        title(tr('hair_style')),
-        items(RewardKind.hair, _look.hairId, (id) => _look.copyWith(hairId: id)),
-        title(tr('outfit')),
-        items(RewardKind.outfit, _look.outfitId, (id) => _look.copyWith(outfitId: id)),
-        title(tr('accessory')),
-        items(RewardKind.accessory, _look.accessoryId, (id) => _look.copyWith(accessoryId: id)),
-      ],
+      ),
     );
   }
 }

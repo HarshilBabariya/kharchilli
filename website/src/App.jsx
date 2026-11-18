@@ -59,7 +59,7 @@ export default function App() {
         <Downloads />
       </main>
       <Footer />
-      <div className="sticky-cta"><span>Kharchili for Android</span><DownloadButton compact /></div>
+      <div className="sticky-cta"><span>Gharcha for Android</span><DownloadButton compact /></div>
     </>
   )
 }

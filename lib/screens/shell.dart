@@ -121,37 +121,35 @@ class _NavBar extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 3),
-            Text(label, maxLines: 1, style: TextStyle(fontSize: 11, fontWeight: on ? FontWeight.w700 : FontWeight.w500, color: on ? cs.primary : cs.onSurfaceVariant)),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: on ? FontWeight.w700 : FontWeight.w500, color: on ? cs.primary : cs.onSurfaceVariant)),
           ]),
         ),
       );
     }
 
-    return SafeArea(
-      minimum: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: SizedBox(
-        height: 86,
-        child: Stack(alignment: Alignment.bottomCenter, clipBehavior: Clip.none, children: [
-          Container(
-            height: 70,
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            decoration: BoxDecoration(
-              color: cs.surface,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: cs.outlineVariant),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: context.isDark ? 0.45 : 0.12), blurRadius: 28, offset: const Offset(0, 12))],
-            ),
-            child: Row(children: [
-              item(0, Icons.home_outlined, Icons.home_rounded, tr('tab_home')),
-              item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, tr('tab_expenses')),
-              const SizedBox(width: 72),
-              item(2, Icons.groups_outlined, Icons.groups_rounded, tr('tab_groups')),
-              item(3, Icons.person_outline_rounded, Icons.person_rounded, tr('tab_me')),
-            ]),
+    final inset = MediaQuery.viewPaddingOf(context).bottom;
+    return SizedBox(
+      height: navBarHeight + inset + 22,
+      child: Stack(alignment: Alignment.bottomCenter, clipBehavior: Clip.none, children: [
+        Container(
+          height: navBarHeight + inset,
+          padding: EdgeInsets.fromLTRB(8, 10, 8, inset),
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            border: Border(top: BorderSide(color: cs.outlineVariant)),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: context.isDark ? 0.5 : 0.1), blurRadius: 30, offset: const Offset(0, -6))],
           ),
-          Positioned(top: 0, child: _AddButton(onTap: onAdd)),
-        ]),
-      ),
+          child: Row(children: [
+            item(0, Icons.home_outlined, Icons.home_rounded, tr('tab_home')),
+            item(1, Icons.receipt_long_outlined, Icons.receipt_long_rounded, tr('tab_expenses')),
+            const SizedBox(width: 76),
+            item(2, Icons.groups_outlined, Icons.groups_rounded, tr('tab_groups')),
+            item(3, Icons.person_outline_rounded, Icons.person_rounded, tr('tab_me')),
+          ]),
+        ),
+        Positioned(top: 0, child: _AddButton(onTap: onAdd)),
+      ]),
     );
   }
 }

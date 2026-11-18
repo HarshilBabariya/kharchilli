@@ -9,12 +9,13 @@ export default function Logo({ size = 40, id = 'logo' }) {
         </linearGradient>
       </defs>
       <rect width="1024" height="1024" rx="236" fill={`url(#${id}-bg)`} />
-      <g fill="none" stroke="#fff" strokeWidth="112" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M372 262V762" />
-        <path d="M372 598C470 560 560 500 628 410" />
-        <path d="M486 548C540 640 590 712 664 762" />
+      <path d="M512 236 L792 468 V716 Q792 788 720 788 H304 Q232 788 232 716 V468 Z" fill="#fff" stroke="#fff" strokeWidth="72" strokeLinejoin="round" />
+      <g fill="none" stroke="#E8203F" strokeWidth="54" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M410 452 H614" />
+        <path d="M410 540 H614" />
+        <path d="M410 452 H486 Q576 452 576 540 Q576 628 486 628 H410 L560 760" />
       </g>
-      <circle cx="726" cy="296" r="58" fill="#FFC531" />
+      <circle cx="770" cy="268" r="58" fill="#FFC531" />
     </svg>
   )
 }

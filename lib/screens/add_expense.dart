@@ -190,7 +190,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
         for (final g in app.groups)
           NavRow(
             icon: Icons.groups_rounded,
-            title: '${g.emoji} ${g.name}',
+            title: g.name,
             subtitle: g.memberIds.map(app.memberName).join(', '),
             onTap: () => Navigator.of(sheet).pop(g.id),
             trailing: _groupId == g.id ? Icon(Icons.check_circle_rounded, color: sheet.cs.primary) : const SizedBox(),
@@ -229,7 +229,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
               ),
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
                   physics: const BouncingScrollPhysics(),
                   children: [
                     Entrance(
@@ -255,25 +255,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                     const SizedBox(height: 16),
                     Entrance(
                       index: 1,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(18)),
-                        child: Row(children: [
-                          for (final credit in [false, true])
-                            Expanded(
-                              child: Pressable(
-                                onTap: () => setState(() => _credit = credit),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 220),
-                                  padding: const EdgeInsets.symmetric(vertical: 11),
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(color: _credit == credit ? (credit ? good : cs.primary) : Colors.transparent, borderRadius: BorderRadius.circular(14)),
-                                  child: Text(credit ? tr('kind_credit') : tr('kind_expense'), style: TextStyle(fontWeight: FontWeight.w700, color: _credit == credit ? Colors.white : cs.onSurfaceVariant)),
-                                ),
-                              ),
-                            ),
-                        ]),
-                      ),
+                      child: Segmented<bool>(options: {false: tr('kind_expense'), true: tr('kind_credit')}, value: _credit, color: accent, onChanged: (credit) => setState(() => _credit = credit)),
                     ),
                     Entrance(
                       index: 2,
@@ -281,18 +263,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                         scale: 0.98,
                         onTap: () {
                           FocusScope.of(context).unfocus();
-                          setState(() => _keypad = !_keypad);
+                          setState(() => _keypad = true);
                         },
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 22),
+                          padding: const EdgeInsets.symmetric(vertical: 20),
                           child: Column(children: [
                             ScaleTransition(
-                              scale: Tween(begin: 1.0, end: 1.12).animate(CurvedAnimation(parent: _bump, curve: Curves.easeOut, reverseCurve: Curves.easeIn)),
+                              scale: Tween(begin: 1.0, end: 1.1).animate(CurvedAnimation(parent: _bump, curve: Curves.easeOut, reverseCurve: Curves.easeIn)),
                               child: FittedBox(
-                                child: Text.rich(TextSpan(children: [
-                                  TextSpan(text: _credit ? '+${Fmt.symbol}' : Fmt.symbol, style: context.tt.headlineMedium!.copyWith(color: accent.withValues(alpha: 0.7))),
-                                  TextSpan(text: _amount.isEmpty ? '0' : _amount, style: context.tt.displaySmall!.copyWith(fontSize: 60, color: _amount.isEmpty ? cs.onSurfaceVariant.withValues(alpha: 0.5) : accent)),
-                                ])),
+                                fit: BoxFit.scaleDown,
+                                child: Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+                                  Text(_credit ? '+${Fmt.symbol}' : Fmt.symbol, style: context.tt.displaySmall!.copyWith(fontSize: 40, color: accent.withValues(alpha: 0.75))),
+                                  const SizedBox(width: 6),
+                                  Text(_amount.isEmpty ? '0' : _amount, style: context.tt.displaySmall!.copyWith(fontSize: 64, color: _amount.isEmpty ? cs.onSurfaceVariant.withValues(alpha: 0.5) : accent)),
+                                ]),
                               ),
                             ),
                             if (_credit) Padding(padding: const EdgeInsets.only(top: 6), child: Text(tr('credit_hint'), textAlign: TextAlign.center, style: context.tt.bodySmall)),
@@ -320,12 +304,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                       index: 3,
                       child: KCard(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          TextField(
-                            controller: _title,
-                            textCapitalization: TextCapitalization.sentences,
-                            onTap: () => setState(() => _keypad = false),
-                            decoration: InputDecoration(labelText: tr('what_for'), hintText: tr('what_for_hint')),
-                          ),
+                          KField(controller: _title, label: tr('what_for'), hint: tr('what_for_hint'), onTap: () => setState(() => _keypad = false)),
                           const SizedBox(height: 14),
                           NavRow(
                             icon: cat.icon,
@@ -406,7 +385,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                         index: 5,
                         child: KCard(
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            NavRow(icon: Icons.groups_rounded, color: const Color(0xFF7C4DFF), title: tr('split_with_group'), subtitle: group == null ? tr('not_shared') : '${group.emoji} ${group.name}', onTap: () => _pickGroup(app)),
+                            NavRow(icon: Icons.groups_rounded, color: const Color(0xFF7C4DFF), title: tr('split_with_group'), subtitle: group == null ? tr('not_shared') : group.name, onTap: () => _pickGroup(app)),
                             if (group != null) ...[
                               const SizedBox(height: 8),
                               Row(children: [
@@ -447,15 +426,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                     const SizedBox(height: 16),
                     Entrance(
                       index: 6,
-                      child: TextField(
-                        controller: _note,
-                        textCapitalization: TextCapitalization.sentences,
-                        minLines: 1,
-                        maxLines: 3,
-                        onTap: () => setState(() => _keypad = false),
-                        onChanged: (_) => _noteFromVoice = false,
-                        decoration: InputDecoration(labelText: tr('note'), hintText: tr('note_hint'), prefixIcon: const Icon(Icons.sticky_note_2_rounded)),
-                      ),
+                      child: KField(controller: _note, label: tr('note'), hint: tr('note_hint'), icon: Icons.sticky_note_2_rounded, lines: 3, onTap: () => setState(() => _keypad = false), onChanged: (_) => _noteFromVoice = false),
                     ),
                   ],
                 ),

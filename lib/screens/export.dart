@@ -13,6 +13,7 @@ import '../core/app_state.dart';
 import '../core/format.dart';
 import '../core/l10n.dart';
 import '../core/parsers.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -24,7 +25,7 @@ Future<File> _temp(String name, List<int> bytes) async {
 String _stamp(DateTime? month) => month == null ? 'all' : '${month.year}-${month.month.toString().padLeft(2, '0')}';
 
 Future<void> shareCsv(AppState app, {DateTime? month}) async {
-  final file = await _temp('kharchili-${_stamp(month)}.csv', utf8.encode('﻿${app.exportCsv(month: month)}'));
+  final file = await _temp('gharcha-${_stamp(month)}.csv', utf8.encode('﻿${app.exportCsv(month: month)}'));
   await Share.shareXFiles([XFile(file.path, mimeType: 'text/csv')]);
 }
 
@@ -64,8 +65,8 @@ Future<void> sharePdf(AppState app, {DateTime? month}) async {
   String amount(num v) => '${v < 0 ? '+' : ''}${Fmt.currencyCode} ${Fmt.number(v)}';
   String fit(String text, int width) => text.length > width ? '${text.substring(0, width - 1)}~' : text.padRight(width);
   String row(List<String> c) => '${fit(c[0], 11)}${fit(c[1], 42)}${fit(c[2], 20)}${fit(c[3], 7)}${fit(c[4], 18)}${c[5].padLeft(18)}';
-  final file = await _temp('kharchili-${_stamp(month)}.pdf', _pdf([
-    'Kharchili - ${month == null ? 'All expenses' : Csv.isoDate(month).substring(0, 7)}',
+  final file = await _temp('gharcha-${_stamp(month)}.pdf', _pdf([
+    'Gharcha - ${month == null ? 'All expenses' : Csv.isoDate(month).substring(0, 7)}',
     '${list.length} expenses, total ${amount(AppState.net(list))}',
     '',
     row(['Date', 'Title', 'Category', 'Mode', 'Paid by', 'Amount']),
@@ -107,7 +108,7 @@ Future<void> shareWeeklyCard(BuildContext context) async {
           final render = boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
           final image = await render.toImage(pixelRatio: 3);
           final data = await image.toByteData(format: ui.ImageByteFormat.png);
-          final file = await _temp('kharchili-week.png', data!.buffer.asUint8List());
+          final file = await _temp('gharcha-week.png', data!.buffer.asUint8List());
           await Share.shareXFiles([XFile(file.path, mimeType: 'image/png')], text: tr('weekly_card_footer'));
         }),
       ]),
@@ -157,9 +158,9 @@ class _WeeklyCard extends StatelessWidget {
           ],
           const Spacer(),
           Row(children: [
-            Pill('🔥 ${app.streak}', onDark: true),
+            Pill('${app.streak}', onDark: true, icon: const Icon(Icons.local_fire_department_rounded, size: 15, color: Colors.white)),
             const SizedBox(width: 8),
-            Pill('⭐ ${Fmt.number(app.settings.points)}', onDark: true),
+            Pill(Fmt.number(app.settings.points), onDark: true, icon: const Coin(size: 15)),
             const Spacer(),
             Flexible(child: Text(tr('weekly_card_footer'), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: white.withValues(alpha: 0.8), fontSize: 11))),
           ]),

@@ -1,11 +1,11 @@
-"""Applies Kharchili's native settings to the android/ and ios/ folders that `flutter create` generates.
+"""Applies Gharcha's native settings to the android/ and ios/ folders that `flutter create` generates.
 
 Run from the project root after `flutter create`; see tool/bootstrap.sh. Safe to run twice.
 """
 import pathlib, plistlib, re, shutil, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-MARK = 'kharchili-patched'
+MARK = 'gharcha-patched'
 
 
 def patch(path, edits):
@@ -19,9 +19,9 @@ def patch(path, edits):
     path.write_text(text)
 
 
-SIGNING = '''    // kharchili-patched
+SIGNING = '''    // gharcha-patched
     signingConfigs {
-        create("kharchili") {
+        create("gharcha") {
             val props = Properties()
             val keyFile = rootProject.file("key.properties")
             if (keyFile.exists()) keyFile.inputStream().use { props.load(it) }
@@ -34,7 +34,7 @@ SIGNING = '''    // kharchili-patched
 
     buildTypes {'''
 
-PERMISSIONS = '''    <!-- kharchili-patched -->
+PERMISSIONS = '''    <!-- gharcha-patched -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -63,14 +63,14 @@ if android.exists():
         ('plugins {', 'import java.util.Properties\n\nplugins {'),
         ('compileOptions {', 'compileOptions {\n        isCoreLibraryDesugaringEnabled = true'),
         ('    buildTypes {', SIGNING),
-        ('signingConfigs.getByName("debug")', 'signingConfigs.getByName("kharchili")'),
+        ('signingConfigs.getByName("debug")', 'signingConfigs.getByName("gharcha")'),
     ])
     gradle = android / 'build.gradle.kts'
     if 'desugar_jdk_libs' not in gradle.read_text():
         gradle.write_text(gradle.read_text() + '\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n')
     manifest = android / 'src' / 'main' / 'AndroidManifest.xml'
     patch(manifest, [('    <application', PERMISSIONS), ('    </application>', RECEIVERS)])
-    manifest.write_text(re.sub(r'android:label="[^"]*"', 'android:label="Kharchili"', manifest.read_text(), count=1))
+    manifest.write_text(re.sub(r'android:label="[^"]*"', 'android:label="Gharcha"', manifest.read_text(), count=1))
     shutil.copytree(ROOT / 'platform' / 'android' / 'res', android / 'src' / 'main' / 'res', dirs_exist_ok=True)
     shutil.copy(ROOT / 'platform' / 'android' / 'sideload.keystore', android / 'sideload.keystore')
 
@@ -88,9 +88,9 @@ if plist_path.exists():
     with plist_path.open('rb') as f:
         plist = plistlib.load(f)
     plist.update({
-        'CFBundleDisplayName': 'Kharchili',
-        'NSMicrophoneUsageDescription': 'Kharchili listens when you tap the mic so you can add an expense by saying it.',
-        'NSSpeechRecognitionUsageDescription': 'Kharchili turns what you say into an expense: amount, category and payment mode.',
+        'CFBundleDisplayName': 'Gharcha',
+        'NSMicrophoneUsageDescription': 'Gharcha listens when you tap the mic so you can add an expense by saying it.',
+        'NSSpeechRecognitionUsageDescription': 'Gharcha turns what you say into an expense: amount, category and payment mode.',
         'ITSAppUsesNonExemptEncryption': False,
     })
     with plist_path.open('wb') as f:

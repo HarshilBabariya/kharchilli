@@ -40,19 +40,17 @@ enum RepeatRule {
 }
 
 enum Mood {
-  happy('😄'),
-  love('😍'),
-  excited('🤩'),
-  smart('🤓'),
-  neutral('🙂'),
-  confused('😕'),
-  sleepy('😴'),
-  sad('😢'),
-  worried('😟'),
-  angry('😤');
+  happy,
+  love,
+  excited,
+  smart,
+  neutral,
+  confused,
+  sleepy,
+  sad,
+  worried,
+  angry;
 
-  const Mood(this.emoji);
-  final String emoji;
   String get label => tr('mood_$name');
   String line(String greeting, int seed) => trPick('mood_lines_$name', [greeting], seed);
 }
@@ -74,16 +72,15 @@ enum Beard {
 }
 
 enum AvatarAction {
-  wave('👋', 1500),
-  jump('🦘', 1100),
-  spin('🌀', 1000),
-  dance('💃', 2000),
-  wink('😉', 1200),
-  cheer('🙌', 1600),
-  laugh('😂', 1500);
+  wave(1500),
+  jump(1100),
+  spin(1000),
+  dance(2000),
+  wink(1200),
+  cheer(1600),
+  laugh(1500);
 
-  const AvatarAction(this.emoji, this.durationMs);
-  final String emoji;
+  const AvatarAction(this.durationMs);
   final int durationMs;
   String get label => tr('act_$name');
 }
@@ -161,12 +158,11 @@ class AvatarConfig {
 }
 
 class Member extends Doc {
-  Member({required this.name, this.relation = 'me', this.isOwner = false, this.phone = '', this.pinHash = '', this.avatar = const AvatarConfig()});
+  Member({required this.name, this.relation = 'me', this.isOwner = false, this.pinHash = '', this.avatar = const AvatarConfig()});
 
   String name;
   String relation;
   bool isOwner;
-  String phone;
   String pinHash;
   AvatarConfig avatar;
 
@@ -176,13 +172,12 @@ class Member extends Doc {
   String get kind => 'member';
 
   @override
-  Json toJson() => {'name': name, 'relation': relation, 'isOwner': isOwner, 'phone': phone, 'pinHash': pinHash, 'avatar': avatar.toJson()};
+  Json toJson() => {'name': name, 'relation': relation, 'isOwner': isOwner, 'pinHash': pinHash, 'avatar': avatar.toJson()};
 
   factory Member.fromJson(Json j) => Member(
         name: j['name'] as String,
         relation: j['relation'] as String? ?? 'other',
         isOwner: j['isOwner'] as bool? ?? false,
-        phone: j['phone'] as String? ?? '',
         pinHash: j['pinHash'] as String? ?? '',
         avatar: AvatarConfig.fromJson((j['avatar'] as Map).cast<String, dynamic>()),
       );
@@ -358,10 +353,12 @@ class Expense extends Doc {
 }
 
 class Group extends Doc {
-  Group({required this.name, this.emoji = '🏠', required this.memberIds, int? createdAt}) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch;
+  Group({required this.name, this.icon = 'home', required this.memberIds, int? createdAt}) : createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch;
 
   String name;
-  String emoji;
+
+  /// A key of `groupIcons`.
+  String icon;
   List<int> memberIds;
   final int createdAt;
 
@@ -369,10 +366,10 @@ class Group extends Doc {
   String get kind => 'group';
 
   @override
-  Json toJson() => {'name': name, 'emoji': emoji, 'memberIds': memberIds, 'createdAt': createdAt};
+  Json toJson() => {'name': name, 'icon': icon, 'memberIds': memberIds, 'createdAt': createdAt};
 
   factory Group.fromJson(Json j) =>
-      Group(name: j['name'] as String, emoji: j['emoji'] as String? ?? '🏠', memberIds: (j['memberIds'] as List).cast<int>().toList(), createdAt: j['createdAt'] as int?);
+      Group(name: j['name'] as String, icon: j['icon'] as String? ?? 'home', memberIds: (j['memberIds'] as List).cast<int>().toList(), createdAt: j['createdAt'] as int?);
 }
 
 class Settlement extends Doc {
@@ -585,7 +582,7 @@ enum ServiceBilling { perUnit, monthly }
 class HomeService extends Doc {
   HomeService({
     required this.name,
-    required this.emoji,
+    required this.icon,
     required this.billing,
     required this.rate,
     this.defaultQty = 1,
@@ -598,7 +595,9 @@ class HomeService extends Doc {
         paidMonths = paidMonths ?? {};
 
   String name;
-  String emoji;
+
+  /// A key of `serviceIcons`.
+  String icon;
   ServiceBilling billing;
   double rate;
   double defaultQty;
@@ -649,7 +648,7 @@ class HomeService extends Doc {
   @override
   Json toJson() => {
         'name': name,
-        'emoji': emoji,
+        'icon': icon,
         'billing': billing.name,
         'rate': rate,
         'defaultQty': defaultQty,
@@ -662,7 +661,7 @@ class HomeService extends Doc {
 
   factory HomeService.fromJson(Json j) => HomeService(
         name: j['name'] as String,
-        emoji: j['emoji'] as String? ?? '🧾',
+        icon: j['icon'] as String? ?? 'other',
         billing: _enum(ServiceBilling.values, j['billing'], ServiceBilling.perUnit),
         rate: (j['rate'] as num).toDouble(),
         defaultQty: (j['defaultQty'] as num? ?? 1).toDouble(),

@@ -11,6 +11,7 @@ import '../core/notifier.dart';
 import '../ui/avatar.dart';
 import '../ui/charts.dart';
 import '../ui/effects.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'add_expense.dart';
@@ -65,7 +66,7 @@ class _HomeTabState extends State<HomeTab> {
             icon: spent <= previous ? Icons.trending_down_rounded : Icons.trending_up_rounded,
             color: spent <= previous ? good : bad,
             label: tr('vs_last_month'),
-            value: previous <= 0 ? tr('no_data_yet') : '${spent <= previous ? '▼' : '▲'} ${((spent - previous).abs() / previous * 100).round()}%',
+            value: previous <= 0 ? tr('no_data_yet') : '${spent <= previous ? '-' : '+'}${((spent - previous).abs() / previous * 100).round()}%',
             onTap: () => open(context, const InsightsScreen()),
           ),
           _Stat(
@@ -97,7 +98,7 @@ class _HomeTabState extends State<HomeTab> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: context.cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(16)),
-              child: Row(children: [const Text('🔮', style: TextStyle(fontSize: 20)), const SizedBox(width: 10), Expanded(child: Text(app.forecast!, style: context.tt.bodyMedium))]),
+              child: Row(children: [Icon(Icons.auto_graph_rounded, size: 22, color: context.cs.primary), const SizedBox(width: 10), Expanded(child: Text(app.forecast!, style: context.tt.bodyMedium))]),
             ),
           ],
         ]),
@@ -184,7 +185,7 @@ class _HomeTabState extends State<HomeTab> {
             Pressable(onTap: () => Shell.switchTab(context, 1), child: Pill(tr('see_all'))),
           ]),
           const SizedBox(height: 6),
-          if (recent.isEmpty) EmptyState(emoji: '🌶️', title: tr('nothing_logged'), body: tr('first_expense_hint')),
+          if (recent.isEmpty) EmptyState(art: 'receipt', title: tr('nothing_logged'), body: tr('first_expense_hint')),
           for (final e in recent.take(5)) ExpenseTile(e),
         ]),
       ),
@@ -195,7 +196,7 @@ class _HomeTabState extends State<HomeTab> {
         SafeArea(
           bottom: false,
           child: ListView.separated(
-            padding: EdgeInsets.fromLTRB(20, 10, 20, 130 + MediaQuery.of(context).padding.bottom),
+            padding: EdgeInsets.fromLTRB(20, 10, 20, navBarHeight + 24 + MediaQuery.viewPaddingOf(context).bottom),
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             itemCount: sections.length,
             separatorBuilder: (_, __) => const SizedBox(height: 16),
@@ -239,8 +240,8 @@ class _Header extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(color: context.cs.surface, borderRadius: BorderRadius.circular(999), border: Border.all(color: context.cs.outlineVariant)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Text('⭐', style: TextStyle(fontSize: 15)),
-            const SizedBox(width: 5),
+            const Coin(size: 18),
+            const SizedBox(width: 6),
             CountUp(app.settings.points.toDouble(), style: context.tt.labelLarge!.copyWith(fontWeight: FontWeight.w700), format: (v) => Fmt.number(v)),
           ]),
         ),
@@ -299,14 +300,15 @@ class _HeroCard extends StatelessWidget {
         ]),
         const SizedBox(height: 18),
         Row(children: [
-          Text(app.mood.emoji, style: const TextStyle(fontSize: 22)),
+          Container(width: 34, height: 34, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle), child: Icon(moodIcon(app.mood), color: Colors.white, size: 20)),
           const SizedBox(width: 10),
           Expanded(child: Text(app.moodLine, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, height: 1.3))),
         ]),
         const SizedBox(height: 16),
         Row(children: [
           Expanded(child: Text(tr('xp_level_label', [level.level, level.title]), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: white70, fontSize: 12, fontWeight: FontWeight.w700))),
-          Text(tr('xp_to_next', [level.nextAt - app.settings.lifetimePoints, level.level + 1]), style: TextStyle(color: white70, fontSize: 12, fontWeight: FontWeight.w700)),
+          const SizedBox(width: 8),
+          Text(tr('xp_to_next', [level.nextAt - app.settings.lifetimePoints, level.level + 1]), maxLines: 1, style: TextStyle(color: white70, fontSize: 12, fontWeight: FontWeight.w700)),
         ]),
         const SizedBox(height: 6),
         KProgress(level.progress(app.settings.lifetimePoints), color: Colors.white, track: Colors.white.withValues(alpha: 0.22), height: 8),
@@ -352,35 +354,41 @@ class _StreakCard extends StatelessWidget {
     final today = Days.today();
     final lastLog = app.settings.lastLogDay == 0 ? null : Days.fromKey(app.settings.lastLogDay);
     bool lit(DateTime d) => lastLog != null && streak > 0 && !d.isAfter(lastLog) && Days.between(d, lastLog) < streak;
+    final next = StreakMilestones.next(streak);
     return KCard(
       onTap: () => open(context, const RewardsScreen()),
-      child: Row(children: [
-        Flame(size: 58, lit: streak > 0),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(streak > 0 ? tr('toast_streak', [streak]) : tr('streak_start_title'), style: context.tt.titleLarge),
-            Text(streak == 0 ? tr('streak_start_body') : app.loggedToday ? tr('streak_safe') : tr('streak_at_risk'), style: context.tt.bodySmall),
-            const SizedBox(height: 10),
-            Row(children: [
-              for (var i = 6; i >= 0; i--)
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: AnimatedContainer(
-                    duration: Duration(milliseconds: 300 + (6 - i) * 80),
-                    width: 22,
-                    height: 22,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: lit(DateTime(today.year, today.month, today.day - i)) ? const Color(0xFFFF8A1F) : context.cs.surfaceContainerHighest),
-                    child: Text(Fmt.date(DateTime(today.year, today.month, today.day - i), 'E').substring(0, 1),
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: lit(DateTime(today.year, today.month, today.day - i)) ? Colors.white : context.cs.onSurfaceVariant)),
-                  ),
-                ),
-              const Spacer(),
-              Pill(tr('streak_next', [StreakMilestones.next(streak)]), color: const Color(0xFFFF8A1F)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Flame(size: 54, lit: streak > 0),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(streak > 0 ? tr('toast_streak', [streak]) : tr('streak_start_title'), maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge),
+              Text(streak == 0 ? tr('streak_start_body') : app.loggedToday ? tr('streak_safe') : tr('streak_at_risk'), maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall),
             ]),
-          ]),
-        ),
+          ),
+        ]),
+        const SizedBox(height: 14),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          for (var i = 6; i >= 0; i--)
+            Column(children: [
+              AnimatedContainer(
+                duration: Duration(milliseconds: 300 + (6 - i) * 80),
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(shape: BoxShape.circle, color: lit(DateTime(today.year, today.month, today.day - i)) ? const Color(0xFFFF8A1F) : context.cs.surfaceContainerHighest),
+                child: Icon(lit(DateTime(today.year, today.month, today.day - i)) ? Icons.check_rounded : Icons.remove_rounded, size: 16, color: lit(DateTime(today.year, today.month, today.day - i)) ? Colors.white : context.cs.outlineVariant),
+              ),
+              const SizedBox(height: 4),
+              Text(Fmt.date(DateTime(today.year, today.month, today.day - i), 'E').substring(0, 1), style: context.tt.labelSmall!.copyWith(fontSize: 10.5, color: i == 0 ? context.cs.onSurface : null)),
+            ]),
+        ]),
+        const SizedBox(height: 14),
+        Row(children: [
+          Expanded(child: KProgress(streak / next, color: const Color(0xFFFF8A1F), height: 7)),
+          const SizedBox(width: 10),
+          Text(tr('streak_next', [next]), style: context.tt.labelSmall),
+        ]),
       ]),
     );
   }
@@ -397,7 +405,7 @@ class _FestivalBanner extends StatelessWidget {
     final f = day.festival;
     final live = app.festival?.key == day.key;
     final until = Days.between(Days.today(), day.main);
-    final title = until > 0 ? '${f.pack.emoji} ${trPlural('fest_countdown', until, [f.label, until])}' : f.title(app.me?.name ?? '');
+    final title = until > 0 ? trPlural('fest_countdown', until, [f.label, until]) : f.title(app.me?.name ?? '');
     final p = paletteOf(f.pack.themeId);
     return KCard(
       gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(p.primary), Color.lerp(Color(p.primary), Color(p.secondary), 0.55)!]),

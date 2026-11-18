@@ -1,7 +1,7 @@
-name: kharchili
-description: Kharchili - household expenses with spice. Track, split, budget and get roasted for it.
+name: gharcha
+description: Gharcha - household expenses with spice. Track, split, budget and get roasted for it.
 publish_to: none
-version: 1.0.3+4
+version: 1.1.0+5
 
 environment:
   sdk: ^3.8.0
@@ -34,6 +34,8 @@ flutter:
     - assets/l10n/
     - assets/sfx/
     - assets/brand/icon.png
+    - assets/art/badges/
+    - assets/art/icons/
   fonts:
     - family: Poppins
       fonts:

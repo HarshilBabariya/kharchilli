@@ -6,6 +6,7 @@ import '../core/app_state.dart';
 import '../core/format.dart';
 import '../core/l10n.dart';
 import '../ui/charts.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'common.dart';
@@ -34,18 +35,16 @@ class BudgetsScreen extends StatelessWidget {
           child: Row(children: [
             RingChart(
               progress: progress,
-              size: 112,
+              size: 104,
+              stroke: 12,
               color: tone,
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text(s.monthlyBudget > 0 ? '${(progress * 100).round()}%' : '—', style: context.tt.headlineSmall),
-                Text(tr('monthly_budget'), textAlign: TextAlign.center, style: context.tt.labelSmall!.copyWith(fontSize: 9)),
-              ]),
+              child: s.monthlyBudget > 0 ? Text('${(progress * 100).round()}%', style: context.tt.headlineSmall) : Icon(Icons.track_changes_rounded, size: 34, color: context.cs.onSurfaceVariant),
             ),
             const SizedBox(width: 18),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(tr('spent_in', [Fmt.month(today)]), style: context.tt.labelSmall),
-                CountUp(spent, style: context.tt.headlineMedium!),
+                FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: CountUp(spent, style: context.tt.headlineMedium!)),
                 const SizedBox(height: 4),
                 Text(
                   s.monthlyBudget <= 0
@@ -64,7 +63,7 @@ class BudgetsScreen extends StatelessWidget {
         if (app.forecast != null)
           Padding(
             padding: const EdgeInsets.only(top: 14),
-            child: KCard(child: Row(children: [const Text('🔮', style: TextStyle(fontSize: 24)), const SizedBox(width: 12), Expanded(child: Text(app.forecast!, style: context.tt.bodyMedium))])),
+            child: KCard(child: Row(children: [const Sticker('forecast', size: 46), const SizedBox(width: 14), Expanded(child: Text(app.forecast!, style: context.tt.bodyMedium))])),
           ),
         Padding(padding: const EdgeInsets.only(top: 12), child: Text(tr('budget_boss_hint'), style: context.tt.bodySmall)),
         SectionTitle(tr('per_category')),

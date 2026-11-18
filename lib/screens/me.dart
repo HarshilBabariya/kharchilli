@@ -6,6 +6,8 @@ import '../core/format.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
 import '../ui/avatar.dart';
+import '../ui/effects.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'avatar_studio.dart';
@@ -20,7 +22,7 @@ import 'lock.dart';
 import 'reminders.dart';
 import 'rewards.dart';
 
-const appVersion = '1.0.3';
+const appVersion = '1.1.0';
 
 class MeTab extends StatelessWidget {
   const MeTab({super.key});
@@ -62,12 +64,26 @@ class MeTab extends StatelessWidget {
               ]),
               const SizedBox(height: 16),
               Row(children: [
-                for (final stat in [(tr('stat_points'), '⭐ ${Fmt.number(s.points)}'), (tr('stat_streak'), '🔥 ${app.streak}'), (tr('stat_level'), '${level.level}')])
+                for (final (i, stat) in [
+                  (const Coin(size: 22), Fmt.number(s.points), tr('stat_points')),
+                  (Flame(size: 22, lit: app.streak > 0), '${app.streak}', tr('stat_streak')),
+                  (const Icon(Icons.military_tech_rounded, color: Colors.white, size: 22), '${level.level}', tr('stat_level')),
+                ].indexed)
                   Expanded(
-                    child: Column(children: [
-                      Text(stat.$2, style: context.tt.titleLarge!.copyWith(color: Colors.white)),
-                      Text(stat.$1, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11.5, fontWeight: FontWeight.w600)),
-                    ]),
+                    child: Container(
+                      margin: EdgeInsets.only(left: i == 0 ? 0 : 8),
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(18)),
+                      child: Column(children: [
+                        Row(mainAxisSize: MainAxisSize.min, children: [
+                          stat.$1,
+                          const SizedBox(width: 6),
+                          Flexible(child: Text(stat.$2, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge!.copyWith(color: Colors.white))),
+                        ]),
+                        const SizedBox(height: 2),
+                        Text(stat.$3, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11.5, fontWeight: FontWeight.w600)),
+                      ]),
+                    ),
                   ),
               ]),
             ]),
@@ -91,11 +107,9 @@ class MeTab extends StatelessWidget {
         section(tr('appearance'), [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Row(children: [
-              for (final m in ThemeModeSetting.values)
-                Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 3), child: KChip(tr('mode_${m.name}'), selected: s.themeMode == m, onTap: () => app.updateSettings((x) => x.themeMode = m)))),
-            ]),
+            child: Segmented<ThemeModeSetting>(options: {for (final m in ThemeModeSetting.values) m: tr('mode_${m.name}')}, value: s.themeMode, onChanged: (m) => app.updateSettings((x) => x.themeMode = m)),
           ),
+          NavRow(icon: Icons.palette_rounded, color: const Color(0xFFEC407A), title: tr('kind_themes'), subtitle: RewardCatalog.find(app.activeThemeId)?.name, onTap: () => open(context, const RewardsScreen(initialTab: 2))),
           NavRow(icon: Icons.translate_rounded, title: tr('language'), subtitle: L10n.languages[s.language], onTap: () => _language(context)),
           toggle(Icons.celebration_rounded, tr('festive_mode'), tr('festive_mode_sub'), s.festiveMode, (x, v) => x.festiveMode = v, color: const Color(0xFFFF7043)),
           toggle(Icons.volume_up_rounded, tr('sound_effects'), null, s.soundEffects, (x, v) => x.soundEffects = v, color: const Color(0xFF26A69A)),
@@ -148,13 +162,29 @@ class MeTab extends StatelessWidget {
         ]),
         section(tr('more_options'), [
           NavRow(icon: Icons.help_rounded, title: tr('faqs'), subtitle: tr('faqs_sub'), onTap: () => _faqs(context)),
-          NavRow(icon: Icons.info_rounded, title: tr('about_app'), subtitle: tr('about_sub'), onTap: () => showKSheet<void>(context, title: tr('about_app'), builder: (sheet) => Text(tr('about_footer', [appVersion]), style: sheet.tt.bodyMedium))),
+          NavRow(icon: Icons.info_rounded, title: tr('about_app'), subtitle: tr('about_sub'), onTap: () => _about(context)),
         ]),
         const SizedBox(height: 18),
         KButton(tr('log_out_switch'), tonal: true, icon: Icons.logout_rounded, onTap: () async {
           if (await confirm(context, title: tr('log_out_q'), body: tr('log_out_body'), action: tr('log_out'), danger: false)) await app.logout();
         }),
       ],
+    );
+  }
+
+  void _about(BuildContext context) {
+    showKSheet<void>(
+      context,
+      title: tr('about_app'),
+      builder: (sheet) => Column(children: [
+        ClipRRect(borderRadius: BorderRadius.circular(24), child: Image.asset('assets/brand/icon.png', width: 84, height: 84)),
+        const SizedBox(height: 12),
+        Text('Gharcha', style: sheet.tt.headlineSmall),
+        const SizedBox(height: 4),
+        Pill(tr('version_label', [appVersion])),
+        const SizedBox(height: 14),
+        Text(tr('about_footer'), textAlign: TextAlign.center, style: sheet.tt.bodyMedium!.copyWith(color: sheet.cs.onSurfaceVariant)),
+      ]),
     );
   }
 
@@ -194,8 +224,8 @@ class MeTab extends StatelessWidget {
       title: tr('export_data'),
       builder: (sheet) => Column(children: [
         for (final scope in [(tr('export_all'), tr('export_all_sub'), null), (Fmt.monthYear(month), tr('export_month_sub'), month)]) ...[
-          NavRow(icon: Icons.table_chart_rounded, color: good, title: '${scope.$1} · CSV', subtitle: scope.$2, onTap: () => shareCsv(app, month: scope.$3)),
-          NavRow(icon: Icons.picture_as_pdf_rounded, color: bad, title: '${scope.$1} · PDF', subtitle: scope.$2, onTap: () => sharePdf(app, month: scope.$3)),
+          NavRow(icon: Icons.table_chart_rounded, color: good, title: '${scope.$1} (CSV)', subtitle: scope.$2, onTap: () => shareCsv(app, month: scope.$3)),
+          NavRow(icon: Icons.picture_as_pdf_rounded, color: bad, title: '${scope.$1} (PDF)', subtitle: scope.$2, onTap: () => sharePdf(app, month: scope.$3)),
         ],
       ]),
     );

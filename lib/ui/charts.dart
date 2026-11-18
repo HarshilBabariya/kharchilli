@@ -101,7 +101,7 @@ class _BarChartState extends State<BarChart> {
                 AnimatedOpacity(
                   opacity: active == i && widget.values[i] > 0 ? 1 : 0,
                   duration: const Duration(milliseconds: 180),
-                  child: FittedBox(child: Text(Fmt.compact(widget.values[i]), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: tint))),
+                  child: FittedBox(fit: BoxFit.scaleDown, child: Text(Fmt.compact(widget.values[i]), maxLines: 1, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: tint))),
                 ),
                 const SizedBox(height: 4),
                 Flexible(
@@ -126,7 +126,7 @@ class _BarChartState extends State<BarChart> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(widget.labels[i], maxLines: 1, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: active == i ? tint : cs.onSurfaceVariant)),
+                FittedBox(fit: BoxFit.scaleDown, child: Text(widget.labels[i], maxLines: 1, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: active == i ? tint : cs.onSurfaceVariant))),
               ]),
             ),
           ),
@@ -332,7 +332,7 @@ class _DonutChartState extends State<DonutChart> with SingleTickerProviderStateM
               padding: EdgeInsets.all(widget.size * 0.24),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Text(picked?.label ?? widget.centerLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.labelSmall),
-                FittedBox(child: Text(Fmt.money(picked?.value ?? total), style: context.tt.titleLarge)),
+                FittedBox(fit: BoxFit.scaleDown, child: Text(Fmt.money(picked?.value ?? total), maxLines: 1, style: context.tt.titleLarge)),
                 if (picked != null && total > 0) Text('${(picked.value / total * 100).round()}%', style: context.tt.labelMedium!.copyWith(color: picked.color)),
               ]),
             ),
@@ -413,7 +413,7 @@ class LegendRow extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(child: Text(slice.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodyMedium)),
         if (trailing != null) Padding(padding: const EdgeInsets.only(right: 8), child: Text(trailing!, style: context.tt.labelSmall)),
-        Text('$share% · ${Fmt.money(slice.value)}', style: context.tt.labelMedium!.copyWith(color: context.cs.onSurface)),
+        Text('$share% · ${Fmt.money(slice.value)}', maxLines: 1, style: context.tt.labelMedium!.copyWith(color: context.cs.onSurface)),
       ]),
     );
   }

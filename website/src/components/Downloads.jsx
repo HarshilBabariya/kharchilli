@@ -7,7 +7,7 @@ export default function Downloads() {
   return (
     <section className="section download" id="download" ref={ref}>
       <div className="section-head">
-        <span className="eyebrow">Get Kharchili {APP_VERSION}</span>
+        <span className="eyebrow">Get Gharcha {APP_VERSION}</span>
         <h2>One app, every phone.</h2>
         <p>Free, no ads, no account. Android installs from this page today; the Play Store and App Store listings are on their way.</p>
       </div>

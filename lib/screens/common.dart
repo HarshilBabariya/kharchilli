@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
+import '../core/catalogs.dart';
 import '../core/format.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
 import '../ui/avatar.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'add_expense.dart';
@@ -129,4 +131,46 @@ Future<double?> askAmount(BuildContext context, {required String title, double? 
       ]),
     ),
   );
+}
+
+/// A shop item as a grid tile: its preview, name and whether it is owned, in use, free or priced.
+class RewardTile extends StatelessWidget {
+  const RewardTile(this.item, {super.key, required this.preview, required this.active, required this.activeLabel, required this.onTap});
+  final RewardItem item;
+  final Widget preview;
+  final bool active;
+  final String activeLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final app = AppScope.of(context);
+    final cs = context.cs;
+    final owned = app.isUnlocked(item.id);
+    final small = context.tt.labelSmall!.copyWith(fontSize: 10.5);
+    return Pressable(
+      scale: 0.94,
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: active ? cs.primary : cs.outlineVariant, width: active ? 2.5 : 1)),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Stack(clipBehavior: Clip.none, children: [
+            preview,
+            if (!owned) Positioned(right: -4, top: -4, child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: cs.surface, shape: BoxShape.circle, border: Border.all(color: cs.outlineVariant)), child: Icon(Icons.lock_rounded, size: 12, color: cs.onSurfaceVariant))),
+          ]),
+          const SizedBox(height: 8),
+          Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.labelSmall!.copyWith(color: cs.onSurface)),
+          const SizedBox(height: 3),
+          if (owned)
+            Text(active ? activeLabel : tr('owned'), maxLines: 1, overflow: TextOverflow.ellipsis, style: small.copyWith(color: active ? good : null))
+          else if (item.pack != null)
+            Text(tr('claim_free'), maxLines: 1, overflow: TextOverflow.ellipsis, style: small.copyWith(color: const Color(0xFFFB8C00)))
+          else
+            Row(mainAxisSize: MainAxisSize.min, children: [const Coin(size: 12), const SizedBox(width: 3), Text('${item.cost}', style: small.copyWith(color: app.settings.points >= item.cost ? cs.onSurface : null))]),
+        ]),
+      ),
+    );
+  }
 }

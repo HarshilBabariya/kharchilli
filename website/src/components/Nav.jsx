@@ -5,7 +5,7 @@ import DownloadButton from './DownloadButton.jsx'
 import { REPO_URL } from '../content.js'
 
 const links = [
-  ['#showcase', 'Why Kharchili'],
+  ['#showcase', 'Why Gharcha'],
   ['#features', 'Features'],
   ['#festivals', 'Festivals'],
   ['#rewards', 'Rewards'],
@@ -31,7 +31,7 @@ export default function Nav() {
       <i className="scroll-progress" ref={bar} />
       <a className="brand" href="#top">
         <Logo size={34} />
-        <span>Kharchili</span>
+        <span>Gharcha</span>
       </a>
       <nav className="nav-links">
         {links.map(([href, label]) => <a key={href} href={href}>{label}</a>)}

@@ -49,7 +49,9 @@ export default function Rewards() {
       </div>
       <div className="marquee" aria-label="Badges">
         <div className="marquee-track">
-          {[...badges, ...badges].map((b, i) => <span className="badge-chip" key={i}>{b}</span>)}
+          {[...badges, ...badges].map(([id, name], i) => (
+            <span className="badge-chip" key={i}><img src={`${import.meta.env.BASE_URL}art/${id}.png`} alt="" loading="lazy" />{name}</span>
+          ))}
         </div>
       </div>
     </section>

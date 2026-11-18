@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../core/format.dart';
 import '../core/l10n.dart';
+import 'glyphs.dart';
 import 'theme.dart';
 
 /// Shrinks under the finger and springs back: every tappable surface uses it.
@@ -118,12 +120,12 @@ class KCard extends StatelessWidget {
   }
 }
 
+/// A glossy gradient tile with a white icon: categories, rows and anything else without its own sticker.
 class IconTile extends StatelessWidget {
-  const IconTile(this.icon, {super.key, this.color, this.size = 44, this.emoji});
-  final IconData? icon;
+  const IconTile(this.icon, {super.key, this.color, this.size = 44});
+  final IconData icon;
   final Color? color;
   final double size;
-  final String? emoji;
 
   @override
   Widget build(BuildContext context) {
@@ -131,48 +133,120 @@ class IconTile extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: tint.withValues(alpha: context.isDark ? 0.22 : 0.13), borderRadius: BorderRadius.circular(size * 0.34)),
-      child: emoji != null ? Text(emoji!, style: TextStyle(fontSize: size * 0.48)) : Icon(icon, color: context.isDark ? Color.lerp(tint, Colors.white, 0.3) : tint, size: size * 0.52),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * 0.32),
+        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color.lerp(tint, Colors.white, 0.32)!, tint, Color.lerp(tint, Colors.black, 0.22)!]),
+        boxShadow: [BoxShadow(color: tint.withValues(alpha: 0.3), blurRadius: size * 0.2, offset: Offset(0, size * 0.08))],
+      ),
+      child: Stack(alignment: Alignment.center, children: [
+        Positioned(
+          top: size * 0.06,
+          left: size * 0.1,
+          right: size * 0.1,
+          height: size * 0.38,
+          child: DecoratedBox(decoration: BoxDecoration(borderRadius: BorderRadius.circular(size * 0.26), gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.white.withValues(alpha: 0.34), Colors.white.withValues(alpha: 0)]))),
+        ),
+        Icon(icon, color: Colors.white, size: size * 0.54),
+      ]),
     );
   }
 }
 
-class KButton extends StatelessWidget {
+/// The main button. While an async [onTap] is running it ignores further taps, so nothing is saved twice.
+class KButton extends StatefulWidget {
   const KButton(this.label, {super.key, this.onTap, this.icon, this.tonal = false, this.expand = true, this.danger = false});
   final String label;
-  final VoidCallback? onTap;
+  final FutureOr<void> Function()? onTap;
   final IconData? icon;
   final bool tonal;
   final bool expand;
   final bool danger;
 
   @override
+  State<KButton> createState() => _KButtonState();
+}
+
+class _KButtonState extends State<KButton> {
+  bool _busy = false;
+
+  Future<void> _run() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await widget.onTap!();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cs = context.cs;
-    final enabled = onTap != null;
+    final enabled = widget.onTap != null;
+    final tonal = widget.tonal, danger = widget.danger;
     final fg = tonal ? (danger ? cs.error : cs.onPrimaryContainer) : Colors.white;
     return Pressable(
-      onTap: onTap,
+      onTap: enabled ? _run : null,
       child: AnimatedOpacity(
         opacity: enabled ? 1 : 0.45,
         duration: const Duration(milliseconds: 200),
         child: Container(
           height: 56,
-          width: expand ? double.infinity : null,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          width: widget.expand ? double.infinity : null,
+          padding: const EdgeInsets.symmetric(horizontal: 22),
           decoration: BoxDecoration(
             gradient: tonal ? null : (danger ? const LinearGradient(colors: [Color(0xFFE5484D), Color(0xFFB3261E)]) : context.heroGradient),
             color: tonal ? (danger ? cs.error.withValues(alpha: 0.12) : cs.primaryContainer) : null,
             borderRadius: BorderRadius.circular(20),
             boxShadow: tonal || !enabled ? null : [BoxShadow(color: (danger ? cs.error : cs.primary).withValues(alpha: 0.4), blurRadius: 18, offset: const Offset(0, 8))],
           ),
-          child: Row(mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
-            if (icon != null) ...[Icon(icon, color: fg, size: 20), const SizedBox(width: 8)],
-            Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.labelLarge!.copyWith(color: fg, fontSize: 16, fontWeight: FontWeight.w700))),
+          child: Row(mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
+            if (_busy)
+              Padding(padding: const EdgeInsets.only(right: 10), child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.4, color: fg)))
+            else if (widget.icon != null) ...[Icon(widget.icon, color: fg, size: 20), const SizedBox(width: 8)],
+            Flexible(child: Text(widget.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.labelLarge!.copyWith(color: fg, fontSize: 16, fontWeight: FontWeight.w700))),
           ]),
         ),
       ),
+    );
+  }
+}
+
+/// One choice out of a few, as a sliding pill.
+class Segmented<T> extends StatelessWidget {
+  const Segmented({super.key, required this.options, required this.value, required this.onChanged, this.color});
+  final Map<T, String> options;
+  final T value;
+  final ValueChanged<T> onChanged;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(18)),
+      child: Row(children: [
+        for (final option in options.entries)
+          Expanded(
+            child: Pressable(
+              onTap: () => onChanged(option.key),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: value == option.key ? (color ?? cs.primary) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: value == option.key ? [BoxShadow(color: (color ?? cs.primary).withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 4))] : null,
+                ),
+                child: FittedBox(fit: BoxFit.scaleDown, child: Text(option.value, maxLines: 1, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: value == option.key ? Colors.white : cs.onSurfaceVariant))),
+              ),
+            ),
+          ),
+      ]),
     );
   }
 }
@@ -272,8 +346,10 @@ class SectionTitle extends StatelessWidget {
 }
 
 class EmptyState extends StatefulWidget {
-  const EmptyState({super.key, required this.emoji, required this.title, required this.body});
-  final String emoji;
+  const EmptyState({super.key, required this.art, required this.title, required this.body});
+
+  /// A sticker name from assets/art/icons.
+  final String art;
   final String title;
   final String body;
 
@@ -293,14 +369,14 @@ class _EmptyStateState extends State<EmptyState> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 36),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         AnimatedBuilder(
           animation: _c,
-          builder: (_, child) => Transform.translate(offset: Offset(0, -8 * Curves.easeInOut.transform(_c.value)), child: child),
-          child: Text(widget.emoji, style: const TextStyle(fontSize: 64)),
+          builder: (_, child) => Transform.translate(offset: Offset(0, -8 * Curves.easeInOut.transform(_c.value)), child: Transform.rotate(angle: -0.08 + 0.16 * Curves.easeInOut.transform(_c.value), child: child)),
+          child: Sticker(widget.art, size: 96),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 20),
         Text(widget.title, textAlign: TextAlign.center, style: context.tt.titleLarge),
         const SizedBox(height: 6),
         Text(widget.body, textAlign: TextAlign.center, style: context.tt.bodyMedium!.copyWith(color: context.cs.onSurfaceVariant)),
@@ -334,51 +410,61 @@ class Backdrop extends StatelessWidget {
 }
 
 class KPage extends StatelessWidget {
-  const KPage({super.key, required this.title, required this.children, this.actions = const [], this.fab, this.bottom, this.subtitle});
+  const KPage({super.key, required this.title, required this.children, this.actions = const [], this.bottom, this.subtitle});
   final String title;
   final String? subtitle;
   final List<Widget> children;
   final List<Widget> actions;
-  final Widget? fab;
+
+  /// A button pinned above the bottom edge.
   final Widget? bottom;
 
   @override
   Widget build(BuildContext context) {
-    final canPop = Navigator.of(context).canPop();
+    final pushed = !(ModalRoute.of(context)?.isFirst ?? true);
+    final inset = MediaQuery.viewPaddingOf(context).bottom;
+    final clearance = bottom != null ? 100.0 : (pushed ? 24.0 : navBarHeight + 24);
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: fab,
-      bottomNavigationBar: bottom == null ? null : SafeArea(minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16), child: bottom!),
       body: Backdrop(
-        child: SafeArea(
-          bottom: false,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
-              child: Row(children: [
-                if (canPop) ...[RoundIcon(Icons.arrow_back_rounded, onTap: () => Navigator.of(context).maybePop()), const SizedBox(width: 12)],
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.headlineSmall),
-                    if (subtitle != null) Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall),
+        child: Stack(children: [
+          SafeArea(
+            bottom: false,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
+                child: SizedBox(
+                  height: 52,
+                  child: Row(children: [
+                    if (pushed) ...[RoundIcon(Icons.arrow_back_rounded, onTap: () => Navigator.of(context).maybePop()), const SizedBox(width: 12)],
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                        Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: pushed ? context.tt.headlineSmall : context.tt.headlineMedium),
+                        if (subtitle != null) Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall),
+                      ]),
+                    ),
+                    for (final a in actions) Padding(padding: const EdgeInsets.only(left: 8), child: a),
                   ]),
                 ),
-                for (final a in actions) Padding(padding: const EdgeInsets.only(left: 8), child: a),
-              ]),
-            ),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.fromLTRB(20, 8, 20, 120 + MediaQuery.of(context).padding.bottom),
-                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                children: [for (var i = 0; i < children.length; i++) Entrance(index: i, child: children[i])],
               ),
-            ),
-          ]),
-        ),
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(20, 8, 20, clearance + inset),
+                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                  children: [for (var i = 0; i < children.length; i++) Entrance(index: i, child: children[i])],
+                ),
+              ),
+            ]),
+          ),
+          if (bottom != null) Positioned(left: 20, right: 20, bottom: inset + 16, child: bottom!),
+        ]),
       ),
     );
   }
 }
+
+/// Height of the tab bar, so tab pages can keep their last card clear of it.
+const navBarHeight = 78.0;
 
 class RoundIcon extends StatelessWidget {
   const RoundIcon(this.icon, {super.key, required this.onTap, this.filled = false});
@@ -461,29 +547,36 @@ class KSwitch extends StatelessWidget {
   }
 }
 
+/// A text field with its label above it.
 class KField extends StatelessWidget {
-  const KField({super.key, required this.controller, required this.label, this.hint, this.number = false, this.onChanged, this.error, this.autofocus = false, this.maxLength});
+  const KField({super.key, required this.controller, required this.label, this.hint, this.number = false, this.onChanged, this.onTap, this.autofocus = false, this.icon, this.lines = 1});
   final TextEditingController controller;
   final String label;
   final String? hint;
   final bool number;
   final ValueChanged<String>? onChanged;
-  final String? error;
+  final VoidCallback? onTap;
   final bool autofocus;
-  final int? maxLength;
+  final IconData? icon;
+  final int lines;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      autofocus: autofocus,
-      onChanged: onChanged,
-      maxLength: maxLength,
-      keyboardType: number ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
-      inputFormatters: number ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))] : null,
-      textCapitalization: number ? TextCapitalization.none : TextCapitalization.sentences,
-      decoration: InputDecoration(labelText: label, hintText: hint, errorText: error, counterText: ''),
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      Padding(padding: const EdgeInsets.only(left: 4, bottom: 7), child: Text(label, style: context.tt.labelMedium)),
+      TextField(
+        controller: controller,
+        autofocus: autofocus,
+        onChanged: onChanged,
+        onTap: onTap,
+        minLines: 1,
+        maxLines: lines,
+        keyboardType: number ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
+        inputFormatters: number ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))] : null,
+        textCapitalization: number ? TextCapitalization.none : TextCapitalization.sentences,
+        decoration: InputDecoration(hintText: hint, prefixIcon: icon == null ? null : Icon(icon)),
+      ),
+    ]);
   }
 }
 
@@ -495,13 +588,13 @@ Future<T?> showKSheet<T>(BuildContext context, {required String title, required 
     enableDrag: false,
     useSafeArea: true,
     builder: (sheet) => Padding(
-      padding: EdgeInsets.fromLTRB(20, 14, 20, 20 + MediaQuery.of(sheet).viewInsets.bottom),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + max(MediaQuery.viewInsetsOf(sheet).bottom, MediaQuery.viewPaddingOf(sheet).bottom)),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
           Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: sheet.tt.titleLarge)),
           RoundIcon(Icons.close_rounded, onTap: () => Navigator.of(sheet).pop()),
         ]),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
         Flexible(child: SingleChildScrollView(child: builder(sheet))),
       ]),
     ),
@@ -578,10 +671,11 @@ class AmountKeypad extends StatelessWidget {
 }
 
 class Pill extends StatelessWidget {
-  const Pill(this.text, {super.key, this.color, this.onDark = false});
+  const Pill(this.text, {super.key, this.color, this.onDark = false, this.icon});
   final String text;
   final Color? color;
   final bool onDark;
+  final Widget? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -589,7 +683,10 @@ class Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(color: onDark ? Colors.white.withValues(alpha: 0.2) : tint.withValues(alpha: context.isDark ? 0.24 : 0.13), borderRadius: BorderRadius.circular(999)),
-      child: Text(text, maxLines: 1, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: onDark ? Colors.white : (context.isDark ? Color.lerp(tint, Colors.white, 0.35) : tint))),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (icon != null) ...[icon!, const SizedBox(width: 5)],
+        Flexible(child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: onDark ? Colors.white : (context.isDark ? Color.lerp(tint, Colors.white, 0.35) : tint)))),
+      ]),
     );
   }
 }

@@ -9,6 +9,7 @@ import '../core/format.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
 import '../ui/avatar.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'add_expense.dart';
@@ -25,7 +26,7 @@ class GroupsTab extends StatelessWidget {
       actions: [RoundIcon(Icons.add_rounded, filled: true, onTap: () => _create(context))],
       children: [
         if (app.groups.isEmpty) ...[
-          EmptyState(emoji: '🤝', title: tr('no_groups_title'), body: tr('no_groups_body')),
+          EmptyState(art: 'friends', title: tr('no_groups_title'), body: tr('no_groups_body')),
           KButton(tr('new_group'), icon: Icons.add_rounded, onTap: () => _create(context)),
         ],
         for (final g in app.groups)
@@ -41,7 +42,7 @@ class GroupsTab extends StatelessWidget {
                 },
                 child: KCard(
                   child: Row(children: [
-                    IconTile(null, emoji: g.emoji, size: 54, color: const Color(0xFF7C4DFF)),
+                    groupSticker(g.icon, size: 54),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -51,9 +52,11 @@ class GroupsTab extends StatelessWidget {
                         _Faces([for (final id in g.memberIds) app.member(id)].whereType<Member>().toList()),
                       ]),
                     ),
+                    const SizedBox(width: 8),
                     Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                       Text(mine.abs() < 0.005 ? tr('settled') : mine > 0 ? tr('owed_to_you') : tr('you_owe'), style: context.tt.labelSmall),
-                      Text(mine.abs() < 0.005 ? '✓' : Fmt.money(mine.abs()), style: context.tt.titleMedium!.copyWith(fontWeight: FontWeight.w700, color: mine.abs() < 0.005 ? good : mine > 0 ? good : bad)),
+                      const SizedBox(height: 2),
+                      if (mine.abs() < 0.005) const Icon(Icons.check_circle_rounded, color: good, size: 24) else Text(Fmt.money(mine.abs()), style: context.tt.titleMedium!.copyWith(fontWeight: FontWeight.w700, color: mine > 0 ? good : bad)),
                     ]),
                   ]),
                 ),
@@ -67,8 +70,7 @@ class GroupsTab extends StatelessWidget {
   Future<void> _create(BuildContext context) async {
     final app = AppScope.read(context);
     final name = TextEditingController();
-    const emojis = ['🏠', '✈️', '🎉', '🍕', '🏖️', '🛒', '🚗', '🎓'];
-    var emoji = emojis.first;
+    var icon = groupIcons.first;
     final picked = app.members.map((m) => m.id).toSet();
     await showKSheet<void>(
       context,
@@ -76,19 +78,17 @@ class GroupsTab extends StatelessWidget {
       builder: (sheet) => StatefulBuilder(
         builder: (_, setState) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           KField(controller: name, label: tr('group_name'), hint: tr('group_name_hint'), onChanged: (_) => setState(() {})),
-          const SizedBox(height: 14),
-          Wrap(spacing: 8, children: [
-            for (final e in emojis)
+          const SizedBox(height: 16),
+          Wrap(spacing: 10, runSpacing: 10, children: [
+            for (final key in groupIcons)
               Pressable(
-                scale: 0.8,
-                onTap: () => setState(() => emoji = e),
+                scale: 0.85,
+                onTap: () => setState(() => icon = key),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  width: 42,
-                  height: 42,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(color: emoji == e ? sheet.cs.primaryContainer : Colors.transparent, borderRadius: BorderRadius.circular(14), border: Border.all(color: emoji == e ? sheet.cs.primary : Colors.transparent, width: 2)),
-                  child: Text(e, style: const TextStyle(fontSize: 22)),
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: icon == key ? sheet.cs.primary : Colors.transparent, width: 2.5)),
+                  child: AnimatedOpacity(duration: const Duration(milliseconds: 180), opacity: icon == key ? 1 : 0.55, child: groupSticker(key, size: 46)),
                 ),
               ),
           ]),
@@ -101,9 +101,8 @@ class GroupsTab extends StatelessWidget {
           const SizedBox(height: 18),
           KButton(tr('create_group'), onTap: name.text.trim().isNotEmpty && picked.length >= 2
               ? () async {
-                  final nav = Navigator.of(sheet);
-                  await app.saveGroup(Group(name: name.text, emoji: emoji, memberIds: picked.toList()));
-                  nav.pop();
+                  Navigator.of(sheet).pop();
+                  await app.saveGroup(Group(name: name.text, icon: icon, memberIds: picked.toList()));
                 }
               : null),
         ]),
@@ -140,15 +139,20 @@ class GroupDetailScreen extends StatelessWidget {
     final shared = app.groupExpenses(group);
     final top = balances.fold(0.0, (m, b) => max(m, b.net.abs()));
     return KPage(
-      title: '${group.emoji} ${group.name}',
+      title: group.name,
       actions: [RoundIcon(Icons.ios_share_rounded, onTap: () => Share.share(app.groupSummary(group)))],
       bottom: KButton(tr('add_shared_expense'), icon: Icons.add_rounded, onTap: () => open(context, AddExpenseScreen(groupId: group.id), rise: true)),
       children: [
         KCard(
           gradient: context.heroGradient,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(tr('total_shared'), style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
-            CountUp(max(AppState.net(shared), 0.0), style: context.tt.displaySmall!.copyWith(color: Colors.white)),
+            Row(children: [
+              groupSticker(group.icon, size: 40),
+              const SizedBox(width: 12),
+              Expanded(child: Text(tr('total_shared'), style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontWeight: FontWeight.w600))),
+            ]),
+            const SizedBox(height: 10),
+            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: CountUp(max(AppState.net(shared), 0.0), style: context.tt.displaySmall!.copyWith(color: Colors.white))),
           ]),
         ),
         SectionTitle(tr('balances')),
@@ -185,7 +189,11 @@ class GroupDetailScreen extends StatelessWidget {
                 child: Row(children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('${t.fromName} → ${t.toName}', maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall),
+                      Row(children: [
+                        Flexible(child: Text(t.fromName, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall)),
+                        Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.arrow_forward_rounded, size: 16, color: context.cs.onSurfaceVariant)),
+                        Flexible(child: Text(t.toName, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall)),
+                      ]),
                       Text(Fmt.money(t.amount), style: context.tt.titleLarge),
                     ]),
                   ),
@@ -195,7 +203,7 @@ class GroupDetailScreen extends StatelessWidget {
             ),
         ],
         SectionTitle(tr('shared_expenses')),
-        if (shared.isEmpty) EmptyState(emoji: '🧾', title: tr('nothing_shared_title'), body: tr('nothing_shared_body')),
+        if (shared.isEmpty) EmptyState(art: 'receipt', title: tr('nothing_shared_title'), body: tr('nothing_shared_body')),
         if (shared.isNotEmpty) KCard(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), child: Column(children: [for (final e in shared) ExpenseTile(e)])),
       ],
     );

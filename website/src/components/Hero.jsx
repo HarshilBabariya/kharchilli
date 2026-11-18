@@ -79,7 +79,7 @@ export default function Hero() {
             <span className="line"><span className="title-word">served</span><span className="nowrap"><span className="title-word">with</span><span className="title-word grad">spice.</span></span></span>
           </h1>
           <p className="lead">
-            Kharchili logs a spend in five seconds, splits it with the family, guards your budget and roasts you, lovingly,
+            Gharcha logs a spend in five seconds, splits it with the family, guards your budget and roasts you, lovingly,
             when you overspend. Points, streaks, avatars and festival packs keep everyone logging. No account, no cloud.
           </p>
           <div className="hero-cta">

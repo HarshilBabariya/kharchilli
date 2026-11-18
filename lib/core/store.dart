@@ -16,7 +16,7 @@ class Store {
 
   static Future<Store> open() async {
     final db = await openDatabase(
-      p.join(await getDatabasesPath(), 'kharchili.db'),
+      p.join(await getDatabasesPath(), 'gharcha.db'),
       version: 1,
       onCreate: (db, _) async {
         await db.execute('CREATE TABLE docs (id INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, body TEXT NOT NULL)');

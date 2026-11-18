@@ -6,6 +6,7 @@ import '../core/l10n.dart';
 import '../core/models.dart';
 import '../ui/avatar.dart';
 import '../ui/effects.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'common.dart';
@@ -20,7 +21,6 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _pages = PageController();
   final _name = TextEditingController();
-  final _phone = TextEditingController();
   int _page = 0;
   Gender _gender = Gender.male;
   String _currency = 'INR';
@@ -31,12 +31,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void dispose() {
     _pages.dispose();
     _name.dispose();
-    _phone.dispose();
     super.dispose();
   }
 
-  bool get _phoneOk => _phone.text.replaceAll(RegExp(r'\D'), '').length >= 10;
-  bool get _canContinue => _page != 1 || (_name.text.trim().isNotEmpty && _phoneOk);
+  bool get _canContinue => _page != 1 || _name.text.trim().isNotEmpty;
 
   Future<void> _next() async {
     FocusScope.of(context).unfocus();
@@ -45,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
     setState(() => _busy = true);
-    await AppScope.read(context).completeOnboarding(name: _name.text, phone: _phone.text.trim(), gender: _gender, currency: _currency, budget: _budget);
+    await AppScope.read(context).completeOnboarding(name: _name.text, gender: _gender, currency: _currency, budget: _budget);
   }
 
   @override
@@ -57,9 +55,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: SafeArea(
           child: Column(children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-              child: Row(children: [
-                if (_page > 0) RoundIcon(Icons.arrow_back_rounded, onTap: () => _pages.previousPage(duration: const Duration(milliseconds: 380), curve: Curves.easeOutCubic)),
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+              child: SizedBox(
+                height: 48,
+                child: Row(children: [
+                AnimatedOpacity(
+                  opacity: _page > 0 ? 1 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: IgnorePointer(ignoring: _page == 0, child: RoundIcon(Icons.arrow_back_rounded, onTap: () => _pages.previousPage(duration: const Duration(milliseconds: 380), curve: Curves.easeOutCubic))),
+                ),
                 const Spacer(),
                 for (var i = 0; i < 3; i++)
                   AnimatedContainer(
@@ -71,6 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     decoration: BoxDecoration(color: _page >= i ? cs.primary : cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(9)),
                   ),
               ]),
+              ),
             ),
             Expanded(
               child: PageView(
@@ -125,49 +130,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _you() {
     return ListView(padding: const EdgeInsets.all(24), children: [
-      Center(child: AvatarView(AvatarConfig(gender: _gender, hairId: _gender == Gender.male ? 'hair_short' : 'hair_long', mood: Mood.happy), size: 150, animate: true, action: AvatarAction.wave)),
+      Center(child: AvatarView(AvatarConfig(gender: _gender, hairId: _gender == Gender.male ? 'hair_short' : 'hair_long', mood: Mood.happy), size: 170, animate: true, action: AvatarAction.wave)),
       const SizedBox(height: 18),
       Text(_name.text.trim().isEmpty ? tr('your_name') : tr('hi_name', [_name.text.trim().capitalised]), textAlign: TextAlign.center, style: context.tt.headlineSmall),
       const SizedBox(height: 22),
       KField(controller: _name, label: tr('your_name'), hint: tr('your_name_hint'), onChanged: (_) => setState(() {})),
-      const SizedBox(height: 12),
-      TextField(
-        controller: _phone,
-        keyboardType: TextInputType.phone,
-        onChanged: (_) => setState(() {}),
-        decoration: InputDecoration(labelText: tr('mobile_number'), hintText: tr('phone_hint'), errorText: _phone.text.isNotEmpty && !_phoneOk ? tr('phone_error') : null, prefixIcon: const Icon(Icons.phone_rounded)),
-      ),
       const SizedBox(height: 18),
-      Row(children: [
-        for (final g in Gender.values)
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: KChip(tr('gender_${g.name}'), selected: _gender == g, onTap: () => setState(() => _gender = g)),
-            ),
-          ),
-      ]),
+      Padding(padding: const EdgeInsets.only(left: 4, bottom: 7), child: Text(tr('gender'), style: context.tt.labelMedium)),
+      Segmented<Gender>(options: {for (final g in Gender.values) g: tr('gender_${g.name}')}, value: _gender, onChanged: (g) => setState(() => _gender = g)),
     ]);
   }
 
   Widget _money() {
     return ListView(padding: const EdgeInsets.all(24), children: [
-      const Center(child: Text('💸', style: TextStyle(fontSize: 84))),
-      const SizedBox(height: 10),
+      const Center(child: Sticker('forecast', size: 104)),
+      const SizedBox(height: 22),
       Text(tr('money_setup'), textAlign: TextAlign.center, style: context.tt.headlineMedium),
       const SizedBox(height: 8),
       Text(tr('money_setup_body'), textAlign: TextAlign.center, style: context.tt.bodyMedium!.copyWith(color: context.cs.onSurfaceVariant)),
       const SizedBox(height: 26),
-      Text(tr('currency'), style: context.tt.labelMedium),
-      const SizedBox(height: 10),
-      Row(children: [
-        for (final c in currencies.entries)
-          Padding(padding: const EdgeInsets.only(right: 10), child: KChip('${c.value}  ${c.key}', selected: _currency == c.key, onTap: () => setState(() {
-                _currency = c.key;
-                Fmt.symbol = c.value;
-                Fmt.currencyCode = c.key;
-              }))),
-      ]),
+      Padding(padding: const EdgeInsets.only(left: 4, bottom: 7), child: Text(tr('currency'), style: context.tt.labelMedium)),
+      Segmented<String>(
+        options: {for (final c in currencies.entries) c.key: '${c.value}  ${c.key}'},
+        value: _currency,
+        onChanged: (code) => setState(() {
+          _currency = code;
+          Fmt.symbol = currencies[code]!;
+          Fmt.currencyCode = code;
+        }),
+      ),
       const SizedBox(height: 22),
       KCard(
         onTap: () async {
