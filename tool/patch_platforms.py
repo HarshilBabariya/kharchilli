@@ -75,6 +75,15 @@ if android.exists():
 
 plist_path = ROOT / 'ios' / 'Runner' / 'Info.plist'
 if plist_path.exists():
+    assets = ROOT / 'ios' / 'Runner' / 'Assets.xcassets'
+    shutil.rmtree(assets / 'AppIcon.appiconset')
+    shutil.copytree(ROOT / 'platform' / 'ios' / 'AppIcon.appiconset', assets / 'AppIcon.appiconset')
+    shutil.copytree(ROOT / 'platform' / 'ios' / 'LaunchImage.imageset', assets / 'LaunchImage.imageset', dirs_exist_ok=True)
+    storyboard = ROOT / 'ios' / 'Runner' / 'Base.lproj' / 'LaunchScreen.storyboard'
+    painted, found = re.subn(r'<color key="backgroundColor"[^>]*/>', '<color key="backgroundColor" red="0.910" green="0.125" blue="0.247" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>', storyboard.read_text())
+    if not found:
+        sys.exit(f'{storyboard}: no backgroundColor to repaint. The Flutter template changed; update tool/patch_platforms.py.')
+    storyboard.write_text(painted)
     with plist_path.open('rb') as f:
         plist = plistlib.load(f)
     plist.update({

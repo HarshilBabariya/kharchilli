@@ -1,29 +1,49 @@
-"""Renders the Kharchili launcher, splash and store icons from one lettermark. Usage: python3 tool/make_brand.py assets/brand"""
-import subprocess, sys, pathlib
+"""Renders every Kharchili icon and splash image from one lettermark. Usage: python3 tool/make_brand.py
 
-out = pathlib.Path(sys.argv[1])
+Needs rsvg-convert and Pillow. Output goes to assets/brand and platform/, which tool/patch_platforms.py copies into the native folders.
+"""
+import json, pathlib, subprocess
+
+from PIL import Image
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 MARK = '''<g fill="none" stroke="#fff" stroke-width="{w}" stroke-linecap="round" stroke-linejoin="round">
 <path d="M372 262 V762"/><path d="M372 598 C470 560 560 500 628 410"/><path d="M486 548 C540 640 590 712 664 762"/></g>
-<circle cx="726" cy="296" r="{r}" fill="#FFC531"/>'''
-BG = '''<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF4D4D"/><stop offset=".55" stop-color="#E8203F"/><stop offset="1" stop-color="#B3124F"/></linearGradient>
-<radialGradient id="h" cx=".28" cy=".2" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>'''
+<circle cx="726" cy="296" r="{r}" fill="{dot}"/>'''
+FILL = '''<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF4D4D"/><stop offset=".55" stop-color="#E8203F"/><stop offset="1" stop-color="#B3124F"/></linearGradient>
+<radialGradient id="h" cx=".28" cy=".2" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+<rect width="1024" height="1024" rx="{rx}" fill="url(#g)"/><rect width="1024" height="1024" rx="{rx}" fill="url(#h)"/>'''
 
-def svg(body, size=1024):
-    return f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 1024 1024">{body}</svg>'
 
-def scaled(scale, w=112, r=58):
+def mark(scale, dot='#FFC531', w=112, r=58):
     t = 512 * (1 - scale)
-    return f'<g transform="translate({t} {t}) scale({scale})">{MARK.format(w=w, r=r)}</g>'
+    return f'<g transform="translate({t} {t}) scale({scale})">{MARK.format(w=w, r=r, dot=dot)}</g>'
 
-files = {
-    'icon.svg': svg(BG + '<rect width="1024" height="1024" fill="url(#g)"/><rect width="1024" height="1024" fill="url(#h)"/>' + scaled(1.0)),
-    'icon_background.svg': svg(BG + '<rect width="1024" height="1024" fill="url(#g)"/><rect width="1024" height="1024" fill="url(#h)"/>'),
-    'icon_foreground.svg': svg(scaled(0.62)),
-    'icon_monochrome.svg': svg(scaled(0.62).replace('#FFC531', '#fff')),
-    'splash.svg': svg(scaled(0.9), 768),
-}
-for name, text in files.items():
-    (out / name).write_text(text)
-    subprocess.run(['rsvg-convert', str(out / name), '-o', str(out / name.replace('.svg', '.png'))], check=True)
-notification = out.parent.parent / 'platform' / 'android' / 'res' / 'drawable' / 'ic_stat_kharchili.png'
-subprocess.run(['rsvg-convert', '/dev/stdin', '-o', str(notification)], input=svg(scaled(0.98, 124, 64).replace('#FFC531', '#fff'), 96).encode(), check=True)
+
+def render(body, size, path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 1024 1024">{body}</svg>'
+    subprocess.run(['rsvg-convert', '/dev/stdin', '-o', str(path)], input=svg.encode(), check=True)
+
+
+SQUARE = FILL.format(rx=0) + mark(1.0)
+render(SQUARE, 1024, ROOT / 'assets' / 'brand' / 'icon.png')
+
+res = ROOT / 'platform' / 'android' / 'res'
+for density, factor in (('mdpi', 1), ('hdpi', 1.5), ('xhdpi', 2), ('xxhdpi', 3), ('xxxhdpi', 4)):
+    folder = res / f'mipmap-{density}'
+    render(FILL.format(rx=230) + mark(1.0), round(48 * factor), folder / 'ic_launcher.png')
+    render(FILL.format(rx=0), round(108 * factor), folder / 'ic_launcher_background.png')
+    render(mark(0.62), round(108 * factor), folder / 'ic_launcher_foreground.png')
+    render(mark(0.62, dot='#fff'), round(108 * factor), folder / 'ic_launcher_monochrome.png')
+render(mark(0.98, dot='#fff', w=124, r=64), 96, res / 'drawable' / 'ic_stat_kharchili.png')
+
+ios = ROOT / 'platform' / 'ios'
+render(SQUARE, 1024, ios / 'AppIcon.appiconset' / 'AppIcon.png')
+Image.open(ios / 'AppIcon.appiconset' / 'AppIcon.png').convert('RGB').save(ios / 'AppIcon.appiconset' / 'AppIcon.png')
+(ios / 'AppIcon.appiconset' / 'Contents.json').write_text(json.dumps({
+    'images': [{'filename': 'AppIcon.png', 'idiom': 'universal', 'platform': 'ios', 'size': '1024x1024'}],
+    'info': {'author': 'xcode', 'version': 1},
+}, indent=2) + '\n')
+for suffix, size in (('', 168), ('@2x', 336), ('@3x', 504)):
+    render(mark(1.0), size, ios / 'LaunchImage.imageset' / f'LaunchImage{suffix}.png')

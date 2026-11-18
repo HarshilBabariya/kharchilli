@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Kharchili is
 Kharchili (kharcha + chili) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/housequest`). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Kharchili** · app id / bundle id: `app.kharchili` · version `1.0.0+1`.
+- App name: **Kharchili** · app id / bundle id: `app.kharchili` · version `1.0.1+2`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Kharchili → Me → Your data → Import CSV.
 - Name check (Nov 2026): "Chillar" was the first pick but two expense trackers already use it; no app named Kharchili turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -18,7 +18,7 @@ Kharchili (kharcha + chili) is the Flutter rewrite of HomeQuest: a gamified hous
 
 ## 3. Features in 1.0.0
 ### Look, feel and flows (new in the rewrite)
-- Lettermark icon: a white rounded **k** with a saffron spark on a chili-red gradient; adaptive, round and themed (monochrome) variants are generated from `assets/brand` by `tool/make_brand.py`.
+- Lettermark icon: a white rounded **k** with a saffron spark on a chili-red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`.
 - Opening moment: the k draws itself stroke by stroke while three sparks orbit it, then the app fades in.
 - Floating pill navigation with four tabs and a glowing centre **+** that turns as the add screen rises from the bottom.
 - Every tappable surface shrinks under the finger and springs back, with haptics; screens build in with staggered slide-and-fade; numbers count up; rings, bars, area charts and donuts animate in and are tappable.
@@ -73,7 +73,7 @@ lib/ui/                  theme (16 palettes), widgets (design system), charts, a
 lib/screens/             shell (tabs), home, expenses + calendar, add_expense, categories, groups, budgets, insights, reminders,
                          rewards, me, family, avatar_studio, household (khata, services, savings), onboarding, lock, export, common
 assets/l10n/{en,hi,gu}.json   strings, arrays and plurals; assets/sfx/*.mp3; assets/brand; assets/fonts (Poppins, OFL)
-platform/android/        raw notification sounds, notification icon, the sideload keystore
+platform/                launcher icons and splash for both platforms, raw notification sounds, notification icon, the sideload keystore
 tool/                    bootstrap.sh, patch_platforms.py, check_strings.py, make_brand.py
 website/                 Vite + React + anime.js site
 ```
@@ -91,7 +91,7 @@ website/                 Vite + React + anime.js site
 - Name clashes to avoid: do not import `package:flutter/foundation.dart` in a file that imports `core/models.dart` (both define `Category`).
 
 ### Native folders
-`android/` and `ios/` are not in the repo. `tool/bootstrap.sh` runs `flutter create`, then `tool/patch_platforms.py` adds desugaring, signing, permissions (notifications, boot, microphone), the notification receivers, the app label, the raw sounds and the iOS usage strings, then renders icons and the splash. To work locally: install Flutter, run `bash tool/bootstrap.sh`, then `flutter run`.
+`android/` and `ios/` are not in the repo. `tool/bootstrap.sh` runs `flutter create`, then `tool/patch_platforms.py` adds desugaring, signing, permissions (notifications, boot, microphone), the notification receivers, the app label, the raw sounds, the icons and splash from `platform/`, and the iOS usage strings. No icon or splash package is used: `flutter_launcher_icons` failed to compile in CI (its `image` dependency against the resolved `archive`), so the images are committed instead. To work locally: install Flutter, run `bash tool/bootstrap.sh`, then `flutter run`.
 
 ### CI (`.github/workflows/build.yml`)
 One workflow, three jobs, on every push to `main`:
@@ -120,4 +120,5 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.0.1 | 2026-11-18 | Build fix: icons and splash are pre-rendered and copied by `tool/patch_platforms.py`; `flutter_launcher_icons` and `flutter_native_splash` removed after the launcher-icons tool failed to compile in CI. |
 | 1.0.0 | 2026-11-18 | Kharchili: Flutter rewrite of HomeQuest 1.9.5 for Android and iOS under the new id `app.kharchili`; new lettermark icon and opening animation; redesigned navigation, add flow, charts and celebrations; comeback and weekly-roast notifications; one build instead of Full / Lite; SMS capture, UPI points packs and the festival launcher icon left out (see 3); website rebranded and its download fixed by building the APK and the site in one workflow. |
