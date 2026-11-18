@@ -21,6 +21,7 @@ Steps for Google Play (upload key and four repo secrets) and the App Store (Appl
 ## Version history
 | Version | Date | Notes |
 |---|---|---|
+| 1.0.3 | 2026-11-18 | Build fix: PDF export written in-app, `pdf` package removed |
 | 1.0.2 | 2026-11-18 | Build fix: Gradle signing block |
 | 1.0.1 | 2026-11-18 | Build fix: icons and splash pre-rendered, icon and splash packages removed |
 | 1.0.0 | 2026-11-18 | First Kharchili release: Flutter rewrite of HomeQuest 1.9.5 for Android and iOS, new icon and redesigned UI, website download fixed |

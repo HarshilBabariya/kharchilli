@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Kharchili is
 Kharchili (kharcha + chili) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/housequest`). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Kharchili** · app id / bundle id: `app.kharchili` · version `1.0.2+3`.
+- App name: **Kharchili** · app id / bundle id: `app.kharchili` · version `1.0.3+4`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Kharchili → Me → Your data → Import CSV.
 - Name check (Nov 2026): "Chillar" was the first pick but two expense trackers already use it; no app named Kharchili turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -59,7 +59,7 @@ Kharchili (kharcha + chili) is the Flutter rewrite of HomeQuest: a gamified hous
 | Hanging festival decor and the three "Lights" styles | Replaced | The banner now carries a looping particle show; the decor art was Compose-only. |
 | Bills auto-log in the background | Changed | They are logged the next time the app opens, back-dated to the due day. |
 | Custom notification sounds on iOS | Android only | iOS needs the sounds bundled into the Xcode project. |
-| PDF in Hindi / Gujarati script | Limited | The PDF uses the built-in Latin font and the currency code instead of ₹. |
+| PDF in Hindi / Gujarati script | Limited | The PDF is a plain Courier table written by the app itself (no PDF package); non-Latin text prints as ? and amounts use the currency code instead of ₹. |
 
 ## 4. Engineering handoff
 ### Stack and layout
@@ -120,6 +120,7 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.0.3 | 2026-11-18 | Build fix: the `pdf` package is removed because its `image` dependency did not compile against the resolved `archive`; `lib/screens/export.dart` now writes the PDF itself (Courier table, A4 landscape). The app has no dependency on `image` or `archive` any more. |
 | 1.0.2 | 2026-11-18 | Build fix: the signing block in `android/app/build.gradle.kts` imports `java.util.Properties` (inside `android {}` the name `java` is Gradle's Java extension, so the qualified name did not resolve). |
 | 1.0.1 | 2026-11-18 | Build fix: icons and splash are pre-rendered and copied by `tool/patch_platforms.py`; `flutter_launcher_icons` and `flutter_native_splash` removed after the launcher-icons tool failed to compile in CI. |
 | 1.0.0 | 2026-11-18 | Kharchili: Flutter rewrite of HomeQuest 1.9.5 for Android and iOS under the new id `app.kharchili`; new lettermark icon and opening animation; redesigned navigation, add flow, charts and celebrations; comeback and weekly-roast notifications; one build instead of Full / Lite; SMS capture, UPI points packs and the festival launcher icon left out (see 3); website rebranded and its download fixed by building the APK and the site in one workflow. |
