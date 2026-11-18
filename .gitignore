@@ -1,0 +1,11 @@
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea/
+*.iml
+build/
+pubspec.lock
+/android/
+/ios/
+/test/
+.metadata
