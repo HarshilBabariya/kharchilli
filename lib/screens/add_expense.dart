@@ -8,14 +8,18 @@ import '../core/format.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
 import '../core/parsers.dart';
+import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'common.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key, this.editing, this.startWithVoice = false, this.groupId});
+  const AddExpenseScreen({super.key, this.editing, this.startWithVoice = false, this.firstTime = false, this.groupId});
   final Expense? editing;
   final bool startWithVoice;
+
+  /// Opened straight after setup: greets the user and asks for their first entry.
+  final bool firstTime;
   final int? groupId;
 
   @override
@@ -34,6 +38,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
   bool _voiceUsed = false;
   bool _noteFromVoice = false;
   bool _saved = false;
+  bool _repeat = false;
   String _heard = '';
   String _category = BuiltInCategories.other;
   DateTime _day = Days.today();
@@ -114,13 +119,28 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
     );
   }
 
+  Map<String, String> _customCategories() => {for (final c in AppScope.read(context).categories.where((c) => !c.builtIn)) c.key: c.customName};
+
   void _applyVoice(String words) {
     if (words.trim().isEmpty) return;
-    final app = AppScope.read(context);
-    final parsed = VoiceParser.parse(words, {for (final c in app.categories.where((c) => !c.builtIn)) c.key: c.customName});
+    _voiceUsed = true;
+    _fill(VoiceParser.parse(words, _customCategories()), words);
+  }
+
+  Future<void> _paste() async {
+    final text = (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '';
+    if (!mounted) return;
+    final parsed = text.isEmpty ? null : MessageParser.parse(text, _customCategories()) ?? VoiceParser.parse(text, _customCategories());
+    if (parsed?.amount == null) {
+      toast(context, tr('paste_nothing'));
+      return;
+    }
+    _fill(parsed!, text);
+  }
+
+  void _fill(VoiceResult parsed, String words) {
     setState(() {
       _listening = false;
-      _voiceUsed = true;
       _credit = parsed.credit;
       if (parsed.amount != null) _amount = Fmt.number(parsed.amount!).replaceAll(',', '');
       if (parsed.title.isNotEmpty) _title.text = parsed.title;
@@ -162,17 +182,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
     HapticFeedback.heavyImpact();
     setState(() => _saved = true);
     await app.saveExpense(e, voice: _voiceUsed && widget.editing == null);
+    if (_repeat) await app.saveReminder(Reminder(title: e.title, hour: 9, minute: 0, dayOfMonth: _day.day, amount: _value, category: _category, autoLog: true, lastLoggedDay: e.day));
     await Future<void>.delayed(const Duration(milliseconds: 650));
     if (mounted) Navigator.of(context).pop();
   }
 
   Future<void> _delete() async {
     final app = AppScope.read(context);
-    final nav = Navigator.of(context);
-    if (await confirm(context, title: tr('delete_expense_q'), body: tr('delete_expense_body'), action: tr('delete'))) {
-      await app.deleteExpense(widget.editing!);
-      nav.pop();
-    }
+    final e = widget.editing!;
+    Navigator.of(context).pop();
+    toast(context, tr('deleted_msg', [e.title]), onUndo: () => app.restoreExpense(e));
+    await app.deleteExpense(e);
   }
 
   Future<void> _pickDate() async {
@@ -224,7 +244,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                   RoundIcon(Icons.close_rounded, onTap: () => Navigator.of(context).pop()),
                   const SizedBox(width: 12),
                   Expanded(child: Text(editing ? tr('edit_expense') : _credit ? tr('add_credit') : tr('add_transaction'), style: context.tt.headlineSmall)),
-                  if (editing) RoundIcon(Icons.delete_outline_rounded, onTap: _delete),
+                  if (editing) RoundIcon(Icons.delete_outline_rounded, onTap: _delete) else RoundIcon(Icons.content_paste_rounded, onTap: _paste),
                 ]),
               ),
               Expanded(
@@ -232,6 +252,23 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
                   physics: const BouncingScrollPhysics(),
                   children: [
+                    if (widget.firstTime)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: KCard(
+                          padding: const EdgeInsets.all(14),
+                          child: Row(children: [
+                            const Sticker('receipt', size: 52),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Text(tr('first_log_title'), style: context.tt.titleMedium!.copyWith(fontWeight: FontWeight.w700)),
+                                Text(tr('first_log_body', [PointsRules.logExpense + PointsRules.firstLogOfDay]), style: context.tt.bodySmall),
+                              ]),
+                            ),
+                          ]),
+                        ),
+                      ),
                     Entrance(
                       child: Pressable(
                         onTap: _listen,
@@ -420,6 +457,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                               if (_split == SplitType.custom) _SharesStatus(_value - group.memberIds.fold(0.0, (a, id) => a + (double.tryParse(_custom[id] ?? '') ?? 0))),
                             ],
                           ]),
+                        ),
+                      ),
+                    ],
+                    if (!editing && !_credit) ...[
+                      const SizedBox(height: 16),
+                      Entrance(
+                        index: 6,
+                        child: KCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          child: NavRow(icon: Icons.event_repeat_rounded, color: const Color(0xFF26A69A), title: tr('repeat_monthly'), subtitle: tr('repeat_monthly_sub', [_day.day]), trailing: KSwitch(value: _repeat, onChanged: (on) => setState(() => _repeat = on))),
                         ),
                       ),
                     ],

@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_state.dart';
 import '../core/catalogs.dart';
@@ -23,11 +24,11 @@ class GroupsTab extends StatelessWidget {
     final app = AppScope.of(context);
     return KPage(
       title: tr('tab_groups'),
-      actions: [RoundIcon(Icons.add_rounded, filled: true, onTap: () => _create(context))],
+      actions: [RoundIcon(Icons.add_rounded, filled: true, onTap: () => editGroup(context))],
       children: [
         if (app.groups.isEmpty) ...[
           EmptyState(art: 'friends', title: tr('no_groups_title'), body: tr('no_groups_body')),
-          KButton(tr('new_group'), icon: Icons.add_rounded, onTap: () => _create(context)),
+          KButton(tr('new_group'), icon: Icons.add_rounded, onTap: () => editGroup(context)),
         ],
         for (final g in app.groups)
           Padding(
@@ -37,9 +38,6 @@ class GroupsTab extends StatelessWidget {
               return Pressable(
                 scale: 0.98,
                 onTap: () => open(context, GroupDetailScreen(g)),
-                onLongPress: () async {
-                  if (await confirm(context, title: tr('delete_group_q', [g.name]), body: tr('delete_group_body'), action: tr('delete'))) await app.deleteGroup(g);
-                },
                 child: KCard(
                   child: Row(children: [
                     groupSticker(g.icon, size: 54),
@@ -47,7 +45,7 @@ class GroupsTab extends StatelessWidget {
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(g.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge),
-                        Text(tr('members_hold_delete', [g.memberIds.length]), style: context.tt.bodySmall),
+                        Text(tr('n_members', [g.memberIds.length]), style: context.tt.bodySmall),
                         const SizedBox(height: 8),
                         _Faces([for (final id in g.memberIds) app.member(id)].whereType<Member>().toList()),
                       ]),
@@ -66,18 +64,23 @@ class GroupsTab extends StatelessWidget {
       ],
     );
   }
+}
 
-  Future<void> _create(BuildContext context) async {
-    final app = AppScope.read(context);
-    final name = TextEditingController();
-    var icon = groupIcons.first;
-    final picked = app.members.map((m) => m.id).toSet();
-    await showKSheet<void>(
-      context,
-      title: tr('new_group'),
-      builder: (sheet) => StatefulBuilder(
-        builder: (_, setState) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          KField(controller: name, label: tr('group_name'), hint: tr('group_name_hint'), onChanged: (_) => setState(() {})),
+/// The sheet that creates a group, or edits [existing].
+Future<void> editGroup(BuildContext context, [Group? existing]) async {
+  final app = AppScope.read(context);
+  final name = TextEditingController(text: existing?.name ?? '');
+  var icon = existing?.icon ?? groupIcons.first;
+  final picked = (existing?.memberIds ?? app.members.map((m) => m.id)).toSet();
+  await showKSheet<void>(
+    context,
+    title: existing == null ? tr('new_group') : tr('edit_group'),
+    pinned: true,
+    builder: (sheet) => StatefulBuilder(
+      builder: (_, setState) {
+        final taken = app.groups.any((g) => g != existing && g.name.toLowerCase() == name.text.trim().toLowerCase());
+        return KSheetForm(body: [
+          KField(controller: name, label: tr('group_name'), hint: tr('group_name_hint'), error: taken ? tr('name_taken') : null, onChanged: (_) => setState(() {})),
           const SizedBox(height: 16),
           Wrap(spacing: 10, runSpacing: 10, children: [
             for (final key in groupIcons)
@@ -98,17 +101,23 @@ class GroupsTab extends StatelessWidget {
           Wrap(spacing: 8, runSpacing: 8, children: [
             for (final m in app.members) MemberChip(m, selected: picked.contains(m.id), onTap: () => setState(() => picked.contains(m.id) ? picked.remove(m.id) : picked.add(m.id))),
           ]),
-          const SizedBox(height: 18),
-          KButton(tr('create_group'), onTap: name.text.trim().isNotEmpty && picked.length >= 2
+          if (existing != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(tr('edit_group_hint'), style: sheet.tt.bodySmall)),
+        ], actions: [
+          KButton(existing == null ? tr('create_group') : tr('save_changes'), onTap: name.text.trim().isNotEmpty && !taken && picked.length >= 2
               ? () async {
                   Navigator.of(sheet).pop();
-                  await app.saveGroup(Group(name: name.text, icon: icon, memberIds: picked.toList()));
+                  final group = existing ?? Group(name: '', memberIds: []);
+                  group
+                    ..name = name.text
+                    ..icon = icon
+                    ..memberIds = picked.toList();
+                  await app.saveGroup(group);
                 }
               : null),
-        ]),
-      ),
-    );
-  }
+        ]);
+      },
+    ),
+  );
 }
 
 class _Faces extends StatelessWidget {
@@ -140,7 +149,17 @@ class GroupDetailScreen extends StatelessWidget {
     final top = balances.fold(0.0, (m, b) => max(m, b.net.abs()));
     return KPage(
       title: group.name,
-      actions: [RoundIcon(Icons.ios_share_rounded, onTap: () => Share.share(app.groupSummary(group)))],
+      actions: [
+        RoundIcon(Icons.edit_rounded, onTap: () => editGroup(context, group)),
+        RoundIcon(Icons.ios_share_rounded, onTap: () => Share.share(app.groupSummary(group))),
+        RoundIcon(Icons.delete_outline_rounded, onTap: () async {
+          final nav = Navigator.of(context);
+          if (await confirm(context, title: tr('delete_group_q', [group.name]), body: tr('delete_group_body'), action: tr('delete'))) {
+            nav.pop();
+            await app.deleteGroup(group);
+          }
+        }),
+      ],
       bottom: KButton(tr('add_shared_expense'), icon: Icons.add_rounded, onTap: () => open(context, AddExpenseScreen(groupId: group.id), rise: true)),
       children: [
         KCard(
@@ -184,28 +203,76 @@ class GroupDetailScreen extends StatelessWidget {
           for (final t in plan)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: KCard(
-                padding: const EdgeInsets.all(14),
-                child: Row(children: [
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(children: [
-                        Flexible(child: Text(t.fromName, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall)),
-                        Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.arrow_forward_rounded, size: 16, color: context.cs.onSurfaceVariant)),
-                        Flexible(child: Text(t.toName, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall)),
-                      ]),
-                      Text(Fmt.money(t.amount), style: context.tt.titleLarge),
-                    ]),
-                  ),
-                  KButton(tr('mark_paid'), expand: false, tonal: true, icon: Icons.check_rounded, onTap: () => app.settle(group, t)),
-                ]),
-              ),
+              child: _SettleCard(group, t),
             ),
         ],
         SectionTitle(tr('shared_expenses')),
         if (shared.isEmpty) EmptyState(art: 'receipt', title: tr('nothing_shared_title'), body: tr('nothing_shared_body')),
         if (shared.isNotEmpty) KCard(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), child: Column(children: [for (final e in shared) ExpenseTile(e)])),
       ],
+    );
+  }
+}
+
+/// One payment of the settle-up plan, with the ways to get it done.
+class _SettleCard extends StatelessWidget {
+  const _SettleCard(this.group, this.transfer);
+  final Group group;
+  final Transfer transfer;
+
+  Future<bool> _launch(Uri uri) async {
+    try {
+      return await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final app = AppScope.of(context);
+    final t = transfer;
+    final me = app.settings.activeMemberId;
+    final payeeUpi = app.member(t.toId)?.upiId ?? '';
+    final canPay = t.fromId == me && app.settings.currencyCode == 'INR';
+    return KCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(
+            child: Row(children: [
+              Flexible(child: Text(t.fromName, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall)),
+              Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.arrow_forward_rounded, size: 16, color: context.cs.onSurfaceVariant)),
+              Flexible(child: Text(t.toName, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall)),
+            ]),
+          ),
+          const SizedBox(width: 10),
+          Text(Fmt.money(t.amount), style: context.tt.titleLarge),
+        ]),
+        if (canPay && payeeUpi.isEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Text(tr('upi_missing', [t.toName]), style: context.tt.bodySmall)),
+        const SizedBox(height: 12),
+        Row(children: [
+          if (canPay && payeeUpi.isNotEmpty) ...[
+            Expanded(
+              child: KButton(tr('pay_upi_now'), icon: Icons.qr_code_rounded, onTap: () async {
+                final paid = await _launch(Uri(scheme: 'upi', host: 'pay', queryParameters: {'pa': payeeUpi, 'pn': t.toName, 'am': t.amount.toStringAsFixed(2), 'cu': 'INR', 'tn': group.name}));
+                if (!paid && context.mounted) toast(context, tr('upi_no_app'));
+              }),
+            ),
+            const SizedBox(width: 10),
+          ],
+          if (t.toId == me) ...[
+            Expanded(
+              child: KButton(tr('remind'), tonal: true, icon: Icons.send_rounded, onTap: () async {
+                final message = tr('remind_message', [t.fromName, Fmt.money(t.amount), group.name]);
+                if (!await _launch(Uri.https('wa.me', '/', {'text': message}))) await Share.share(message);
+              }),
+            ),
+            const SizedBox(width: 10),
+          ],
+          Expanded(child: KButton(tr('mark_paid'), tonal: true, icon: Icons.check_rounded, onTap: () => app.settle(group, t))),
+        ]),
+      ]),
     );
   }
 }

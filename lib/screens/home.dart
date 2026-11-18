@@ -17,7 +17,6 @@ import '../ui/widgets.dart';
 import 'add_expense.dart';
 import 'budgets.dart';
 import 'common.dart';
-import 'export.dart';
 import 'insights.dart';
 import 'reminders.dart';
 import 'rewards.dart';
@@ -42,17 +41,10 @@ class _HomeTabState extends State<HomeTab> {
     final month = app.inMonth(today);
     final spent = app.spentIn(today);
     final previous = app.spentIn(Days.addMonths(today, -1));
-    final week = [for (var i = 6; i >= 0; i--) DateTime(today.year, today.month, today.day - i)];
-    final weekTotals = [for (final d in week) max(AppState.net(app.onDay(d)), 0.0)];
     final categories = app.byCategory(month);
-    final payers = app.byPayer(month);
     final recent = [...app.expenses]..sort((a, b) => b.day != a.day ? b.day.compareTo(a.day) : b.createdAt.compareTo(a.createdAt));
     final bills = app.upcomingReminders.take(3).toList();
     final festival = app.festival ?? app.upcomingFestival;
-    var running = 0.0;
-    final cumulative = [
-      for (var d = 1; d <= today.day; d++) running = max(running + AppState.net(app.onDay(DateTime(today.year, today.month, d))), 0.0),
-    ];
 
     final sections = <Widget>[
       _Header(action: _hello),
@@ -69,6 +61,8 @@ class _HomeTabState extends State<HomeTab> {
             value: previous <= 0 ? tr('no_data_yet') : '${spent <= previous ? '-' : '+'}${((spent - previous).abs() / previous * 100).round()}%',
             onTap: () => open(context, const InsightsScreen()),
           ),
+          if (s.monthlyIncome > 0)
+            _Stat(icon: Icons.savings_rounded, color: good, label: tr('saved_this_month'), value: spent > s.monthlyIncome ? '-${Fmt.money(spent - s.monthlyIncome)}' : Fmt.money(s.monthlyIncome - spent), onTap: () => open(context, const BudgetsScreen())),
           _Stat(
             icon: Icons.handshake_rounded,
             color: const Color(0xFF7C4DFF),
@@ -87,72 +81,9 @@ class _HomeTabState extends State<HomeTab> {
       ),
       _StreakCard(),
       KCard(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(tr('month_so_far'), style: context.tt.titleLarge),
-          const SizedBox(height: 2),
-          Text('${tr('on_pace_for')} · ${Fmt.money(app.projectedMonth)}', style: context.tt.bodySmall),
-          const SizedBox(height: 14),
-          AreaChart(values: cumulative, paceTotal: s.monthlyBudget, totalSlots: Days.inMonth(today), labelFor: (i) => Fmt.date(DateTime(today.year, today.month, i + 1))),
-          if (app.forecast != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: context.cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(16)),
-              child: Row(children: [Icon(Icons.auto_graph_rounded, size: 22, color: context.cs.primary), const SizedBox(width: 10), Expanded(child: Text(app.forecast!, style: context.tt.bodyMedium))]),
-            ),
-          ],
-        ]),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: NavRow(icon: Icons.insights_rounded, color: const Color(0xFFEC407A), title: tr('insights'), subtitle: categories.isEmpty ? tr('insights_sub') : tr('insight_top_category', [categories.first.key.name, (categories.first.value / categories.fold(0.0, (a, b) => a + b.value) * 100).round()]), onTap: () => open(context, const InsightsScreen())),
       ),
-      KCard(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(tr('last_7_days'), style: context.tt.titleLarge),
-                Text('${Fmt.money(weekTotals.fold(0.0, (a, b) => a + b))} · ${tr('avg_per_day', [Fmt.money(weekTotals.fold(0.0, (a, b) => a + b) / 7)])}', style: context.tt.bodySmall),
-              ]),
-            ),
-            RoundIcon(Icons.ios_share_rounded, onTap: () => shareWeeklyCard(context)),
-          ]),
-          const SizedBox(height: 12),
-          BarChart(values: weekTotals, labels: [for (final d in week) Fmt.date(d, 'E').substring(0, 1)], highlight: 6),
-        ]),
-      ),
-      if (categories.isNotEmpty)
-        KCard(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(child: Text(tr('by_category'), style: context.tt.titleLarge)),
-              if (app.isUnlocked(RewardCatalog.insights)) Pressable(onTap: () => open(context, const InsightsScreen()), child: Pill(tr('insights'))),
-            ]),
-            const SizedBox(height: 10),
-            Center(child: DonutChart(slices: [for (final c in categories) Slice(c.key.name, c.value, c.key.tint)], centerLabel: Fmt.month(today))),
-            const SizedBox(height: 8),
-            for (final c in categories.take(5)) LegendRow(Slice(c.key.name, c.value, c.key.tint), categories.fold(0.0, (a, b) => a + b.value)),
-          ]),
-        ),
-      if (payers.length > 1)
-        KCard(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(tr('who_paid'), style: context.tt.titleLarge),
-            const SizedBox(height: 10),
-            for (final p in payers)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(children: [
-                  AvatarView(p.key.avatar, size: 36),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(children: [Expanded(child: Text(p.key.name, style: context.tt.titleSmall)), Text(Fmt.money(p.value), style: context.tt.titleSmall)]),
-                      const SizedBox(height: 6),
-                      KProgress(p.value / payers.fold(0.0, (a, b) => a + b.value), height: 7),
-                    ]),
-                  ),
-                ]),
-              ),
-          ]),
-        ),
       KCard(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
@@ -196,7 +127,7 @@ class _HomeTabState extends State<HomeTab> {
         SafeArea(
           bottom: false,
           child: ListView.separated(
-            padding: EdgeInsets.fromLTRB(20, 10, 20, navBarHeight + 24 + MediaQuery.viewPaddingOf(context).bottom),
+            padding: EdgeInsets.fromLTRB(20, 10, 20, 24 + MediaQuery.paddingOf(context).bottom),
             physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
             itemCount: sections.length,
             separatorBuilder: (_, __) => const SizedBox(height: 16),

@@ -194,7 +194,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
               padding: const EdgeInsets.all(14),
               onTap: () => act(item),
               child: Row(children: [
-                Sticker(item.id == RewardCatalog.insights ? 'forecast' : 'receipt', size: 54),
+                const Sticker('forecast', size: 54),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

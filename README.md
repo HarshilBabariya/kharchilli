@@ -22,6 +22,10 @@ Steps for Google Play (upload key and four repo secrets) and the App Store (Appl
 ## Version history
 | Version | Date | Notes |
 |---|---|---|
+| 1.3.0 | 2026-11-19 | Edit group, duplicate-name checks, expense filters, swipe actions, fingerprint / face unlock, Settings screen |
+| 1.2.1 | 2026-11-19 | Fixes: sheets close on Save without duplicate records, last item no longer hidden behind the tab bar, Save buttons pinned on long sheets |
+| 1.2.0 | 2026-11-19 | First-expense step, shorter Home, free export and basic Insights, notification tone, income and savings, repeat monthly, paste a payment message, Pay by UPI / Remind, undo on delete, app shortcuts, privacy policy |
+| 1.1.1 | 2026-11-19 | New opening animation: coins drop into the house, replacing the orbiting-dots one |
 | 1.1.0 | 2026-11-19 | Renamed to Gharcha with a house-and-rupee icon; illustrated badges and icons, redrawn avatars, redesigned navigation, forms, themes and celebrations; fixes from device testing of 1.0.3 |
 | 1.0.3 | 2026-11-18 | Build fix: PDF export written in-app, `pdf` package removed |
 | 1.0.2 | 2026-11-18 | Build fix: Gradle signing block |

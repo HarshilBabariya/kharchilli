@@ -11,6 +11,7 @@ import '../ui/charts.dart';
 import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import 'export.dart';
 import 'rewards.dart';
 
 enum _Period { week, month, year }
@@ -49,12 +50,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
-    if (!app.isUnlocked(RewardCatalog.insights)) {
-      return KPage(title: tr('insights'), children: [
-        EmptyState(art: 'lock', title: tr('insights_locked_title'), body: tr('insights_locked_body')),
-        KButton(tr('shop'), icon: Icons.storefront_rounded, onTap: () => open(context, const RewardsScreen(initialTab: 2))),
-      ]);
-    }
+    final advanced = app.isUnlocked(RewardCatalog.insights);
     final (from, to) = _range(_back);
     final (prevFrom, prevTo) = _range(_back + 1);
     final list = app.between(from, to);
@@ -86,7 +82,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
     return KPage(
       title: tr('insights'),
+      actions: [RoundIcon(Icons.ios_share_rounded, onTap: () => shareWeeklyCard(context))],
       children: [
+        if (advanced) ...[
         Segmented<_Period>(
           options: {for (final p in _Period.values) p: tr('period_${p.name}')},
           value: _period,
@@ -107,6 +105,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
           Opacity(opacity: _back == 0 ? 0.3 : 1, child: RoundIcon(Icons.chevron_right_rounded, onTap: () => setState(() => _back = max(_back - 1, 0)))),
         ]),
         const SizedBox(height: 14),
+        ],
         KCard(
           key: ValueKey('hero$_period$_back'),
           gradient: context.heroGradient,
@@ -149,12 +148,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 LegendRow(
                   Slice(c.key.name, c.value, c.key.tint),
                   categoryTotal,
-                  trailing: (previousByCategory[c.key.key] ?? 0) <= 0 ? null : '${c.value >= previousByCategory[c.key.key]! ? '▲' : '▼'}${((c.value - previousByCategory[c.key.key]!).abs() / previousByCategory[c.key.key]! * 100).round()}%',
+                  trailing: !advanced || (previousByCategory[c.key.key] ?? 0) <= 0 ? null : '${c.value >= previousByCategory[c.key.key]! ? '▲' : '▼'}${((c.value - previousByCategory[c.key.key]!).abs() / previousByCategory[c.key.key]! * 100).round()}%',
                 ),
             ]),
           ),
         ],
-        if (total > 0) ...[
+        if (advanced && total > 0) ...[
           SectionTitle(tr('payment_modes')),
           KCard(
             child: Column(children: [
@@ -164,11 +163,30 @@ class _InsightsScreenState extends State<InsightsScreen> {
             ]),
           ),
         ],
-        if (payers.length > 1) ...[
+        if (advanced && payers.length > 1) ...[
           SectionTitle(tr('paid_by')),
           KCard(
             child: Column(children: [
               for (final p in payers) LegendRow(Slice(p.key.name, p.value, context.cs.primary), payers.fold(0.0, (a, b) => a + b.value)),
+            ]),
+          ),
+        ],
+        if (!advanced) ...[
+          const SizedBox(height: 16),
+          KCard(
+            child: Column(children: [
+              Row(children: [
+                const Sticker('lock', size: 54),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(tr('insights_locked_title'), style: context.tt.titleMedium!.copyWith(fontWeight: FontWeight.w700)),
+                    Text(tr('insights_locked_body'), style: context.tt.bodySmall),
+                  ]),
+                ),
+              ]),
+              const SizedBox(height: 14),
+              KButton(tr('shop'), tonal: true, icon: Icons.storefront_rounded, onTap: () => open(context, const RewardsScreen(initialTab: 2))),
             ]),
           ),
         ],

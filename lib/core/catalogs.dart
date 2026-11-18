@@ -256,11 +256,9 @@ class RewardCatalog {
     RewardItem('acc_santa_hat', _a, 'rw_santa_hat', 0, FestivalPack.christmas),
     RewardItem('acc_party_hat', _a, 'rw_party_hat', 0, FestivalPack.newYear),
     RewardItem('feature_insights', _f, 'rw_insights', 300),
-    RewardItem('feature_export_csv', _f, 'rw_export', 250),
   ];
 
   static const insights = 'feature_insights';
-  static const export = 'feature_export_csv';
 
   static Set<String> defaults() => items.where((i) => i.isFree && i.pack == null).map((i) => i.id).toSet();
   static List<RewardItem> ofKind(RewardKind kind) => items.where((i) => i.kind == kind).toList();

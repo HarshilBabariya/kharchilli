@@ -52,7 +52,7 @@ class Notifier {
           android: AndroidInitializationSettings('ic_stat_gharcha'),
           iOS: DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false),
         ),
-        onDidReceiveNotificationResponse: (response) => _open(response.payload),
+        onDidReceiveNotificationResponse: (response) => open(response.payload),
       );
       final launch = await _plugin.getNotificationAppLaunchDetails();
       if (launch?.didNotificationLaunchApp ?? false) pendingRoute = launch!.notificationResponse?.payload;
@@ -62,7 +62,8 @@ class Notifier {
     }
   }
 
-  static void _open(String? route) {
+  /// Asks the shell to show [route]; used by notification taps and home-screen shortcuts.
+  static void open(String? route) {
     if (route == null || route.isEmpty) return;
     pendingRoute = route;
     routeTaps.value++;

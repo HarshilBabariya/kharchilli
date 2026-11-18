@@ -52,14 +52,18 @@ class FamilyScreen extends StatelessWidget {
   Future<void> _edit(BuildContext context, Member? existing) async {
     final app = AppScope.read(context);
     final name = TextEditingController(text: existing?.name ?? '');
+    final upi = TextEditingController(text: existing?.upiId ?? '');
     var relation = existing?.relation ?? 'partner';
     var gender = existing?.avatar.gender ?? Gender.female;
     await showKSheet<void>(
       context,
       title: existing == null ? tr('add_member') : tr('edit_member'),
+      pinned: true,
       builder: (sheet) => StatefulBuilder(
-        builder: (_, setState) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          KField(controller: name, label: tr('name'), onChanged: (_) => setState(() {})),
+        builder: (_, setState) {
+          final taken = app.members.any((m) => m != existing && m.name.toLowerCase() == name.text.trim().toLowerCase());
+          return KSheetForm(body: [
+          KField(controller: name, label: tr('name'), error: taken ? tr('name_taken') : null, onChanged: (_) => setState(() {})),
           const SizedBox(height: 16),
           if (existing == null || !existing.isOwner) ...[
             Text(tr('relation'), style: sheet.tt.labelMedium),
@@ -70,9 +74,13 @@ class FamilyScreen extends StatelessWidget {
           Text(tr('gender'), style: sheet.tt.labelMedium),
           const SizedBox(height: 8),
           Segmented<Gender>(options: {for (final g in Gender.values) g: tr('gender_${g.name}')}, value: gender, onChanged: (g) => setState(() => gender = g)),
+          if (app.settings.currencyCode == 'INR') ...[
+            const SizedBox(height: 16),
+            KField(controller: upi, label: tr('upi_id'), hint: tr('upi_id_hint'), icon: Icons.qr_code_rounded),
+          ],
           if (existing == null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(tr('member_random_look'), style: sheet.tt.bodySmall)),
-          const SizedBox(height: 18),
-          KButton(tr('save'), onTap: name.text.trim().isEmpty
+          ], actions: [
+          KButton(tr('save'), onTap: name.text.trim().isEmpty || taken
               ? null
               : () async {
                   final nav = Navigator.of(sheet);
@@ -80,6 +88,7 @@ class FamilyScreen extends StatelessWidget {
                     existing
                       ..name = name.text.trim()
                       ..relation = existing.isOwner ? existing.relation : relation
+                      ..upiId = upi.text.trim()
                       ..avatar = existing.avatar.copyWith(gender: gender);
                     nav.pop();
                     await app.updateMember(existing);
@@ -93,7 +102,7 @@ class FamilyScreen extends StatelessWidget {
                     resplit = choice == 0;
                   }
                   nav.pop();
-                  await app.addMember(name: name.text, relation: relation, gender: gender, joinGroups: join, resplit: resplit);
+                  await app.addMember(name: name.text, relation: relation, gender: gender, upiId: upi.text, joinGroups: join, resplit: resplit);
                 }),
           if (existing != null && !existing.isOwner) ...[
             const SizedBox(height: 8),
@@ -105,7 +114,8 @@ class FamilyScreen extends StatelessWidget {
               await app.removeMember(existing, resplit: choice == 0);
             }),
           ],
-        ]),
+        ]);
+        },
       ),
     );
   }

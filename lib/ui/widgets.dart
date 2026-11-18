@@ -422,8 +422,8 @@ class KPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pushed = !(ModalRoute.of(context)?.isFirst ?? true);
-    final inset = MediaQuery.viewPaddingOf(context).bottom;
-    final clearance = bottom != null ? 100.0 : (pushed ? 24.0 : navBarHeight + 24);
+    final inset = MediaQuery.paddingOf(context).bottom;
+    final clearance = bottom != null ? 100.0 : 24.0;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Backdrop(
@@ -462,9 +462,6 @@ class KPage extends StatelessWidget {
     );
   }
 }
-
-/// Height of the tab bar, so tab pages can keep their last card clear of it.
-const navBarHeight = 78.0;
 
 class RoundIcon extends StatelessWidget {
   const RoundIcon(this.icon, {super.key, required this.onTap, this.filled = false});
@@ -549,7 +546,7 @@ class KSwitch extends StatelessWidget {
 
 /// A text field with its label above it.
 class KField extends StatelessWidget {
-  const KField({super.key, required this.controller, required this.label, this.hint, this.number = false, this.onChanged, this.onTap, this.autofocus = false, this.icon, this.lines = 1});
+  const KField({super.key, required this.controller, required this.label, this.hint, this.number = false, this.onChanged, this.onTap, this.autofocus = false, this.icon, this.lines = 1, this.error});
   final TextEditingController controller;
   final String label;
   final String? hint;
@@ -559,6 +556,9 @@ class KField extends StatelessWidget {
   final bool autofocus;
   final IconData? icon;
   final int lines;
+
+  /// Shown in red under the field when not null.
+  final String? error;
 
   @override
   Widget build(BuildContext context) {
@@ -576,12 +576,15 @@ class KField extends StatelessWidget {
         textCapitalization: number ? TextCapitalization.none : TextCapitalization.sentences,
         decoration: InputDecoration(hintText: hint, prefixIcon: icon == null ? null : Icon(icon)),
       ),
+      if (error != null) Padding(padding: const EdgeInsets.only(left: 4, top: 6), child: Text(error!, style: context.tt.bodySmall!.copyWith(color: context.cs.error, fontWeight: FontWeight.w600))),
     ]);
   }
 }
 
 /// A bottom sheet that closes with its X button or a tap outside, never by a drag on its content.
-Future<T?> showKSheet<T>(BuildContext context, {required String title, required WidgetBuilder builder}) {
+/// A bottom sheet with a title and close button. Its content scrolls when it is taller than the screen; a [pinned]
+/// sheet instead lays itself out with [KSheetForm], so its action buttons stay in view.
+Future<T?> showKSheet<T>(BuildContext context, {required String title, required WidgetBuilder builder, bool pinned = false}) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -595,10 +598,26 @@ Future<T?> showKSheet<T>(BuildContext context, {required String title, required 
           RoundIcon(Icons.close_rounded, onTap: () => Navigator.of(sheet).pop()),
         ]),
         const SizedBox(height: 16),
-        Flexible(child: SingleChildScrollView(child: builder(sheet))),
+        Flexible(child: pinned ? builder(sheet) : SingleChildScrollView(child: builder(sheet))),
       ]),
     ),
   );
+}
+
+/// The content of a pinned sheet: [body] scrolls, [actions] stay fixed under it.
+class KSheetForm extends StatelessWidget {
+  const KSheetForm({super.key, required this.body, required this.actions});
+  final List<Widget> body;
+  final List<Widget> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Flexible(child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: body))),
+      const SizedBox(height: 14),
+      ...actions,
+    ]);
+  }
 }
 
 Future<bool> confirm(BuildContext context, {required String title, required String body, required String action, bool danger = true}) async {
@@ -620,10 +639,15 @@ Future<bool> confirm(BuildContext context, {required String title, required Stri
   return ok ?? false;
 }
 
-void toast(BuildContext context, String message) {
+/// A short message at the bottom; with [onUndo] it stays longer and offers to take the action back.
+void toast(BuildContext context, String message, {VoidCallback? onUndo}) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message), duration: const Duration(seconds: 2)));
+    ..showSnackBar(SnackBar(
+      content: Text(message),
+      duration: Duration(seconds: onUndo == null ? 2 : 5),
+      action: onUndo == null ? null : SnackBarAction(label: tr('undo'), textColor: const Color(0xFFFFC531), onPressed: onUndo),
+    ));
 }
 
 /// The big number pad used wherever money is typed.

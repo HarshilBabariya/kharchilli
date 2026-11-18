@@ -118,8 +118,8 @@ class KhataScreen extends StatelessWidget {
           KButton(tr('delete_shop'), tonal: true, danger: true, onTap: () async {
             final nav = Navigator.of(sheet);
             if (await confirm(sheet, title: tr('delete_shop_q', [shop.name]), body: tr('delete_shop_body'), action: tr('delete'))) {
-              await app.deleteShop(shop);
               nav.pop();
+              await app.deleteShop(shop);
             }
           }),
         ]);
@@ -197,8 +197,9 @@ class ServicesScreen extends StatelessWidget {
     await showKSheet<void>(
       context,
       title: tr('add_service'),
+      pinned: true,
       builder: (sheet) => StatefulBuilder(
-        builder: (_, setState) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        builder: (_, setState) => KSheetForm(body: [
           SizedBox(
             height: 92,
             child: ListView(scrollDirection: Axis.horizontal, clipBehavior: Clip.none, children: [
@@ -235,11 +236,12 @@ class ServicesScreen extends StatelessWidget {
           KField(controller: rate, label: billing == ServiceBilling.perUnit ? tr('rate_per_unit') : tr('monthly_salary'), number: true, onChanged: (_) => setState(() {})),
           const SizedBox(height: 10),
           if (billing == ServiceBilling.perUnit) KField(controller: qty, label: tr('units_per_day'), number: true) else KField(controller: deduction, label: tr('leave_deduction'), number: true),
-          const SizedBox(height: 14),
+          ], actions: [
           KButton(tr('save'), onTap: name.text.trim().isEmpty || (double.tryParse(rate.text) ?? 0) <= 0
               ? null
               : () async {
                   final nav = Navigator.of(sheet);
+                  nav.pop();
                   await app.saveService(HomeService(
                     name: name.text,
                     icon: icon,
@@ -250,7 +252,6 @@ class ServicesScreen extends StatelessWidget {
                     category: category,
                     startDay: Days.key(Days.monthStart(Days.today())),
                   ));
-                  nav.pop();
                 }),
         ]),
       ),
@@ -297,8 +298,8 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
         RoundIcon(Icons.delete_outline_rounded, onTap: () async {
           final nav = Navigator.of(context);
           if (await confirm(context, title: tr('delete_service_q', [s.name]), body: tr('delete_service_body'), action: tr('delete'))) {
-            await app.deleteService(s);
             nav.pop();
+            await app.deleteService(s);
           }
         }),
       ],
@@ -434,12 +435,8 @@ class SavingsScreen extends StatelessWidget {
         for (final g in app.gold)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: Pressable(
-              onLongPress: () async {
-                if (await confirm(context, title: tr('delete'), body: g.label, action: tr('delete'))) await app.deleteGold(g);
-              },
-              child: KCard(
-                padding: const EdgeInsets.all(14),
+            child: KCard(
+                padding: const EdgeInsets.fromLTRB(14, 14, 6, 14),
                 child: Row(children: [
                   const Sticker('gold', size: 48),
                   const SizedBox(width: 12),
@@ -454,8 +451,14 @@ class SavingsScreen extends StatelessWidget {
                     ]),
                   ),
                   Text(Fmt.money(g.valueAt(rate)), style: context.tt.titleMedium!.copyWith(fontWeight: FontWeight.w700)),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline_rounded, color: context.cs.onSurfaceVariant),
+                    onPressed: () {
+                      toast(context, tr('deleted_msg', [g.label]), onUndo: () => app.saveGold(g));
+                      app.deleteGold(g);
+                    },
+                  ),
                 ]),
-              ),
             ),
           ),
         SectionTitle(tr('chits'), action: tr('add_chit'), onAction: () => _addChit(context)),
@@ -463,13 +466,22 @@ class SavingsScreen extends StatelessWidget {
         for (final c in app.chits)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: Pressable(
-              onLongPress: () async {
-                if (await confirm(context, title: tr('delete'), body: c.name, action: tr('delete'))) await app.deleteChit(c);
-              },
-              child: KCard(
+            child: KCard(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(c.name, style: context.tt.titleLarge),
+                  Row(children: [
+                    Expanded(child: Text(c.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge)),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(Icons.delete_outline_rounded, color: context.cs.onSurfaceVariant),
+                      onPressed: () {
+                        toast(context, tr('deleted_msg', [c.name]), onUndo: () {
+                          c.id = 0;
+                          app.saveChit(c);
+                        });
+                        app.deleteChit(c);
+                      },
+                    ),
+                  ]),
                   Text(tr('chit_line', [Fmt.money(c.monthlyAmount), c.paidMonths, c.months]), style: context.tt.bodySmall),
                   const SizedBox(height: 10),
                   KProgress(c.paidMonths / c.months, color: const Color(0xFFFFB300)),
@@ -497,7 +509,6 @@ class SavingsScreen extends StatelessWidget {
                       ),
                   ]),
                 ]),
-              ),
             ),
           ),
       ],
@@ -525,8 +536,8 @@ class SavingsScreen extends StatelessWidget {
               ? null
               : () async {
                   final nav = Navigator.of(sheet);
-                  await app.saveGold(GoldItem(label: label.text.trim().capitalised, grams: double.parse(grams.text), karat: karat, pricePaid: double.tryParse(paid.text) ?? 0.0));
                   nav.pop();
+                  await app.saveGold(GoldItem(label: label.text.trim().capitalised, grams: double.parse(grams.text), karat: karat, pricePaid: double.tryParse(paid.text) ?? 0.0));
                 }),
         ]),
       ),
@@ -553,8 +564,8 @@ class SavingsScreen extends StatelessWidget {
               ? null
               : () async {
                   final nav = Navigator.of(sheet);
-                  await app.saveChit(Chit(name: name.text.trim().capitalised, monthlyAmount: double.parse(monthly.text), months: int.parse(months.text), startMonth: Days.monthKey(Days.today())));
                   nav.pop();
+                  await app.saveChit(Chit(name: name.text.trim().capitalised, monthlyAmount: double.parse(monthly.text), months: int.parse(months.text), startMonth: Days.monthKey(Days.today())));
                 }),
         ]),
       ),

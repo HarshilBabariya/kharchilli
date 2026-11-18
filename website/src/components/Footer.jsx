@@ -10,6 +10,7 @@ export default function Footer() {
       </div>
       <p>One Flutter codebase for Android and iOS. Your data never leaves the phone.</p>
       <nav>
+        <a href={`${import.meta.env.BASE_URL}privacy.html`}>Privacy policy</a>
         <a href={REPO_URL} target="_blank" rel="noreferrer">Source on GitHub</a>
         <a href={`${REPO_URL}/issues`} target="_blank" rel="noreferrer">Report a bug</a>
         <a href={`${REPO_URL}/actions`} target="_blank" rel="noreferrer">Builds</a>

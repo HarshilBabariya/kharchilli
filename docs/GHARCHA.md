@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Gharcha is
 Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/Kharchili`; the repo kept the app's previous working name). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.1.0+5`.
+- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.3.0+9`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Gharcha → Me → Your data → Import CSV.
 - Names: 1.0.x shipped as Kharchili (`app.kharchili`); 1.1.0 renamed it to Gharcha with a new id, so it installs as a separate app from a 1.0.x test build (move data with CSV export / import). Name check (Nov 2026): "Chillar" and "GharKharch" are taken by other expense apps; no app named Gharcha turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -16,9 +16,9 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Every handover updates this document and the README in the same pass.
 - Fixes are verified in a fresh review pass before a zip is handed over.
 
-## 3. Features in 1.1.0
+## 3. Features in 1.3.0
 ### Look, feel and flows (new in the rewrite)
-- Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment draws the house and rupee and brings in the Gharcha wordmark.
+- Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment plays on the brand red: the house rises, three gold coins drop into it (it bounces with each), the rupee writes itself, the saffron dot pops and the Gharcha wordmark and tagline slide in. It is the app's own story (money coming home); the earlier letter-with-orbiting-dots opening was too close to the reference app and is gone.
 - Illustrated art instead of emoji: 33 badge medals (bronze, silver or gold rim by difficulty, one to three rank stars, an emblem per badge) and 24 sticker icons (groups, home services, empty screens, shop, gold, forecast). They are drawn as SVG and rendered to PNG by `tool/make_art.py` into `assets/art/`; the app shows them with `Medal` and `Sticker` (`lib/ui/glyphs.dart`). Locked medals are greyed behind a padlock with a progress ring. Points are a gold coin (`Coin`); categories and rows use glossy gradient tiles (`IconTile`).
 - Docked full-width tab bar with four tabs and a raised glowing centre **+**; tab pages have no back button, pushed pages do.
 - Every tappable surface shrinks under the finger and springs back, with haptics; screens build in with staggered slide-and-fade; numbers count up; rings, bars, area charts and donuts animate in and are tappable.
@@ -26,6 +26,28 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Add transaction: voice banner with a pulsing mic, Expense / Credit segments, a large amount with the currency symbol at the same weight and a money keypad that stays open, Yesterday / Today / Tomorrow chips, Paid by chips, four payment-mode tiles, group split (equal or custom) and a note. Saving floods the screen with the accent colour and a tick springs in, then a points toast with the coin floats up on Home.
 - Celebrations for level-ups, badges, streak milestones and festivals are a card over looping confetti (or the festival's own particle show): the badge's medal, the flame or the dressed avatar on rotating rays, with the household sound and haptics. They wait until no sheet or pushed page is on top.
 - Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 16 themes.
+
+### Added in 1.3.0
+- **Edit a group:** the pencil on a group's page reopens the group sheet to rename it, change its sticker or its members. Saving re-splits the group's equal splits; custom splits are left alone.
+- **No duplicate names:** the category, group and member sheets show "This name is already in use" under the field and keep Save disabled (`KField.error`).
+- **Expense filters:** the filter button on Expenses opens date (all time, last 7 days, this month, last month), paid-by and payment-mode filters; an active-filter line shows the filtered net total with Clear. Categories moved off this header (they are in Me and in the category picker).
+- **Swipe an expense row** (Expenses tab): left deletes with a 5-second Undo, right logs the same expense again for today.
+- **Fingerprint or face unlock** (Settings → Security, for a member with a PIN): the phone's biometric check opens that member's profile from the PIN screen; the PIN always still works. Uses `local_auth` 2.3.0 through `core/biometrics.dart`. `tool/patch_platforms.py` switches `MainActivity` to `FlutterFragmentActivity`, gives the launch and normal themes an AppCompat parent, and adds the `USE_BIOMETRIC` permission and the iOS Face ID reason.
+- **Me is short:** profile card, Household, Views, Household money, one Settings row and Log out. Appearance, notifications, security, data and help live on the new Settings screen (`SettingsScreen` in `screens/me.dart`).
+
+### Added in 1.2.0
+- **First expense in setup:** finishing onboarding opens Add transaction with a welcome card, so nobody lands on an empty Home. The budget in setup stays optional.
+- **Shorter Home:** header, festival banner, spend card, stat tiles, streak, an Insights row, upcoming bills and recent transactions. The month curve, 7-day bars, category donut and who-paid moved to Insights; the weekly share card is the share button on Insights.
+- **Insights are free for the current month** (hero stats, trend, categories). The shop unlock (300 points) adds Week / Year, paging back, change vs the previous period, payment modes and who paid.
+- **Export is free:** CSV and PDF no longer need a shop unlock (`feature_export_csv` is gone from the catalog).
+- **Notification tone** (Me → Notifications): Spicy (the roast pools), Mild (one plain line per kind, `plain_*` strings) or Quiet (plain wording and no comeback, weekly or streak-in-danger nudges). `AppState._copy` picks the wording.
+- **Monthly income** (Budgets): with income set, Budgets shows spent-against-income and "Saved so far", and Home gets a "Saved this month" tile.
+- **Repeat every month** switch on Add transaction: saving also creates a monthly auto-logging bill reminder for that day of the month.
+- **Paste a payment message:** the paste button on Add transaction reads the clipboard and fills amount, payee, payment mode, category and credit/debit (`MessageParser` in `core/parsers.dart`; falls back to the voice parser).
+- **Settle up:** each settle-up card has Mark paid, plus **Pay by UPI** when you are the payer (opens the phone's UPI app through a `upi://pay` link using the payee's UPI ID, a new optional field on a member; INR households only) and **Remind** when you are owed (WhatsApp link, falling back to the share sheet).
+- **Visible delete with undo:** groups have a delete button on their page (with confirmation, because their splits and settlements go too); gold items, chits and expenses delete from a visible button with a 5-second Undo bar. No delete is hidden behind a long-press any more.
+- **App shortcuts:** long-press the launcher icon for Add transaction and Voice entry (`quick_actions`).
+- **Privacy:** an in-app Privacy sheet (Me → More) and `website/public/privacy.html`, linked from the site footer, for the store listings.
 
 ### Carried over from HomeQuest, same behaviour
 - Two-step setup (You, Money) with the step dots fixed in the header, after a welcome page with the language picker; you become the owner at Level 1 and get a daily 8:30 PM nudge.
@@ -59,6 +81,9 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 | Festival launcher icon and animated splash | Left out | Android activity-aliases and iOS alternate icons need native code per platform. |
 | Hanging festival decor and the three "Lights" styles | Replaced | The banner now carries a looping particle show; the decor art was Compose-only. |
 | Bills auto-log in the background | Changed | They are logged the next time the app opens, back-dated to the due day. |
+| Share-to-Gharcha from a bank or UPI app | Replaced by paste | Receiving a share needs native code in both platform folders, which are generated at build time and cannot be compiled on the authoring side. Copy the message and tap paste instead. |
+| Home-screen widget | Replaced by app shortcuts | A widget needs a native widget provider on Android and a WidgetKit extension on iOS. Long-press shortcuts cover quick add without native code; a real widget is a candidate once builds can be tested on a device loop. |
+| Backup and restore file | Not built | Deliberately left out of 1.2.0 at the owner's request; CSV export / import remains the only way to move data. |
 | Custom notification sounds on iOS | Android only | iOS needs the sounds bundled into the Xcode project. |
 | PDF in Hindi / Gujarati script | Limited | The PDF is a plain Courier table written by the app itself (no PDF package); non-Latin text prints as ? and amounts use the currency code instead of ₹. |
 
@@ -69,7 +94,7 @@ Flutter (stable 3.38.x in CI, Dart 3.8+), Material 3. No state-management packag
 ```
 lib/main.dart            boot, MaterialApp, opening animation
 lib/core/                l10n, format (money, dates), models, catalogs (points, levels, rewards, badges, festivals),
-                         store (sqflite + shared_preferences), app_state (all business rules), notifier (notifications, sounds), parsers (PIN, voice, CSV)
+                         store (sqflite + shared_preferences), app_state (all business rules), notifier (notifications, sounds), parsers (PIN, voice, payment messages, CSV), biometrics
 lib/ui/                  theme (16 palettes), widgets (design system), glyphs (stickers, medals, coin, theme preview), charts, avatar, effects (particles, flame, celebrations)
 lib/screens/             shell (tabs), home, expenses + calendar, add_expense, categories, groups, budgets, insights, reminders,
                          rewards, me, family, avatar_studio, household (khata, services, savings), onboarding, lock, export, common
@@ -86,7 +111,7 @@ website/                 Vite + React + anime.js site
 
 ### Rules worth knowing
 - Points, streak, level-ups, badge checks and budget alerts all run inside `AppState.saveExpense` → `_rewardLog` / `_checkBudgets` / `_afterChange`. Celebrations are queued on `AppState.celebrations` and shown by `CelebrationHost` in the shell.
-- `AppState.syncNotifications` cancels and reschedules everything; it runs at start and after any change. Schedules are inexact (no exact-alarm permission, which Play restricts).
+- `AppState.syncNotifications` cancels and reschedules everything; it runs at start and after any change. After a change it is not awaited and it never throws (one pass at a time, a second call queues one more pass), so a notification failure can no longer stop a save from finishing. Save and delete handlers close their sheet first and write afterwards. Schedules are inexact (no exact-alarm permission, which Play restricts).
 - `_dailyChecks` at start: last month's under-budget award, auto-logged bills, the festival celebration.
 - Strings: `tr('key', [args])`, `trPick('array')`, `trPlural('key', n)`. `tool/check_strings.py` fails CI when a key is missing in any language or no longer used (`--prune` removes dead keys).
 - Name clashes to avoid: do not import `package:flutter/foundation.dart` in a file that imports `core/models.dart` (both define `Category`).
@@ -121,6 +146,10 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.3.0 | 2026-11-19 | Edit group; duplicate-name checks; expense filters; swipe to delete / duplicate; fingerprint or face unlock (`local_auth`, native patches for FragmentActivity and AppCompat theme); Me split into a short page plus a Settings screen. |
+| 1.2.1 | 2026-11-19 | Fixes from device testing of 1.2.0. Sheets that stayed open on Save and added a record per tap: every save / delete handler now closes the sheet before writing, and notification rescheduling runs in the background and cannot throw into a save. Tab pages (Home, Expenses, Groups, Me) cleared the tab bar by too little, hiding the last item; they now use the bar's real height. Long sheets (category, reminder, family member, service) keep Save / Delete pinned below a scrolling body (`KSheetForm`). Release builds no longer minify (`isMinifyEnabled = false`), because the notification plugin's stored schedules are known to break under code shrinking. |
+| 1.2.0 | 2026-11-19 | First-expense step after setup; shorter Home; current-month Insights free and export free; notification tone (Spicy / Mild / Quiet); monthly income and savings; repeat-monthly expenses; paste a payment message; Pay by UPI and Remind on settle-up cards (member UPI ID); visible delete with undo; launcher shortcuts; privacy sheet and website privacy page. New packages: `url_launcher`, `quick_actions`. |
+| 1.1.1 | 2026-11-19 | New opening animation built around the app (house, falling coins, rupee, tagline) replacing the letter-with-orbiting-dots one that mirrored the reference app. |
 | 1.1.0 | 2026-11-19 | Renamed to **Gharcha** (`app.gharcha`) with a house-and-rupee icon. Redesign from device feedback on 1.0.3: illustrated medals and sticker icons replace every emoji used as an icon; redrawn avatar and a new avatar studio; docked full-width tab bar; themes as miniature previews; badge sheet and celebration card redesigned. Fixes: sheets and pinned buttons no longer sit under the system navigation bar; Save / Delete could fire repeatedly and the sheet stayed open when a celebration opened on top of it; back arrow on tab pages; onboarding dots moving between steps; amount field hiding its keypad; text overflow on the streak card, budgets and charts; extra space at the end of pages. Removed the unused member mobile number. Website: new logo, illustrated feature icons and badge strip. |
 | 1.0.3 | 2026-11-18 | Build fix: the `pdf` package is removed because its `image` dependency did not compile against the resolved `archive`; `lib/screens/export.dart` now writes the PDF itself (Courier table, A4 landscape). The app has no dependency on `image` or `archive` any more. |
 | 1.0.2 | 2026-11-18 | Build fix: the signing block in `android/app/build.gradle.kts` imports `java.util.Properties` (inside `android {}` the name `java` is Gradle's Java extension, so the qualified name did not resolve). |

@@ -6,8 +6,9 @@ import '../core/l10n.dart';
 import '../core/models.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
-import 'categories.dart';
 import 'common.dart';
+
+enum _Range { all, week, month, lastMonth }
 
 class ExpensesTab extends StatefulWidget {
   const ExpensesTab({super.key});
@@ -19,6 +20,9 @@ class ExpensesTab extends StatefulWidget {
 class _ExpensesTabState extends State<ExpensesTab> {
   final _search = TextEditingController();
   String? _category;
+  _Range _range = _Range.all;
+  int? _member;
+  PaymentMode? _mode;
 
   @override
   void dispose() {
@@ -26,12 +30,62 @@ class _ExpensesTabState extends State<ExpensesTab> {
     super.dispose();
   }
 
+  void _filter() {
+    final app = AppScope.read(context);
+    showKSheet<void>(
+      context,
+      title: tr('filters'),
+      builder: (sheet) => StatefulBuilder(
+        builder: (_, setSheet) {
+          void change(VoidCallback update) {
+            setState(update);
+            setSheet(() {});
+          }
+
+          Widget group(String label, List<Widget> chips) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Padding(padding: const EdgeInsets.only(left: 4, bottom: 8), child: Text(label, style: sheet.tt.labelMedium)),
+                Wrap(spacing: 8, runSpacing: 8, children: chips),
+                const SizedBox(height: 18),
+              ]);
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            group(tr('date'), [for (final r in _Range.values) KChip(tr('range_${r.name}'), selected: _range == r, onTap: () => change(() => _range = r))]),
+            group(tr('paid_by'), [
+              KChip(tr('all'), selected: _member == null, onTap: () => change(() => _member = null)),
+              for (final m in app.members) MemberChip(m, selected: _member == m.id, onTap: () => change(() => _member = m.id)),
+            ]),
+            group(tr('payment_mode'), [
+              KChip(tr('all'), selected: _mode == null, onTap: () => change(() => _mode = null)),
+              for (final m in PaymentMode.values) KChip(m.label, icon: m.icon, color: m.color, selected: _mode == m, onTap: () => change(() => _mode = m)),
+            ]),
+            KButton(tr('show_results'), onTap: () => Navigator.of(sheet).pop()),
+          ]);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final today = Days.today();
     final query = _search.text.trim().toLowerCase();
-    final list = app.expenses.where((e) => (_category == null || e.category == _category) && (query.isEmpty || e.title.toLowerCase().contains(query) || e.note.toLowerCase().contains(query))).toList()
+    final lastMonth = Days.addMonths(today, -1);
+    final (from, to) = switch (_range) {
+      _Range.all => (0, 99999999),
+      _Range.week => (Days.key(DateTime(today.year, today.month, today.day - 6)), Days.key(today)),
+      _Range.month => (Days.key(Days.monthStart(today)), Days.key(DateTime(today.year, today.month + 1, 0))),
+      _Range.lastMonth => (Days.key(Days.monthStart(lastMonth)), Days.key(DateTime(lastMonth.year, lastMonth.month + 1, 0))),
+    };
+    final filters = (_range == _Range.all ? 0 : 1) + (_member == null ? 0 : 1) + (_mode == null ? 0 : 1);
+    final list = app.expenses
+        .where((e) =>
+            (_category == null || e.category == _category) &&
+            e.day >= from &&
+            e.day <= to &&
+            (_member == null || e.paidBy == _member) &&
+            (_mode == null || e.mode == _mode) &&
+            (query.isEmpty || e.title.toLowerCase().contains(query) || e.note.toLowerCase().contains(query)))
+        .toList()
       ..sort((a, b) => b.day != a.day ? b.day.compareTo(a.day) : b.createdAt.compareTo(a.createdAt));
     final days = <int, List<Expense>>{};
     for (final e in list) {
@@ -43,7 +97,7 @@ class _ExpensesTabState extends State<ExpensesTab> {
       subtitle: tr('n_expenses', [list.length]),
       actions: [
         RoundIcon(Icons.calendar_month_rounded, onTap: () => open(context, const CalendarScreen())),
-        RoundIcon(Icons.tune_rounded, onTap: () => open(context, const CategoriesScreen())),
+        RoundIcon(Icons.filter_list_rounded, filled: filters > 0, onTap: _filter),
       ],
       children: [
         Row(children: [
@@ -62,6 +116,28 @@ class _ExpensesTabState extends State<ExpensesTab> {
               Padding(padding: const EdgeInsets.only(right: 8), child: KChip(c.name, icon: c.icon, color: c.tint, selected: _category == c.key, onTap: () => setState(() => _category = c.key))),
           ]),
         ),
+        if (filters > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Row(children: [
+              Expanded(
+                child: Text(
+                  [if (_range != _Range.all) tr('range_${_range.name}'), if (_member != null) app.memberName(_member!), if (_mode != null) _mode!.label, Fmt.ledger(AppState.net(list))].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.tt.labelMedium,
+                ),
+              ),
+              Pressable(
+                onTap: () => setState(() {
+                  _range = _Range.all;
+                  _member = null;
+                  _mode = null;
+                }),
+                child: Pill(tr('clear_filters'), icon: Icon(Icons.close_rounded, size: 14, color: context.cs.primary)),
+              ),
+            ]),
+          ),
         if (list.isEmpty) EmptyState(art: 'receipt', title: tr('no_expenses_title'), body: tr('no_expenses_body')),
         for (final day in days.entries) ...[
           Padding(
@@ -71,11 +147,50 @@ class _ExpensesTabState extends State<ExpensesTab> {
               Text(Fmt.ledger(AppState.net(day.value)), style: context.tt.labelMedium),
             ]),
           ),
-          KCard(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), child: Column(children: [for (final e in day.value) ExpenseTile(e)])),
+          KCard(
+            padding: EdgeInsets.zero,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(26),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(children: [
+                for (final e in day.value)
+                  Dismissible(
+                    key: ValueKey('expense${e.id}'),
+                    background: const _SwipeAction(Icons.copy_rounded, Color(0xFF039BE5), Alignment.centerLeft),
+                    secondaryBackground: const _SwipeAction(Icons.delete_outline_rounded, bad, Alignment.centerRight),
+                    confirmDismiss: (direction) async {
+                      if (direction == DismissDirection.endToStart) return true;
+                      await app.duplicateExpense(e);
+                      if (context.mounted) toast(context, tr('duplicated_msg', [e.title]));
+                      return false;
+                    },
+                    onDismissed: (_) {
+                      toast(context, tr('deleted_msg', [e.title]), onUndo: () => app.restoreExpense(e));
+                      app.deleteExpense(e);
+                      setState(() {});
+                    },
+                    child: Padding(padding: const EdgeInsets.symmetric(horizontal: 14), child: ExpenseTile(e)),
+                  ),
+              ]),
+              ),
+            ),
+          ),
         ],
       ],
     );
   }
+}
+
+/// The coloured strip revealed while an expense row is swiped.
+class _SwipeAction extends StatelessWidget {
+  const _SwipeAction(this.icon, this.colour, this.alignment);
+  final IconData icon;
+  final Color colour;
+  final Alignment alignment;
+
+  @override
+  Widget build(BuildContext context) => Container(color: colour, alignment: alignment, padding: const EdgeInsets.symmetric(horizontal: 22), child: Icon(icon, color: Colors.white));
 }
 
 class _Tile extends StatelessWidget {

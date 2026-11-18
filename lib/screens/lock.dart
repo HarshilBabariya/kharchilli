@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/app_state.dart';
+import '../core/biometrics.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
 import '../core/parsers.dart';
@@ -20,6 +21,11 @@ class LockScreen extends StatefulWidget {
 
 class _LockScreenState extends State<LockScreen> {
   Member? _picked;
+
+  Future<void> _biometric(Member m) async {
+    final app = AppScope.read(context);
+    if (app.settings.biometricMemberId == m.id && await Biometrics.confirm(tr('biometric_reason'))) await app.login(m);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +52,7 @@ class _LockScreenState extends State<LockScreen> {
                             onTap: () {
                               if (m.hasPin) {
                                 setState(() => _picked = m);
+                                _biometric(m);
                               } else {
                                 app.login(m);
                               }
@@ -77,6 +84,10 @@ class _LockScreenState extends State<LockScreen> {
                         await app.login(picked);
                         return null;
                       }),
+                      if (app.settings.biometricMemberId == picked.id) ...[
+                        const SizedBox(height: 14),
+                        KButton(tr('biometric_unlock'), tonal: true, expand: false, icon: Icons.fingerprint_rounded, onTap: () => _biometric(picked)),
+                      ],
                       const SizedBox(height: 10),
                       TextButton(onPressed: () => setState(() => _picked = null), child: Text(tr('switch_profile', [picked.name]))),
                     ]),

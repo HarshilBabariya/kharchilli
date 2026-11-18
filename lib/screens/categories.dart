@@ -38,11 +38,14 @@ class CategoriesScreen extends StatelessWidget {
     await showKSheet<void>(
       context,
       title: existing == null ? tr('new_category') : tr('edit_category'),
+      pinned: true,
       builder: (sheet) => StatefulBuilder(
-        builder: (_, setState) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        builder: (_, setState) {
+          final taken = name.text.trim().isNotEmpty && app.categories.any((c) => c != existing && c.name.toLowerCase() == name.text.trim().toLowerCase());
+          return KSheetForm(body: [
           Center(child: IconTile(CategoryIcons.of(icon), color: Color(colour), size: 72)),
           const SizedBox(height: 14),
-          if (existing == null || !existing.builtIn) KField(controller: name, label: tr('category_name'), hint: tr('category_name_hint'), onChanged: (_) => setState(() {})),
+          if (existing == null || !existing.builtIn) KField(controller: name, label: tr('category_name'), hint: tr('category_name_hint'), error: taken ? tr('name_taken') : null, onChanged: (_) => setState(() {})),
           const SizedBox(height: 16),
           Text(tr('icon'), style: sheet.tt.labelMedium),
           const SizedBox(height: 8),
@@ -86,8 +89,8 @@ class CategoriesScreen extends StatelessWidget {
               colour = HSVColor.fromAHSV(1, v, 0.72, 0.9).toColor().toARGB32();
             }),
           ),
-          const SizedBox(height: 8),
-          KButton(tr('save'), onTap: existing != null && existing.builtIn || name.text.trim().isNotEmpty
+          ], actions: [
+          KButton(tr('save'), onTap: existing != null && existing.builtIn || name.text.trim().isNotEmpty && !taken
               ? () async {
                   final nav = Navigator.of(sheet);
                   final c = existing ?? Category(key: 'custom_${DateTime.now().millisecondsSinceEpoch}', iconKey: icon, color: colour);
@@ -95,8 +98,8 @@ class CategoriesScreen extends StatelessWidget {
                     ..customName = existing != null && existing.builtIn ? '' : name.text
                     ..iconKey = icon
                     ..color = colour;
-                  await app.saveCategory(c);
                   nav.pop();
+                  await app.saveCategory(c);
                 }
               : null),
           if (existing != null && !existing.builtIn) ...[
@@ -104,12 +107,13 @@ class CategoriesScreen extends StatelessWidget {
             KButton(tr('delete_category'), tonal: true, danger: true, onTap: () async {
               final nav = Navigator.of(sheet);
               if (await confirm(sheet, title: tr('delete_category_q', [existing.name]), body: tr('delete_category_body'), action: tr('delete'))) {
-                await app.deleteCategory(existing);
                 nav.pop();
+                await app.deleteCategory(existing);
               }
             }),
           ],
-        ]),
+        ]);
+        },
       ),
     );
   }

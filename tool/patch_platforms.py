@@ -39,6 +39,7 @@ PERMISSIONS = '''    <!-- gharcha-patched -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <queries>
         <intent>
             <action android:name="android.speech.RecognitionService" />
@@ -63,7 +64,7 @@ if android.exists():
         ('plugins {', 'import java.util.Properties\n\nplugins {'),
         ('compileOptions {', 'compileOptions {\n        isCoreLibraryDesugaringEnabled = true'),
         ('    buildTypes {', SIGNING),
-        ('signingConfigs.getByName("debug")', 'signingConfigs.getByName("gharcha")'),
+        ('signingConfigs.getByName("debug")', 'signingConfigs.getByName("gharcha")\n            isMinifyEnabled = false\n            isShrinkResources = false'),
     ])
     gradle = android / 'build.gradle.kts'
     if 'desugar_jdk_libs' not in gradle.read_text():
@@ -72,6 +73,13 @@ if android.exists():
     patch(manifest, [('    <application', PERMISSIONS), ('    </application>', RECEIVERS)])
     manifest.write_text(re.sub(r'android:label="[^"]*"', 'android:label="Gharcha"', manifest.read_text(), count=1))
     shutil.copytree(ROOT / 'platform' / 'android' / 'res', android / 'src' / 'main' / 'res', dirs_exist_ok=True)
+    # The fingerprint prompt needs a FragmentActivity and, on Android 8 and below, an AppCompat theme.
+    for folder, parent in (('values', 'Theme.AppCompat.Light.NoActionBar'), ('values-night', 'Theme.AppCompat.NoActionBar')):
+        styles = android / 'src' / 'main' / 'res' / folder / 'styles.xml'
+        if styles.exists():
+            styles.write_text(re.sub(r'parent="@android:style/Theme\.[A-Za-z.]+"', f'parent="{parent}"', styles.read_text()))
+    for activity in (android / 'src' / 'main').rglob('MainActivity.kt'):
+        activity.write_text(activity.read_text().replace('FlutterActivity', 'FlutterFragmentActivity'))
     shutil.copy(ROOT / 'platform' / 'android' / 'sideload.keystore', android / 'sideload.keystore')
 
 plist_path = ROOT / 'ios' / 'Runner' / 'Info.plist'
@@ -91,6 +99,7 @@ if plist_path.exists():
         'CFBundleDisplayName': 'Gharcha',
         'NSMicrophoneUsageDescription': 'Gharcha listens when you tap the mic so you can add an expense by saying it.',
         'NSSpeechRecognitionUsageDescription': 'Gharcha turns what you say into an expense: amount, category and payment mode.',
+        'NSFaceIDUsageDescription': 'Gharcha can use Face ID instead of your PIN to open your profile.',
         'ITSAppUsesNonExemptEncryption': False,
     })
     with plist_path.open('wb') as f:

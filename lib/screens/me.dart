@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
+import '../core/biometrics.dart';
 import '../core/catalogs.dart';
 import '../core/format.dart';
 import '../core/l10n.dart';
@@ -22,7 +23,7 @@ import 'lock.dart';
 import 'reminders.dart';
 import 'rewards.dart';
 
-const appVersion = '1.1.0';
+const appVersion = '1.3.0';
 
 class MeTab extends StatelessWidget {
   const MeTab({super.key});
@@ -33,13 +34,6 @@ class MeTab extends StatelessWidget {
     final s = app.settings;
     final me = app.me;
     final level = app.level;
-    Widget section(String title, List<Widget> rows) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SectionTitle(title),
-          KCard(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), child: Column(children: rows)),
-        ]);
-    Widget toggle(IconData icon, String title, String? subtitle, bool value, void Function(Settings, bool) set, {Color? color}) =>
-        NavRow(icon: icon, color: color, title: title, subtitle: subtitle, trailing: KSwitch(value: value, onChanged: (v) => app.updateSettings((x) => set(x, v))));
-
     return KPage(
       title: tr('tab_me'),
       children: [
@@ -88,23 +82,58 @@ class MeTab extends StatelessWidget {
               ]),
             ]),
           ),
-        section(tr('household'), [
+        _section(context, tr('household'), [
           NavRow(icon: Icons.emoji_events_rounded, color: const Color(0xFFFFB300), title: tr('rewards'), subtitle: tr('rewards_sub'), onTap: () => open(context, const RewardsScreen())),
           NavRow(icon: Icons.family_restroom_rounded, color: const Color(0xFF7C4DFF), title: tr('family_members'), subtitle: trPlural('family_sub', app.members.length), onTap: () => open(context, const FamilyScreen())),
           NavRow(icon: Icons.track_changes_rounded, color: good, title: tr('budgets'), subtitle: tr('budgets_sub'), onTap: () => open(context, const BudgetsScreen())),
           NavRow(icon: Icons.notifications_active_rounded, color: const Color(0xFFFB8C00), title: tr('reminders_bills'), subtitle: tr('reminders_sub'), onTap: () => open(context, const RemindersScreen())),
           NavRow(icon: Icons.category_rounded, color: const Color(0xFF039BE5), title: tr('categories'), subtitle: tr('categories_sub'), onTap: () => open(context, const CategoriesScreen())),
         ]),
-        section(tr('views'), [
+        _section(context, tr('views'), [
           NavRow(icon: Icons.insights_rounded, color: const Color(0xFFEC407A), title: tr('insights'), subtitle: tr('insights_sub'), onTap: () => open(context, const InsightsScreen())),
           NavRow(icon: Icons.calendar_month_rounded, color: const Color(0xFF26A69A), title: tr('calendar'), onTap: () => open(context, const CalendarScreen())),
         ]),
-        section(tr('household_money'), [
+        _section(context, tr('household_money'), [
           NavRow(icon: Icons.storefront_rounded, color: const Color(0xFF8D6E63), title: tr('khata'), subtitle: tr('khata_sub'), onTap: () => open(context, const KhataScreen())),
           NavRow(icon: Icons.local_drink_rounded, color: const Color(0xFF29B6F6), title: tr('services'), subtitle: tr('services_sub'), onTap: () => open(context, const ServicesScreen())),
           NavRow(icon: Icons.diamond_rounded, color: const Color(0xFFFFB300), title: tr('savings'), subtitle: tr('savings_sub'), onTap: () => open(context, const SavingsScreen())),
         ]),
-        section(tr('appearance'), [
+        const SizedBox(height: 22),
+        KCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: NavRow(icon: Icons.settings_rounded, color: const Color(0xFF607D8B), title: tr('settings'), subtitle: tr('settings_sub'), onTap: () => open(context, const SettingsScreen())),
+        ),
+        const SizedBox(height: 18),
+        KButton(tr('log_out_switch'), tonal: true, icon: Icons.logout_rounded, onTap: () async {
+          if (await confirm(context, title: tr('log_out_q'), body: tr('log_out_body'), action: tr('log_out'), danger: false)) await app.logout();
+        }),
+      ],
+    );
+  }
+
+}
+
+Widget _section(BuildContext context, String title, List<Widget> rows) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SectionTitle(title),
+      KCard(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), child: Column(children: rows)),
+    ]);
+
+/// Appearance, notifications, security, data and help: everything that is set once and rarely revisited.
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final app = AppScope.of(context);
+    final s = app.settings;
+    final me = app.me;
+    Widget toggle(IconData icon, String title, String? subtitle, bool value, void Function(Settings, bool) set, {Color? color}) =>
+        NavRow(icon: icon, color: color, title: title, subtitle: subtitle, trailing: KSwitch(value: value, onChanged: (v) => app.updateSettings((x) => set(x, v))));
+
+    return KPage(
+      title: tr('settings'),
+      children: [
+        _section(context, tr('appearance'), [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Segmented<ThemeModeSetting>(options: {for (final m in ThemeModeSetting.values) m: tr('mode_${m.name}')}, value: s.themeMode, onChanged: (m) => app.updateSettings((x) => x.themeMode = m)),
@@ -114,13 +143,23 @@ class MeTab extends StatelessWidget {
           toggle(Icons.celebration_rounded, tr('festive_mode'), tr('festive_mode_sub'), s.festiveMode, (x, v) => x.festiveMode = v, color: const Color(0xFFFF7043)),
           toggle(Icons.volume_up_rounded, tr('sound_effects'), null, s.soundEffects, (x, v) => x.soundEffects = v, color: const Color(0xFF26A69A)),
         ]),
-        section(tr('notifications'), [
+        _section(context, tr('notifications'), [
           toggle(Icons.speed_rounded, tr('budget_alerts'), tr('budget_alerts_sub'), s.budgetAlerts, (x, v) => x.budgetAlerts = v),
           toggle(Icons.alarm_rounded, tr('reminders_bills'), tr('reminder_notifs_sub'), s.reminderNotifs, (x, v) => x.reminderNotifs = v),
           toggle(Icons.military_tech_rounded, tr('rewards'), tr('reward_notifs_sub'), s.rewardNotifs, (x, v) => x.rewardNotifs = v),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 10, 0, 12),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(tr('tone_title'), style: context.tt.titleMedium),
+              const SizedBox(height: 2),
+              Text(tr('tone_${s.tone.name}_sub'), style: context.tt.bodySmall),
+              const SizedBox(height: 10),
+              Segmented<NotifTone>(options: {for (final t in NotifTone.values) t: tr('tone_${t.name}')}, value: s.tone, onChanged: (t) => app.updateSettings((x) => x.tone = t)),
+            ]),
+          ),
         ]),
         if (me != null)
-          section(tr('security'), [
+          _section(context, tr('security'), [
             NavRow(
               icon: Icons.lock_rounded,
               title: tr('app_lock'),
@@ -137,6 +176,24 @@ class MeTab extends StatelessWidget {
                 },
               ),
             ),
+            if (me.hasPin)
+              NavRow(
+                icon: Icons.fingerprint_rounded,
+                title: tr('biometric_unlock'),
+                subtitle: tr('biometric_unlock_sub'),
+                trailing: KSwitch(
+                  value: s.biometricMemberId == me.id,
+                  onChanged: (on) async {
+                    if (!on) {
+                      await app.setBiometric(null);
+                    } else if (!await Biometrics.available()) {
+                      if (context.mounted) toast(context, tr('biometric_unavailable'));
+                    } else if (await Biometrics.confirm(tr('biometric_reason'))) {
+                      await app.setBiometric(me);
+                    }
+                  },
+                ),
+              ),
             NavRow(
               icon: Icons.pin_rounded,
               title: me.hasPin ? tr('change_pin') : tr('set_pin'),
@@ -148,7 +205,7 @@ class MeTab extends StatelessWidget {
             ),
             if (me.hasPin) NavRow(icon: Icons.lock_open_rounded, color: bad, title: tr('remove_pin'), onTap: () => app.setPin(me, null)),
           ]),
-        section(tr('your_data'), [
+        _section(context, tr('your_data'), [
           NavRow(icon: Icons.ios_share_rounded, title: tr('export_data'), subtitle: tr('export_sub'), onTap: () => _export(context)),
           NavRow(icon: Icons.file_download_rounded, title: tr('import_csv'), subtitle: tr('import_sub'), onTap: () => importCsvFile(context)),
           NavRow(
@@ -160,14 +217,11 @@ class MeTab extends StatelessWidget {
             },
           ),
         ]),
-        section(tr('more_options'), [
+        _section(context, tr('more_options'), [
           NavRow(icon: Icons.help_rounded, title: tr('faqs'), subtitle: tr('faqs_sub'), onTap: () => _faqs(context)),
+          NavRow(icon: Icons.shield_rounded, color: good, title: tr('privacy'), subtitle: tr('privacy_sub'), onTap: () => showKSheet<void>(context, title: tr('privacy'), builder: (sheet) => Text(tr('privacy_body'), style: sheet.tt.bodyMedium))),
           NavRow(icon: Icons.info_rounded, title: tr('about_app'), subtitle: tr('about_sub'), onTap: () => _about(context)),
         ]),
-        const SizedBox(height: 18),
-        KButton(tr('log_out_switch'), tonal: true, icon: Icons.logout_rounded, onTap: () async {
-          if (await confirm(context, title: tr('log_out_q'), body: tr('log_out_body'), action: tr('log_out'), danger: false)) await app.logout();
-        }),
       ],
     );
   }
@@ -212,12 +266,6 @@ class MeTab extends StatelessWidget {
 
   void _export(BuildContext context) {
     final app = AppScope.read(context);
-    if (!app.isUnlocked(RewardCatalog.export)) {
-      final item = RewardCatalog.find(RewardCatalog.export)!;
-      toast(context, tr('need_more_points', [item.cost, item.name]));
-      open(context, const RewardsScreen(initialTab: 2));
-      return;
-    }
     final month = Days.today();
     showKSheet<void>(
       context,

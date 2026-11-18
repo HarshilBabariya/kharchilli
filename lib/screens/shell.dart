@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quick_actions/quick_actions.dart';
 
 import '../core/l10n.dart';
 import '../core/notifier.dart';
@@ -33,6 +34,9 @@ class _ShellState extends State<Shell> {
     super.initState();
     Notifier.routeTaps.addListener(_followRoute);
     WidgetsBinding.instance.addPostFrameCallback((_) => _followRoute());
+    const QuickActions()
+      ..initialize(Notifier.open)
+      ..setShortcutItems([ShortcutItem(type: 'add', localizedTitle: tr('add_transaction')), ShortcutItem(type: 'voice', localizedTitle: tr('shortcut_voice'))]);
   }
 
   @override
@@ -51,6 +55,10 @@ class _ShellState extends State<Shell> {
     switch (route) {
       case 'add':
         open(context, const AddExpenseScreen(), rise: true);
+      case 'voice':
+        open(context, const AddExpenseScreen(startWithVoice: true), rise: true);
+      case 'first':
+        open(context, const AddExpenseScreen(firstTime: true), rise: true);
       case 'rewards':
         open(context, const RewardsScreen());
       case 'badges':
@@ -93,6 +101,8 @@ class _ShellState extends State<Shell> {
   }
 }
 
+const _barHeight = 78.0;
+
 class _NavBar extends StatelessWidget {
   const _NavBar({required this.tab, required this.onSelect, required this.onAdd});
   final int tab;
@@ -129,10 +139,10 @@ class _NavBar extends StatelessWidget {
 
     final inset = MediaQuery.viewPaddingOf(context).bottom;
     return SizedBox(
-      height: navBarHeight + inset + 22,
+      height: _barHeight + inset + 22,
       child: Stack(alignment: Alignment.bottomCenter, clipBehavior: Clip.none, children: [
         Container(
-          height: navBarHeight + inset,
+          height: _barHeight + inset,
           padding: EdgeInsets.fromLTRB(8, 10, 8, inset),
           decoration: BoxDecoration(
             color: cs.surface,

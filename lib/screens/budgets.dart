@@ -60,6 +60,35 @@ class BudgetsScreen extends StatelessWidget {
             ),
           ]),
         ),
+        const SizedBox(height: 14),
+        KCard(
+          onTap: () async {
+            final v = await askAmount(context, title: tr('monthly_income'), initial: s.monthlyIncome, removeLabel: tr('remove'));
+            if (v != null) await app.setMonthlyIncome(v);
+          },
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const IconTile(Icons.savings_rounded, color: good),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(tr('monthly_income'), style: context.tt.labelSmall),
+                  Text(s.monthlyIncome > 0 ? Fmt.money(s.monthlyIncome) : tr('income_hint'), maxLines: 2, overflow: TextOverflow.ellipsis, style: s.monthlyIncome > 0 ? context.tt.titleLarge : context.tt.bodyMedium),
+                ]),
+              ),
+              Icon(Icons.edit_rounded, color: context.cs.onSurfaceVariant),
+            ]),
+            if (s.monthlyIncome > 0) ...[
+              const SizedBox(height: 14),
+              KProgress(spent / s.monthlyIncome, color: spent > s.monthlyIncome ? bad : good, height: 9),
+              const SizedBox(height: 8),
+              Text(
+                spent > s.monthlyIncome ? tr('over_income_by', [Fmt.money(spent - s.monthlyIncome)]) : tr('saved_so_far', [Fmt.money(s.monthlyIncome - spent), ((1 - spent / s.monthlyIncome) * 100).round()]),
+                style: context.tt.bodySmall!.copyWith(color: spent > s.monthlyIncome ? bad : good, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ]),
+        ),
         if (app.forecast != null)
           Padding(
             padding: const EdgeInsets.only(top: 14),

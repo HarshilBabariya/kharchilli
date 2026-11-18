@@ -158,12 +158,15 @@ class AvatarConfig {
 }
 
 class Member extends Doc {
-  Member({required this.name, this.relation = 'me', this.isOwner = false, this.pinHash = '', this.avatar = const AvatarConfig()});
+  Member({required this.name, this.relation = 'me', this.isOwner = false, this.pinHash = '', this.upiId = '', this.avatar = const AvatarConfig()});
 
   String name;
   String relation;
   bool isOwner;
   String pinHash;
+
+  /// Where group settlements are paid to, e.g. name@bank. Empty when not given.
+  String upiId;
   AvatarConfig avatar;
 
   bool get hasPin => pinHash.isNotEmpty;
@@ -172,13 +175,14 @@ class Member extends Doc {
   String get kind => 'member';
 
   @override
-  Json toJson() => {'name': name, 'relation': relation, 'isOwner': isOwner, 'pinHash': pinHash, 'avatar': avatar.toJson()};
+  Json toJson() => {'name': name, 'relation': relation, 'isOwner': isOwner, 'pinHash': pinHash, 'upiId': upiId, 'avatar': avatar.toJson()};
 
   factory Member.fromJson(Json j) => Member(
         name: j['name'] as String,
         relation: j['relation'] as String? ?? 'other',
         isOwner: j['isOwner'] as bool? ?? false,
         pinHash: j['pinHash'] as String? ?? '',
+        upiId: j['upiId'] as String? ?? '',
         avatar: AvatarConfig.fromJson((j['avatar'] as Map).cast<String, dynamic>()),
       );
 }
@@ -728,20 +732,28 @@ class Chit extends Doc {
 
 enum ThemeModeSetting { system, light, dark }
 
+/// How notifications are worded. [quiet] also drops the comeback, weekly and streak-in-danger nudges.
+enum NotifTone { spicy, mild, quiet }
+
 /// Everything that is one-per-household: preferences, the points profile and small keyed sets.
 class Settings {
   bool onboarded = false;
   String language = 'en';
   String currencyCode = 'INR';
   double monthlyBudget = 0;
+  double monthlyIncome = 0;
   Map<String, double> categoryBudgets = {};
   String themeId = 'theme_sunrise';
   ThemeModeSetting themeMode = ThemeModeSetting.system;
   bool appLock = false;
+
+  /// The member whose PIN the phone's fingerprint or face check may stand in for; 0 when off.
+  int biometricMemberId = 0;
   int activeMemberId = 0;
   bool budgetAlerts = true;
   bool reminderNotifs = true;
   bool rewardNotifs = true;
+  NotifTone tone = NotifTone.spicy;
   bool soundEffects = true;
   bool festiveMode = true;
   double goldRate = 0;
@@ -766,14 +778,17 @@ class Settings {
         'language': language,
         'currencyCode': currencyCode,
         'monthlyBudget': monthlyBudget,
+        'monthlyIncome': monthlyIncome,
         'categoryBudgets': categoryBudgets,
         'themeId': themeId,
         'themeMode': themeMode.name,
         'appLock': appLock,
+        'biometricMemberId': biometricMemberId,
         'activeMemberId': activeMemberId,
         'budgetAlerts': budgetAlerts,
         'reminderNotifs': reminderNotifs,
         'rewardNotifs': rewardNotifs,
+        'tone': tone.name,
         'soundEffects': soundEffects,
         'festiveMode': festiveMode,
         'goldRate': goldRate,
@@ -800,14 +815,17 @@ class Settings {
       ..language = j['language'] as String? ?? 'en'
       ..currencyCode = j['currencyCode'] as String? ?? 'INR'
       ..monthlyBudget = (j['monthlyBudget'] as num? ?? 0).toDouble()
+      ..monthlyIncome = (j['monthlyIncome'] as num? ?? 0).toDouble()
       ..categoryBudgets = ((j['categoryBudgets'] ?? const {}) as Map).map((k, v) => MapEntry('$k', (v as num).toDouble()))
       ..themeId = j['themeId'] as String? ?? 'theme_sunrise'
       ..themeMode = _enum(ThemeModeSetting.values, j['themeMode'], ThemeModeSetting.system)
       ..appLock = j['appLock'] as bool? ?? false
+      ..biometricMemberId = j['biometricMemberId'] as int? ?? 0
       ..activeMemberId = j['activeMemberId'] as int? ?? 0
       ..budgetAlerts = j['budgetAlerts'] as bool? ?? true
       ..reminderNotifs = j['reminderNotifs'] as bool? ?? true
       ..rewardNotifs = j['rewardNotifs'] as bool? ?? true
+      ..tone = _enum(NotifTone.values, j['tone'], NotifTone.spicy)
       ..soundEffects = j['soundEffects'] as bool? ?? true
       ..festiveMode = j['festiveMode'] as bool? ?? true
       ..goldRate = (j['goldRate'] as num? ?? 0).toDouble()

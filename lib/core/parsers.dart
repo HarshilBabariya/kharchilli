@@ -98,6 +98,30 @@ class VoiceParser {
   }
 }
 
+/// Reads a pasted payment message (bank SMS, UPI app text) into the same fields voice entry fills.
+class MessageParser {
+  static final _amount = RegExp(r'(?:rs\.?|inr|₹)\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)', caseSensitive: false);
+  static final _credit = RegExp(r'\b(credited|received|refund(ed)?|cashback|deposited)\b', caseSensitive: false);
+  static final _party = RegExp(r"\b(?:to|at|from)\s+([A-Za-z0-9][A-Za-z0-9 .&'-]{1,28}?)(?=\s+(?:on|via|ref|upi|using|for|thru|through|a/c|ac|account)\b|[.,;:]|\s*$)", caseSensitive: false);
+
+  /// Null when the text carries no currency amount, so the caller can fall back to [VoiceParser].
+  static VoiceResult? parse(String text, Map<String, String> customCategories) {
+    final amount = _amount.firstMatch(text);
+    if (amount == null) return null;
+    final lower = text.toLowerCase();
+    final mode = lower.contains('upi')
+        ? PaymentMode.upi
+        : lower.contains('card')
+            ? PaymentMode.card
+            : RegExp(r'\b(neft|imps|rtgs|a/c|acct|account)\b').hasMatch(lower)
+                ? PaymentMode.bank
+                : null;
+    final party = _party.allMatches(text).map((m) => m.group(1)!.trim()).where((p) => !RegExp(r'^(a/c|ac|account|your|bank)\b', caseSensitive: false).hasMatch(p)).firstOrNull ?? '';
+    final title = party.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).map((w) => w.toLowerCase().capitalised).join(' ');
+    return VoiceResult(double.tryParse(amount.group(1)!.replaceAll(',', '')), title, VoiceParser.parse(party, customCategories).categoryKey, mode, null, _credit.hasMatch(text));
+  }
+}
+
 class Csv {
   static const header = ['date', 'title', 'category', 'payment_mode', 'amount', 'paid_by', 'group_id', 'note'];
 

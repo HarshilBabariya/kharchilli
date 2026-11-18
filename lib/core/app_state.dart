@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -248,8 +249,8 @@ class AppState extends ChangeNotifier {
     );
   }
 
-  Future<Member> addMember({required String name, required String relation, required Gender gender, required bool joinGroups, required bool resplit}) async {
-    final m = Member(name: name.trim().capitalised, relation: relation, avatar: _randomLook(gender));
+  Future<Member> addMember({required String name, required String relation, required Gender gender, required String upiId, required bool joinGroups, required bool resplit}) async {
+    final m = Member(name: name.trim().capitalised, relation: relation, upiId: upiId.trim(), avatar: _randomLook(gender));
     await _store.save(m);
     members.add(m);
     if (joinGroups) {
@@ -291,11 +292,17 @@ class AppState extends ChangeNotifier {
     m.pinHash = pin == null ? '' : Pin.hash(pin);
     await _store.save(m);
     if (!members.any((x) => x.id == settings.activeMemberId && x.hasPin)) settings.appLock = false;
+    if (!m.hasPin && settings.biometricMemberId == m.id) settings.biometricMemberId = 0;
     await _persist();
   }
 
   Future<void> setAppLock(bool on) async {
     settings.appLock = on;
+    await _persist();
+  }
+
+  Future<void> setBiometric(Member? m) async {
+    settings.biometricMemberId = m?.id ?? 0;
     await _persist();
   }
 
@@ -324,7 +331,7 @@ class AppState extends ChangeNotifier {
     if (after.level > before) {
       celebrations.add(Celebration(CelebrationKind.level,
           title: tr('toast_level', [after.level, after.title]), body: trPick('notif_level_bodies', [after.title]), sound: Channel.levels.sound));
-      if (settings.rewardNotifs) Notifier.show(Channel.levels, trPick('notif_level_titles', [after.level]), trPick('notif_level_bodies', [after.title]), route: 'rewards');
+      if (settings.rewardNotifs) Notifier.show(Channel.levels, _copy('level', 0, [after.level]), _copy('level', 1, [after.title]), route: 'rewards');
     }
   }
 
@@ -370,7 +377,7 @@ class AppState extends ChangeNotifier {
         final b = status.badge;
         settings.badges[b.id] = DateTime.now().millisecondsSinceEpoch;
         celebrations.add(Celebration(CelebrationKind.badge, badgeId: b.id, title: tr('toast_badge', [b.name]), body: trPick('notif_badge_bodies', [b.name, b.bonus]), sound: Channel.badges.sound));
-        if (settings.rewardNotifs) Notifier.show(Channel.badges, trPick('notif_badge_titles', [b.emoji]), trPick('notif_badge_bodies', [b.name, b.bonus]), route: 'badges');
+        if (settings.rewardNotifs) Notifier.show(Channel.badges, _copy('badge', 0, [b.emoji]), _copy('badge', 1, [b.name, b.bonus]), route: 'badges');
         await _award(b.bonus, PointReasons.encode(PointReasons.badge, b.id));
         again = true;
       }
@@ -380,7 +387,7 @@ class AppState extends ChangeNotifier {
   Future<void> _afterChange() async {
     await _checkBadges();
     await _persist();
-    await syncNotifications();
+    unawaited(syncNotifications());
   }
 
   Future<bool> unlock(RewardItem item) async {
@@ -436,7 +443,7 @@ class AppState extends ChangeNotifier {
         final name = me?.name ?? '';
         celebrations.add(Celebration(CelebrationKind.streak,
             title: tr('celebrate_streak_title', [settings.streakDays]), body: trPick('celebrate_streak_lines', [name, settings.streakDays]), sound: Channel.streakWin.sound));
-        if (settings.rewardNotifs) Notifier.show(Channel.streakWin, trPick('notif_streak_win_titles', [settings.streakDays]), trPick('notif_streak_win_bodies'), route: 'rewards');
+        if (settings.rewardNotifs) Notifier.show(Channel.streakWin, _copy('streak_win', 0, [settings.streakDays]), _copy('streak_win', 1), route: 'rewards');
       }
     }
     await _award(earned, PointReasons.logExpense);
@@ -453,9 +460,9 @@ class AppState extends ChangeNotifier {
       if (stage == 0 || !settings.budgetAlertsSent.add('${Days.monthKey(Days.today())}:$scope:$stage')) return;
       final args = [label, Fmt.money(spent), Fmt.money(limit)];
       if (stage == 100) {
-        await Notifier.show(Channel.budgetOver, trPick('notif_budget_over_titles'), trPick('notif_budget_over_bodies', args), route: 'budgets');
+        await Notifier.show(Channel.budgetOver, _copy('budget_over', 0), _copy('budget_over', 1, args), route: 'budgets');
       } else {
-        await Notifier.show(Channel.budgetWarn, trPick('notif_budget_warn_titles'), trPick('notif_budget_warn_bodies', args), route: 'budgets');
+        await Notifier.show(Channel.budgetWarn, _copy('budget_warn', 0), _copy('budget_warn', 1, args), route: 'budgets');
       }
     }
 
@@ -467,6 +474,18 @@ class AppState extends ChangeNotifier {
   Future<void> deleteExpense(Expense e) async {
     expenses.remove(e);
     await _store.remove(e);
+    await _afterChange();
+  }
+
+  /// Logs the same expense again, dated today.
+  Future<void> duplicateExpense(Expense e) =>
+      saveExpense(Expense(title: e.title, amount: e.amount, category: e.category, mode: e.mode, day: Days.key(Days.today()), paidBy: e.paidBy, groupId: e.groupId, splitType: e.splitType, shares: Map.of(e.shares), note: e.note));
+
+  /// Puts back an expense removed by [deleteExpense].
+  Future<void> restoreExpense(Expense e) async {
+    e.id = 0;
+    await _store.save(e);
+    expenses.add(e);
     await _afterChange();
   }
 
@@ -502,6 +521,8 @@ class AppState extends ChangeNotifier {
     if (isNew) {
       groups.add(g);
       await _award(PointsRules.createGroup, PointReasons.group);
+    } else {
+      await _resplit(g);
     }
     await _afterChange();
   }
@@ -576,6 +597,11 @@ class AppState extends ChangeNotifier {
     await _persist();
   }
 
+  Future<void> setMonthlyIncome(double value) async {
+    settings.monthlyIncome = value;
+    await _persist();
+  }
+
   Future<void> setCategoryBudget(String key, double? value) async {
     if (value == null || value <= 0) {
       settings.categoryBudgets.remove(key);
@@ -597,12 +623,6 @@ class AppState extends ChangeNotifier {
     if (projected <= budget || daily <= 0) return tr('forecast_on_track', [Fmt.money((budget - projected).round())]);
     final crossing = today.add(Duration(days: ((budget - spent) / daily).ceil()));
     return tr('forecast_over', [Fmt.money((projected - budget).round()), Fmt.date(crossing)]);
-  }
-
-  double get projectedMonth {
-    final today = Days.today();
-    final spent = max(net(inMonth(today).where((e) => e.day <= Days.key(today))), 0.0);
-    return spent / today.day * Days.inMonth(today);
   }
 
   // ---- Reminders
@@ -697,7 +717,9 @@ class AppState extends ChangeNotifier {
     await _persist();
   }
 
+  /// Saves a new item, or puts back one removed by [deleteGold].
   Future<void> saveGold(GoldItem g) async {
+    g.id = 0;
     await _store.save(g);
     gold.add(g);
     notifyListeners();
@@ -837,7 +859,37 @@ class AppState extends ChangeNotifier {
     await syncNotifications();
   }
 
+  /// A notification's title ([part] 0) or body (1): a random roast from the pools when the tone is spicy, one plain line otherwise.
+  String _copy(String kind, int part, [List<Object?> args = const []]) {
+    final spicy = settings.tone == NotifTone.spicy;
+    return part == 0
+        ? (spicy ? trPick('notif_${kind}_titles', args) : tr('plain_${kind}_title', args))
+        : (spicy ? trPick('notif_${kind}_bodies', args) : tr('plain_${kind}_body', args));
+  }
+
+  /// Reschedules every notification. Runs one pass at a time; a call made meanwhile queues one more pass.
   Future<void> syncNotifications() async {
+    if (_syncing) {
+      _syncAgain = true;
+      return;
+    }
+    _syncing = true;
+    try {
+      do {
+        _syncAgain = false;
+        await _schedule();
+      } while (_syncAgain);
+    } catch (e) {
+      debugPrint('Notification sync failed: $e');
+    } finally {
+      _syncing = false;
+    }
+  }
+
+  bool _syncing = false;
+  bool _syncAgain = false;
+
+  Future<void> _schedule() async {
     await Notifier.cancelAll();
     if (!settings.onboarded) return;
     final now = DateTime.now();
@@ -846,8 +898,8 @@ class AppState extends ChangeNotifier {
         final next = r.nextAfter(now);
         if (next == null) continue;
         List<String> copy() => r.isBill
-            ? [trPick('notif_bill_titles', [r.title]), trPick('notif_bill_bodies', ['${r.title} · ${Fmt.money(r.amount!)}'])]
-            : [trPick('notif_nudge_titles'), trPick('notif_nudge_bodies', [r.title])];
+            ? [_copy('bill', 0, [r.title]), _copy('bill', 1, ['${r.title} · ${Fmt.money(r.amount!)}'])]
+            : [_copy('nudge', 0), _copy('nudge', 1, [r.title])];
         final channel = r.isBill ? Channel.bills : Channel.nudges;
         final route = r.isBill ? 'reminders' : 'add';
         if (r.repeat == RepeatRule.daily) {
@@ -868,16 +920,18 @@ class AppState extends ChangeNotifier {
         }
       }
       final days = streak;
-      if (days >= 2) {
+      if (days >= 2 && settings.tone != NotifTone.quiet) {
         final tonight = DateTime(now.year, now.month, now.day, 21, 30);
         final when = loggedToday ? tonight.add(const Duration(days: 1)) : tonight;
-        await Notifier.schedule(NotificationIds.streakRisk, Channel.streakRisk, when, trPick('notif_streak_risk_titles', [days]), trPick('notif_streak_risk_bodies', [days]), route: 'add');
+        await Notifier.schedule(NotificationIds.streakRisk, Channel.streakRisk, when, _copy('streak_risk', 0, [days]), _copy('streak_risk', 1, [days]), route: 'add');
       }
-      final comeback = DateTime(now.year, now.month, now.day + 3, 19);
-      await Notifier.schedule(NotificationIds.comeback, Channel.nudges, comeback, trPick('notif_comeback_titles'), trPick('notif_comeback_bodies', [me?.name ?? '']), route: 'add');
-      final sunday = DateTime(now.year, now.month, now.day + (DateTime.sunday - now.weekday) % 7, 10);
-      await Notifier.schedule(NotificationIds.weekly, Channel.nudges, sunday.isAfter(now) ? sunday : sunday.add(const Duration(days: 7)), trPick('notif_weekly_titles'), trPick('notif_weekly_bodies', [me?.name ?? '']),
-          route: 'insights', repeat: DateTimeComponents.dayOfWeekAndTime);
+      if (settings.tone != NotifTone.quiet) {
+        final comeback = DateTime(now.year, now.month, now.day + 3, 19);
+        await Notifier.schedule(NotificationIds.comeback, Channel.nudges, comeback, _copy('comeback', 0), _copy('comeback', 1, [me?.name ?? '']), route: 'add');
+        final sunday = DateTime(now.year, now.month, now.day + (DateTime.sunday - now.weekday) % 7, 10);
+        await Notifier.schedule(NotificationIds.weekly, Channel.nudges, sunday.isAfter(now) ? sunday : sunday.add(const Duration(days: 7)), _copy('weekly', 0), _copy('weekly', 1, [me?.name ?? '']),
+            route: 'insights', repeat: DateTimeComponents.dayOfWeekAndTime);
+      }
     }
     final greeting = FestivalCalendar.nextGreeting(now);
     if (settings.festiveMode && greeting != null) {

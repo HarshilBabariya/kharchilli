@@ -4,6 +4,7 @@ import '../core/app_state.dart';
 import '../core/format.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
+import '../core/notifier.dart';
 import '../ui/avatar.dart';
 import '../ui/effects.dart';
 import '../ui/glyphs.dart';
@@ -43,6 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
     setState(() => _busy = true);
+    Notifier.pendingRoute = 'first';
     await AppScope.read(context).completeOnboarding(name: _name.text, gender: _gender, currency: _currency, budget: _budget);
   }
 

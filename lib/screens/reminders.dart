@@ -75,10 +75,11 @@ class RemindersScreen extends StatelessWidget {
     await showKSheet<void>(
       context,
       title: existing == null ? tr('new_reminder') : tr('edit_reminder'),
+      pinned: true,
       builder: (sheet) => StatefulBuilder(
         builder: (_, setState) {
           final hasAmount = (double.tryParse(amount.text) ?? 0) > 0;
-          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          return KSheetForm(body: [
             if (existing == null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -170,7 +171,7 @@ class RemindersScreen extends StatelessWidget {
             ),
             if (hasAmount) NavRow(icon: Icons.bolt_rounded, color: good, title: tr('auto_log'), subtitle: tr('auto_log_sub'), trailing: KSwitch(value: autoLog, onChanged: (v) => setState(() => autoLog = v))),
             if (existing != null) NavRow(icon: Icons.notifications_active_rounded, title: tr('active'), trailing: KSwitch(value: enabled, onChanged: (v) => setState(() => enabled = v))),
-            const SizedBox(height: 14),
+            ], actions: [
             KButton(tr('save_reminder'), onTap: title.text.trim().isEmpty
                 ? null
                 : () async {
@@ -193,16 +194,16 @@ class RemindersScreen extends StatelessWidget {
                       final next = r.nextAfter(DateTime.now());
                       r.lastLoggedDay = Days.key(next != null && Days.of(next) == today ? DateTime(today.year, today.month, today.day - 1) : today);
                     }
-                    await app.saveReminder(r);
                     nav.pop();
+                    await app.saveReminder(r);
                   }),
             if (existing != null) ...[
               const SizedBox(height: 8),
               KButton(tr('delete'), tonal: true, danger: true, onTap: () async {
                 final nav = Navigator.of(sheet);
                 if (await confirm(sheet, title: tr('delete_reminder_q', [existing.title]), body: tr('delete_reminder_body'), action: tr('delete'))) {
-                  await app.deleteReminder(existing);
                   nav.pop();
+                  await app.deleteReminder(existing);
                 }
               }),
             ],
