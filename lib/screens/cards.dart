@@ -12,26 +12,106 @@ import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
-/// Backgrounds a shared card can take; the first follows the app theme.
-const cardLooks = <List<int>?>[null, [0xFFF97316, 0xFFDB2777], [0xFF059669, 0xFF0E7490], [0xFF312E81, 0xFF7C3AED], [0xFF111827, 0xFF374151]];
+enum CardDeco { none, bubbles, stripes, stars, rings }
 
-/// Tells the cards below it which of [cardLooks] to paint.
+/// One way to dress a shared card: its background and pattern, where the header sits, and the panel's shape.
+class CardStyle {
+  const CardStyle(this.colors, this.deco, {this.centered = false, this.panelRadius = 22, this.panelColor = 0xFFFFFFFF, this.panelBorder});
+
+  /// Background gradient; null follows the app theme.
+  final List<int>? colors;
+  final CardDeco deco;
+  final bool centered;
+  final double panelRadius;
+  final int panelColor;
+  final int? panelBorder;
+
+  Gradient gradient(BuildContext context) {
+    final own = colors;
+    return own == null ? context.heroGradient : LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [for (final c in own) Color(c)]);
+  }
+}
+
+const cardLooks = <CardStyle>[
+  CardStyle(null, CardDeco.none),
+  CardStyle([0xFFF97316, 0xFFDB2777], CardDeco.bubbles, centered: true, panelRadius: 34),
+  CardStyle([0xFF059669, 0xFF0E7490], CardDeco.stripes, panelRadius: 8),
+  CardStyle([0xFF1E1B4B, 0xFF7C3AED], CardDeco.stars, centered: true, panelColor: 0xFFF3EEFF, panelBorder: 0xFFF5C451),
+  CardStyle([0xFF111827, 0xFF374151], CardDeco.rings, panelRadius: 14, panelBorder: 0xFF9CA3AF),
+];
+
+/// Tells the cards below it which of [cardLooks] to wear.
 class CardLook extends InheritedWidget {
   const CardLook({super.key, required this.index, required super.child});
   final int index;
 
-  static Gradient gradient(BuildContext context, int index) {
-    final colors = cardLooks[index];
-    return colors == null ? context.heroGradient : LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [for (final c in colors) Color(c)]);
-  }
-
-  static Gradient of(BuildContext context) => gradient(context, context.dependOnInheritedWidgetOfExactType<CardLook>()?.index ?? 0);
+  static CardStyle of(BuildContext context) => cardLooks[context.dependOnInheritedWidgetOfExactType<CardLook>()?.index ?? 0];
 
   @override
   bool updateShouldNotify(CardLook oldWidget) => oldWidget.index != index;
 }
 
-/// The frame every shared image uses: brand gradient, the mark and name on top, the tagline at the bottom.
+/// A shared card's background: the look's gradient with its pattern painted over it.
+class CardBackdrop extends StatelessWidget {
+  const CardBackdrop({super.key, required this.padding, required this.child});
+  final EdgeInsets padding;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = CardLook.of(context);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: DecoratedBox(
+        decoration: BoxDecoration(gradient: style.gradient(context)),
+        child: CustomPaint(painter: _DecoPainter(style.deco), child: Padding(padding: padding, child: child)),
+      ),
+    );
+  }
+}
+
+class _DecoPainter extends CustomPainter {
+  const _DecoPainter(this.deco);
+  final CardDeco deco;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    switch (deco) {
+      case CardDeco.none:
+        break;
+      case CardDeco.bubbles:
+        final fill = Paint()..color = Colors.white.withValues(alpha: 0.12);
+        for (final (x, y, r) in const [(0.92, 0.06, 0.30), (0.04, 0.96, 0.36), (0.80, 0.78, 0.12), (0.12, 0.20, 0.07)]) {
+          canvas.drawCircle(Offset(w * x, h * y), w * r, fill);
+        }
+      case CardDeco.stripes:
+        final band = Paint()
+          ..color = Colors.white.withValues(alpha: 0.07)
+          ..strokeWidth = 16;
+        for (var x = -h; x < w; x += 44) {
+          canvas.drawLine(Offset(x, 0), Offset(x + h, h), band);
+        }
+      case CardDeco.stars:
+        for (var i = 0; i < 46; i++) {
+          canvas.drawCircle(Offset(w * (i * 37 % 100) / 100, h * (i * 61 % 100) / 100), 0.9 + i % 3 * 0.7, Paint()..color = Colors.white.withValues(alpha: 0.25 + i % 4 * 0.12));
+        }
+      case CardDeco.rings:
+        final line = Paint()
+          ..color = Colors.white.withValues(alpha: 0.14)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2;
+        for (final r in const [0.22, 0.38, 0.54, 0.70]) {
+          canvas.drawCircle(Offset(w, 0), w * r, line);
+        }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DecoPainter oldDelegate) => oldDelegate.deco != deco;
+}
+
+/// The frame every shared image uses: the look's backdrop, the mark and name on top, the tagline at the bottom.
 class ShareCard extends StatelessWidget {
   const ShareCard({super.key, required this.label, required this.child});
   final String label;
@@ -39,19 +119,22 @@ class ShareCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brand = [
+      ClipRRect(borderRadius: BorderRadius.circular(9), child: Image.asset('assets/brand/icon.png', width: 30, height: 30)),
+      const SizedBox(width: 8),
+      const Text('Gharcha', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 17, color: Colors.white)),
+    ];
     return AspectRatio(
       aspectRatio: 1080 / 1350,
-      child: Container(
+      child: CardBackdrop(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(gradient: CardLook.of(context), borderRadius: BorderRadius.circular(28)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(children: [
-            ClipRRect(borderRadius: BorderRadius.circular(9), child: Image.asset('assets/brand/icon.png', width: 30, height: 30)),
-            const SizedBox(width: 8),
-            const Text('Gharcha', style: TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 17, color: Colors.white)),
-            const Spacer(),
-            Pill(label, onDark: true),
-          ]),
+          if (CardLook.of(context).centered) ...[
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: brand),
+            const SizedBox(height: 8),
+            Center(child: Pill(label, onDark: true)),
+          ] else
+            Row(children: [...brand, const Spacer(), Pill(label, onDark: true)]),
           const SizedBox(height: 14),
           Expanded(child: child),
           const SizedBox(height: 12),
@@ -62,16 +145,18 @@ class ShareCard extends StatelessWidget {
   }
 }
 
-/// The white panel most cards put their details on.
+/// The panel most cards put their details on; its shape and edge follow the look.
 class _Panel extends StatelessWidget {
   const _Panel({required this.child});
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
+    final style = CardLook.of(context);
+    final border = style.panelBorder;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 24, offset: const Offset(0, 10))]),
+      decoration: BoxDecoration(color: Color(style.panelColor), borderRadius: BorderRadius.circular(style.panelRadius), border: border == null ? null : Border.all(color: Color(border), width: 2.5), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 24, offset: const Offset(0, 10))]),
       child: DefaultTextStyle.merge(style: const TextStyle(color: Color(0xFF1D1517)), child: child),
     );
   }

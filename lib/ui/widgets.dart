@@ -679,11 +679,11 @@ void toast(BuildContext context, String message, {VoidCallback? onUndo}) {
           child: Container(
             margin: const EdgeInsets.only(left: 12),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(color: const Color(0xFFFFC531), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(gradient: context.heroGradient, borderRadius: BorderRadius.circular(14)),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.undo_rounded, size: 18, color: Color(0xFF2A2024)),
+              const Icon(Icons.undo_rounded, size: 18, color: Colors.white),
               const SizedBox(width: 6),
-              Text(tr('undo'), style: const TextStyle(color: Color(0xFF2A2024), fontWeight: FontWeight.w800)),
+              Text(tr('undo'), style: const TextStyle(fontFamily: 'Poppins', color: Colors.white, fontWeight: FontWeight.w700)),
             ]),
           ),
         ),

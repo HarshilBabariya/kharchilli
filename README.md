@@ -22,6 +22,8 @@ Steps for Google Play (upload key and four repo secrets) and the App Store (Appl
 ## Version history
 | Version | Date | Notes |
 |---|---|---|
+| 1.10.2 | 2026-11-19 | Real share card styles, themed Undo, removable khata payments |
+| 1.10.1 | 2026-11-19 | Second build artifact with payment capture |
 | 1.10.0 | 2026-11-19 | Editing everywhere, goal history, quick tips, website download fix |
 | 1.9.1 | 2026-11-19 | Notifications for loans, chits, home help, goals, recap, dues |
 | 1.9.0 | 2026-11-19 | Quick access, share card looks, editable lists, back-to-exit |

@@ -98,7 +98,7 @@ class KhataScreen extends StatelessWidget {
                   ]),
                 ),
                 Text('${k.payment ? '−' : '+'}${Fmt.money(k.amount)}', style: sheet.tt.titleSmall!.copyWith(color: k.payment ? good : bad)),
-                if (!k.payment) IconButton(onPressed: () => app.deleteKhata(k), icon: const Icon(Icons.close_rounded, size: 18)),
+                IconButton(onPressed: () => app.deleteKhata(k), icon: const Icon(Icons.close_rounded, size: 18)),
               ]),
             ),
           const SizedBox(height: 8),

@@ -150,7 +150,7 @@ class _SharePreviewState extends State<_SharePreview> {
                 width: 38,
                 height: 38,
                 margin: const EdgeInsets.symmetric(horizontal: 6),
-                decoration: BoxDecoration(shape: BoxShape.circle, gradient: CardLook.gradient(context, i), border: Border.all(color: Colors.white, width: i == _look ? 3.5 : 1.2)),
+                decoration: BoxDecoration(shape: BoxShape.circle, gradient: cardLooks[i].gradient(context), border: Border.all(color: Colors.white, width: i == _look ? 3.5 : 1.2)),
               ),
             ),
         ]),
@@ -195,9 +195,8 @@ class _WeeklyCard extends StatelessWidget {
     const white = Colors.white;
     return AspectRatio(
       aspectRatio: 1080 / 1350,
-      child: Container(
+      child: CardBackdrop(
         padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(gradient: CardLook.of(context), borderRadius: BorderRadius.circular(28)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(tr('weekly_card_title'), style: context.tt.titleLarge!.copyWith(color: white)),
           const Spacer(),

@@ -834,9 +834,13 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Removes an entry; a payment also takes the expense it logged back out.
   Future<void> deleteKhata(KhataEntry k) async {
     khata.remove(k);
     await _store.remove(k);
+    final shop = shops.where((s) => s.id == k.shopId).firstOrNull;
+    final logged = !k.payment || shop == null ? null : expenses.where((e) => e.day == k.day && e.amount == k.amount && e.title == tr('khata_payment_title', [shop.name])).firstOrNull;
+    if (logged != null) await deleteExpense(logged);
     notifyListeners();
   }
 
