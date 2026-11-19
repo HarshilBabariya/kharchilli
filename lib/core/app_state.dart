@@ -113,7 +113,7 @@ class AppState extends ChangeNotifier {
     locked = settings.onboarded && (settings.appLock || me == null);
     if (settings.onboarded) await _dailyChecks();
     await syncCaptures();
-    await _refreshWidget();
+    await _syncNative();
   }
 
   void _applyGlobals() {
@@ -488,20 +488,23 @@ class AppState extends ChangeNotifier {
     _syncSoon?.cancel();
     _syncSoon = Timer(const Duration(seconds: 2), () {
       syncNotifications();
-      _refreshWidget();
+      _syncNative();
     });
   }
 
-  Future<void> _refreshWidget() async {
+  /// Hands the Android widget and payment alert their text in the app's language, then asks the widget to redraw.
+  Future<void> _syncNative() async {
     if (!Platform.isAndroid || !settings.onboarded) return;
     final today = Days.today();
     final safe = safeToday;
     try {
-      await _store.saveWidget(
-        title: tr('widget_month', [Fmt.month(today)]),
-        amount: Fmt.money(spentIn(today)),
-        note: safe == null ? tr('widget_today', [Fmt.money(max(net(onDay(today)), 0.0))]) : tr('widget_safe', [Fmt.money(max(safe, 0.0))]),
-      );
+      await _store.saveForNative({
+        'widget_title': tr('widget_month', [Fmt.month(today)]),
+        'widget_amount': Fmt.money(spentIn(today)),
+        'widget_note': safe == null ? tr('widget_today', [Fmt.money(max(net(onDay(today)), 0.0))]) : tr('widget_safe', [Fmt.money(max(safe, 0.0))]),
+        'capture_alert_title': tr('capture_alert_title'),
+        'capture_alert_body': tr('capture_alert_body'),
+      });
       await const AndroidIntent(action: 'app.gharcha.WIDGET_REFRESH', package: 'app.gharcha', componentName: 'app.gharcha.SpendWidget').sendBroadcast();
     } on Exception {
       return;
@@ -728,6 +731,16 @@ class AppState extends ChangeNotifier {
 
   Future<void> setMonthlyBudget(double value) async {
     settings.monthlyBudget = value;
+    await _persist();
+  }
+
+  Future<void> setCardLook(String card, int look) async {
+    settings.cardLooks[card] = look;
+    await _persist();
+  }
+
+  Future<void> setTourSeen() async {
+    settings.tourSeen = true;
     await _persist();
   }
 

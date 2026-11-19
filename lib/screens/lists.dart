@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 
@@ -81,6 +82,16 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
               Icon(item.done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, color: item.done ? good : context.cs.onSurfaceVariant),
               const SizedBox(width: 12),
               Expanded(child: Text(item.name, style: context.tt.titleMedium!.copyWith(decoration: item.done ? TextDecoration.lineThrough : null, color: item.done ? context.cs.onSurfaceVariant : null))),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: Icon(Icons.edit_rounded, size: 18, color: context.cs.onSurfaceVariant),
+                onPressed: () async {
+                  final name = await askText(context, tr('a11y_edit'), tr('shopping_item'), tr('shopping_hint'), initial: item.name);
+                  if (name == null) return;
+                  item.name = name.capitalised;
+                  await app.put(app.shopping, item);
+                },
+              ),
               IconButton(visualDensity: VisualDensity.compact, icon: Icon(Icons.close_rounded, size: 20, color: context.cs.onSurfaceVariant), onPressed: () => app.drop(app.shopping, item)),
             ]),
           ),
@@ -202,7 +213,15 @@ class LoansScreen extends StatelessWidget {
                 },
               ),
             ]),
-            if (!l.settled)
+            if (l.settled)
+              Padding(
+                padding: const EdgeInsets.only(top: 10, right: 8),
+                child: KButton(tr('reopen'), tonal: true, icon: Icons.undo_rounded, onTap: () {
+                  l.settled = false;
+                  app.put(app.loans, l);
+                }),
+              )
+            else
               Padding(
                 padding: const EdgeInsets.only(top: 10, right: 8),
                 child: Row(children: [
@@ -251,6 +270,32 @@ class LoansScreen extends StatelessWidget {
 /// Things being saved up for, with how far along each is.
 class GoalsScreen extends StatelessWidget {
   const GoalsScreen({super.key});
+
+  void _history(BuildContext context, Goal g) {
+    showKSheet<void>(
+      context,
+      title: g.name,
+      builder: (sheet) {
+        final app = AppScope.of(sheet);
+        return Column(children: [
+          for (final (i, (day, amount)) in g.history.indexed.toList().reversed)
+            Row(children: [
+              Expanded(child: Text(Fmt.date(Days.fromKey(day), 'd MMM yyyy'), style: sheet.tt.titleMedium)),
+              Text(Fmt.money(amount), style: sheet.tt.titleMedium!.copyWith(fontWeight: FontWeight.w700)),
+              IconButton(
+                icon: Icon(Icons.delete_outline_rounded, color: sheet.cs.onSurfaceVariant),
+                onPressed: () {
+                  g.history.removeAt(i);
+                  g.saved = max(g.saved - amount, 0.0);
+                  app.put(app.goals, g);
+                },
+              ),
+            ]),
+          if (g.history.isEmpty) Text(tr('goal_history_empty'), style: sheet.tt.bodySmall),
+        ]);
+      },
+    );
+  }
 
   Future<void> _edit(BuildContext context, Goal? existing) async {
     final app = AppScope.read(context);
@@ -317,12 +362,21 @@ class GoalsScreen extends StatelessWidget {
                   style: context.tt.bodySmall!.copyWith(color: g.left <= 0 ? good : null, fontWeight: g.left <= 0 ? FontWeight.w700 : null),
                 ),
                 const SizedBox(height: 12),
-                KButton(tr('goal_add_money'), tonal: true, icon: Icons.savings_rounded, onTap: () async {
-                  final amount = await askAmount(context, title: tr('goal_add_money'));
-                  if (amount == null || amount <= 0) return;
-                  g.saved += amount;
-                  await app.put(app.goals, g);
-                }),
+                Row(children: [
+                  Expanded(
+                    child: KButton(tr('goal_add_money'), tonal: true, icon: Icons.savings_rounded, onTap: () async {
+                      final amount = await askAmount(context, title: tr('goal_add_money'));
+                      if (amount == null || amount <= 0) return;
+                      g.saved += amount;
+                      g.history.add((Days.key(Days.today()), amount));
+                      await app.put(app.goals, g);
+                    }),
+                  ),
+                  if (g.history.isNotEmpty) ...[
+                    const SizedBox(width: 10),
+                    Expanded(child: KButton(tr('goal_history'), tonal: true, icon: Icons.history_rounded, onTap: () => _history(context, g))),
+                  ],
+                ]),
               ]),
             ),
           ),
@@ -392,7 +446,8 @@ class PapersScreen extends StatelessWidget {
               child: Builder(builder: (context) {
                 final left = Days.between(today, Days.fromKey(p.expiryDay));
                 final tone = left < 0 ? bad : left <= 30 ? warn : good;
-                return Row(children: [
+                return Column(children: [
+                  Row(children: [
                   if (p.photo.isEmpty) IconTile(Icons.description_rounded, color: tone) else Pressable(onTap: () => showKSheet<void>(context, title: p.name, builder: (_) => ClipRRect(borderRadius: BorderRadius.circular(18), child: InteractiveViewer(child: Image.file(File('${app.photosDir}/${p.photo}'), fit: BoxFit.contain)))), child: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File('${app.photosDir}/${p.photo}'), width: 44, height: 44, fit: BoxFit.cover))),
                   const SizedBox(width: 12),
                   Expanded(
@@ -409,6 +464,18 @@ class PapersScreen extends StatelessWidget {
                       app.drop(app.papers, p);
                     },
                   ),
+                  ]),
+                  if (left <= 30)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10, right: 8),
+                      child: KButton(tr('paper_renewed'), tonal: true, icon: Icons.autorenew_rounded, onTap: () async {
+                        final expiry = Days.fromKey(p.expiryDay);
+                        final next = await _pickDay(context, initial: DateTime(max(expiry.year, today.year) + 1, expiry.month, expiry.day));
+                        if (next == null) return;
+                        p.expiryDay = Days.key(next);
+                        await app.put(app.papers, p);
+                      }),
+                    ),
                 ]);
               }),
             ),

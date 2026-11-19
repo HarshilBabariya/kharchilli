@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
@@ -425,12 +427,13 @@ class SavingsScreen extends StatelessWidget {
             ),
           ]),
         ),
-        SectionTitle(tr('gold'), action: tr('add_gold'), onAction: () => _addGold(context)),
+        SectionTitle(tr('gold'), action: tr('add_gold'), onAction: () => _editGold(context, null)),
         for (final g in app.gold)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: KCard(
                 padding: const EdgeInsets.fromLTRB(14, 14, 6, 14),
+                onTap: () => _editGold(context, g),
                 child: Row(children: [
                   const Sticker('gold', size: 48),
                   const SizedBox(width: 12),
@@ -455,12 +458,13 @@ class SavingsScreen extends StatelessWidget {
                 ]),
             ),
           ),
-        SectionTitle(tr('chits'), action: tr('add_chit'), onAction: () => _addChit(context)),
+        SectionTitle(tr('chits'), action: tr('add_chit'), onAction: () => _editChit(context, null)),
         if (app.chits.isEmpty) Text(tr('chits_empty'), style: context.tt.bodySmall),
         for (final c in app.chits)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: KCard(
+                onTap: () => _editChit(context, c),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     Expanded(child: Text(c.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge)),
@@ -509,13 +513,15 @@ class SavingsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _addGold(BuildContext context) async {
+  Future<void> _editGold(BuildContext context, GoldItem? existing) async {
     final app = AppScope.read(context);
-    final label = TextEditingController(), grams = TextEditingController(), paid = TextEditingController();
-    var karat = 22;
+    final label = TextEditingController(text: existing?.label ?? ''),
+        grams = TextEditingController(text: existing == null ? '' : Fmt.number(existing.grams).replaceAll(',', '')),
+        paid = TextEditingController(text: existing == null || existing.pricePaid <= 0 ? '' : Fmt.number(existing.pricePaid).replaceAll(',', ''));
+    var karat = existing?.karat ?? 22;
     await showKSheet<void>(
       context,
-      title: tr('add_gold'),
+      title: existing?.label ?? tr('add_gold'),
       builder: (sheet) => StatefulBuilder(
         builder: (_, setState) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           KField(controller: label, label: tr('gold_label'), hint: tr('gold_label_hint'), onChanged: (_) => setState(() {})),
@@ -529,21 +535,28 @@ class SavingsScreen extends StatelessWidget {
           KButton(tr('save'), onTap: label.text.trim().isEmpty || (double.tryParse(grams.text) ?? 0) <= 0
               ? null
               : () async {
-                  final nav = Navigator.of(sheet);
-                  nav.pop();
-                  await app.saveGold(GoldItem(label: label.text.trim().capitalised, grams: double.parse(grams.text), karat: karat, pricePaid: double.tryParse(paid.text) ?? 0.0));
+                  Navigator.of(sheet).pop();
+                  final item = existing ?? GoldItem(label: '', grams: 0);
+                  item
+                    ..label = label.text.trim().capitalised
+                    ..grams = double.parse(grams.text)
+                    ..karat = karat
+                    ..pricePaid = double.tryParse(paid.text) ?? 0.0;
+                  await app.put(app.gold, item);
                 }),
         ]),
       ),
     );
   }
 
-  Future<void> _addChit(BuildContext context) async {
+  Future<void> _editChit(BuildContext context, Chit? existing) async {
     final app = AppScope.read(context);
-    final name = TextEditingController(), monthly = TextEditingController(), months = TextEditingController(text: '20');
+    final name = TextEditingController(text: existing?.name ?? ''),
+        monthly = TextEditingController(text: existing == null ? '' : Fmt.number(existing.monthlyAmount).replaceAll(',', '')),
+        months = TextEditingController(text: '${existing?.months ?? 20}');
     await showKSheet<void>(
       context,
-      title: tr('add_chit'),
+      title: existing?.name ?? tr('add_chit'),
       builder: (sheet) => StatefulBuilder(
         builder: (_, setState) => Column(children: [
           KField(controller: name, label: tr('chit_name'), hint: tr('chit_name_hint'), onChanged: (_) => setState(() {})),
@@ -552,14 +565,18 @@ class SavingsScreen extends StatelessWidget {
           const SizedBox(height: 10),
           KField(controller: months, label: tr('chit_months'), number: true, onChanged: (_) => setState(() {})),
           const SizedBox(height: 6),
-          Text('${tr('chit_start')} · ${Fmt.monthYear(Days.today())}', style: sheet.tt.bodySmall),
+          Text('${tr('chit_start')} · ${Fmt.monthYear(existing == null ? Days.today() : DateTime(existing.startMonth ~/ 100, existing.startMonth % 100))}', style: sheet.tt.bodySmall),
           const SizedBox(height: 14),
           KButton(tr('save'), onTap: name.text.trim().isEmpty || (double.tryParse(monthly.text) ?? 0) <= 0 || (int.tryParse(months.text) ?? 0) <= 0
               ? null
               : () async {
-                  final nav = Navigator.of(sheet);
-                  nav.pop();
-                  await app.saveChit(Chit(name: name.text.trim().capitalised, monthlyAmount: double.parse(monthly.text), months: int.parse(months.text), startMonth: Days.monthKey(Days.today())));
+                  Navigator.of(sheet).pop();
+                  final chit = existing ?? Chit(name: '', monthlyAmount: 0, months: 0, startMonth: Days.monthKey(Days.today()));
+                  chit
+                    ..name = name.text.trim().capitalised
+                    ..monthlyAmount = double.parse(monthly.text)
+                    ..months = max(int.parse(months.text), chit.paidMonths);
+                  await app.saveChit(chit);
                 }),
         ]),
       ),

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_default_note">शुरू करने के लिए ऐप खोलें</string>
+    <string name="widget_voice">बोलकर जोड़ें</string>
+    <string name="widget_add">खर्च जोड़ें</string>
+</resources>

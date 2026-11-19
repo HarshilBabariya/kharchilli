@@ -70,8 +70,8 @@ class PaymentListener : NotificationListenerService() {
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) Notification.Builder(this, CHANNEL) else Notification.Builder(this)
         manager.notify(ALERT_ID, builder
             .setSmallIcon(if (icon != 0) icon else applicationInfo.icon)
-            .setContentTitle("Payment spotted")
-            .setContentText("Tap to add it to Gharcha")
+            .setContentTitle(prefs().getString(ALERT_TITLE, null) ?: "Payment spotted")
+            .setContentText(prefs().getString(ALERT_BODY, null) ?: "Tap to add it to Gharcha")
             .setContentIntent(open)
             .setAutoCancel(true)
             .build())
@@ -83,5 +83,7 @@ class PaymentListener : NotificationListenerService() {
         const val MAX_QUEUED = 200
         const val CHANNEL = "capture"
         const val ALERT_ID = 930001
+        const val ALERT_TITLE = "flutter.capture_alert_title"
+        const val ALERT_BODY = "flutter.capture_alert_body"
     }
 }

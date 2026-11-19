@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_default_note">Open the app to begin</string>
+    <string name="widget_voice">Voice entry</string>
+    <string name="widget_add">Add transaction</string>
+</resources>

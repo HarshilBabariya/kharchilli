@@ -25,8 +25,9 @@ import 'lists.dart';
 import 'lock.dart';
 import 'reminders.dart';
 import 'rewards.dart';
+import 'tour.dart';
 
-const appVersion = '1.9.1';
+const appVersion = '1.10.0';
 
 class MeTab extends StatelessWidget {
   const MeTab({super.key});
@@ -229,6 +230,7 @@ class SettingsScreen extends StatelessWidget {
           ),
         ]),
         _section(context, tr('more_options'), [
+          NavRow(icon: Icons.lightbulb_rounded, color: const Color(0xFFFFB300), title: tr('tour_replay'), subtitle: tr('tour_replay_sub'), onTap: () => showTour(context)),
           NavRow(icon: Icons.help_rounded, title: tr('faqs'), subtitle: tr('faqs_sub'), onTap: () => _faqs(context)),
           NavRow(icon: Icons.shield_rounded, color: good, title: tr('privacy'), subtitle: tr('privacy_sub'), onTap: () => showKSheet<void>(context, title: tr('privacy'), builder: (sheet) => Text(tr('privacy_body'), style: sheet.tt.bodyMedium))),
           NavRow(icon: Icons.info_rounded, title: tr('about_app'), subtitle: tr('about_sub'), onTap: () => _about(context)),

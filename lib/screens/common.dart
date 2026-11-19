@@ -147,8 +147,8 @@ Future<double?> askAmount(BuildContext context, {required String title, double? 
 }
 
 /// Asks for one line of text.
-Future<String?> askText(BuildContext context, String title, String label, String hint) {
-  final text = TextEditingController();
+Future<String?> askText(BuildContext context, String title, String label, String hint, {String initial = ''}) {
+  final text = TextEditingController(text: initial);
   return showKSheet<String>(
     context,
     title: title,

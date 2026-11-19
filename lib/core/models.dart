@@ -700,10 +700,10 @@ class HomeService extends Doc {
 class GoldItem extends Doc {
   GoldItem({required this.label, required this.grams, this.karat = 22, this.pricePaid = 0});
 
-  final String label;
-  final double grams;
-  final int karat;
-  final double pricePaid;
+  String label;
+  double grams;
+  int karat;
+  double pricePaid;
 
   double valueAt(double rate24k) => grams * rate24k * karat / 24;
 
@@ -742,7 +742,7 @@ class Capture extends Doc {
 
 /// Something being saved up for.
 class Goal extends Doc {
-  Goal({required this.name, required this.target, this.saved = 0, this.dueMonth});
+  Goal({required this.name, required this.target, this.saved = 0, this.dueMonth, List<(int, double)>? history}) : history = history ?? [];
 
   String name;
   double target;
@@ -750,6 +750,9 @@ class Goal extends Doc {
 
   /// Month key (yyyymm) the money is wanted by, if a date was set.
   int? dueMonth;
+
+  /// Each "Add money": the day key and the amount, oldest first.
+  final List<(int, double)> history;
 
   double get left => (target - saved).clamp(0, target).toDouble();
 
@@ -765,16 +768,25 @@ class Goal extends Doc {
   String get kind => 'goal';
 
   @override
-  Json toJson() => {'name': name, 'target': target, 'saved': saved, 'dueMonth': dueMonth};
+  Json toJson() => {
+        'name': name,
+        'target': target,
+        'saved': saved,
+        'dueMonth': dueMonth,
+        'history': [for (final (day, amount) in history) [day, amount]],
+      };
 
-  factory Goal.fromJson(Json j) => Goal(name: j['name'] as String, target: (j['target'] as num).toDouble(), saved: (j['saved'] as num? ?? 0).toDouble(), dueMonth: j['dueMonth'] as int?);
+  factory Goal.fromJson(Json j) => Goal(name: j['name'] as String, target: (j['target'] as num).toDouble(), saved: (j['saved'] as num? ?? 0).toDouble(),
+        dueMonth: j['dueMonth'] as int?,
+        history: [for (final h in j['history'] as List? ?? const []) ((h as List)[0] as int, (h[1] as num).toDouble())],
+      );
 }
 
 /// One line of the shopping list.
 class ShopItem extends Doc {
   ShopItem({required this.name, this.done = false});
 
-  final String name;
+  String name;
   bool done;
 
   @override
@@ -843,9 +855,9 @@ class Account extends Doc {
 class Chit extends Doc {
   Chit({required this.name, required this.monthlyAmount, required this.months, required this.startMonth, this.paidMonths = 0, this.prizeAmount});
 
-  final String name;
-  final double monthlyAmount;
-  final int months;
+  String name;
+  double monthlyAmount;
+  int months;
 
   /// Month key (yyyymm).
   final int startMonth;
@@ -901,6 +913,10 @@ class Settings {
   /// Routes of the Home quick-access row, at most [quickAccessMax].
   List<String> quickAccess = ['reminders', 'shopping', 'goals', 'loans'];
   static const quickAccessMax = 4;
+
+  /// The background last used for each kind of share card, keyed by the card's file name.
+  Map<String, int> cardLooks = {};
+  bool tourSeen = false;
   bool soundEffects = true;
   bool festiveMode = true;
   double goldRate = 0;
@@ -937,6 +953,8 @@ class Settings {
         'rewardNotifs': rewardNotifs,
         'tone': tone.name,
         'quickAccess': quickAccess,
+        'cardLooks': cardLooks,
+        'tourSeen': tourSeen,
         'soundEffects': soundEffects,
         'festiveMode': festiveMode,
         'goldRate': goldRate,
@@ -975,6 +993,8 @@ class Settings {
       ..rewardNotifs = j['rewardNotifs'] as bool? ?? true
       ..tone = _enum(NotifTone.values, j['tone'], NotifTone.spicy)
       ..quickAccess = (j['quickAccess'] as List?)?.cast<String>().toList() ?? ['reminders', 'shopping', 'goals', 'loans']
+      ..cardLooks = {...?(j['cardLooks'] as Map?)?.cast<String, int>()}
+      ..tourSeen = j['tourSeen'] as bool? ?? false
       ..soundEffects = j['soundEffects'] as bool? ?? true
       ..festiveMode = j['festiveMode'] as bool? ?? true
       ..goldRate = (j['goldRate'] as num? ?? 0).toDouble()

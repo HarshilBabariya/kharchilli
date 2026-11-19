@@ -1,7 +1,7 @@
 name: gharcha
 description: Gharcha - household expenses with spice. Track, split, budget and get roasted for it.
 publish_to: none
-version: 1.9.1+20
+version: 1.10.0+21
 
 environment:
   sdk: ^3.8.0

@@ -51,11 +51,12 @@ class Store {
 
   Future<void> saveSettings(Settings settings) => _prefs.setString(_settingsKey, jsonEncode(settings.toJson()));
 
-  /// The lines the Android home-screen widget shows; platform/android/kotlin/SpendWidget.kt reads the same keys.
-  Future<void> saveWidget({required String title, required String amount, required String note}) async {
-    await _prefs.setString('widget_title', title);
-    await _prefs.setString('widget_amount', amount);
-    await _prefs.setString('widget_note', note);
+  /// Text the Android side shows without a Flutter engine: the widget's lines (SpendWidget.kt) and the payment
+  /// alert's wording (PaymentListener.kt). Both read these keys from the same preferences file.
+  Future<void> saveForNative(Map<String, String> lines) async {
+    for (final line in lines.entries) {
+      await _prefs.setString(line.key, line.value);
+    }
   }
 
   /// Keys the Android notification listener writes to (see tool/patch_platforms.py).

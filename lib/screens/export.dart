@@ -111,7 +111,12 @@ class _SharePreview extends StatefulWidget {
 
 class _SharePreviewState extends State<_SharePreview> {
   final _boundary = GlobalKey();
-  int _look = 0;
+  late int _look = (AppScope.read(context).settings.cardLooks[widget.file] ?? 0) % cardLooks.length;
+
+  void _pick(int look) {
+    setState(() => _look = look % cardLooks.length);
+    AppScope.read(context).setCardLook(widget.file, _look);
+  }
 
   Future<void> _share() async {
     final render = _boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
@@ -131,7 +136,7 @@ class _SharePreviewState extends State<_SharePreview> {
           child: GestureDetector(
             onHorizontalDragEnd: (drag) {
               final speed = drag.primaryVelocity ?? 0;
-              if (speed != 0) setState(() => _look = (_look + (speed < 0 ? 1 : -1)) % cardLooks.length);
+              if (speed != 0) _pick(_look + (speed < 0 ? 1 : -1));
             },
             child: RepaintBoundary(key: _boundary, child: CardLook(index: _look, child: widget.card)),
           ),
@@ -140,7 +145,7 @@ class _SharePreviewState extends State<_SharePreview> {
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           for (var i = 0; i < cardLooks.length; i++)
             Pressable(
-              onTap: () => setState(() => _look = i),
+              onTap: () => _pick(i),
               child: Container(
                 width: 38,
                 height: 38,

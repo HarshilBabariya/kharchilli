@@ -19,6 +19,7 @@ import 'lists.dart';
 import 'me.dart';
 import 'reminders.dart';
 import 'rewards.dart';
+import 'tour.dart';
 
 class Shell extends StatefulWidget {
   const Shell({super.key});
@@ -39,7 +40,11 @@ class _ShellState extends State<Shell> {
     super.initState();
     Notifier.routeTaps.addListener(_followRoute);
     _lifecycle = AppLifecycleListener(onResume: () => AppScope.read(context).syncCaptures());
-    WidgetsBinding.instance.addPostFrameCallback((_) => _followRoute());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final showTips = Notifier.pendingRoute == null && !AppScope.read(context).settings.tourSeen;
+      _followRoute();
+      if (showTips) showTour(context);
+    });
     const QuickActions()
       ..initialize(Notifier.open)
       ..setShortcutItems([

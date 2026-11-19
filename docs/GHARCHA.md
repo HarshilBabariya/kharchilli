@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Gharcha is
 Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/Kharchili`; the repo kept the app's previous working name). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.9.1+20`.
+- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.10.0+21`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Gharcha → Me → Your data → Import CSV.
 - Names: 1.0.x shipped as Kharchili (`app.kharchili`); 1.1.0 renamed it to Gharcha with a new id, so it installs as a separate app from a 1.0.x test build (move data with CSV export / import). Name check (Nov 2026): "Chillar" and "GharKharch" are taken by other expense apps; no app named Gharcha turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -16,7 +16,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Every handover updates this document and the README in the same pass.
 - Fixes are verified in a fresh review pass before a zip is handed over.
 
-## 3. Features in 1.9.1
+## 3. Features in 1.10.0
 ### Look, feel and flows (new in the rewrite)
 - Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment plays on the brand red: the house rises, three gold coins drop into it (it bounces with each), the rupee writes itself, the saffron dot pops and the Gharcha wordmark and tagline slide in. It is the app's own story (money coming home); the earlier letter-with-orbiting-dots opening was too close to the reference app and is gone.
 - Illustrated art instead of emoji: 33 badge medals (bronze, silver or gold rim by difficulty, one to three rank stars, an emblem per badge) and 24 sticker icons (groups, home services, empty screens, shop, gold, forecast). They are drawn as SVG and rendered to PNG by `tool/make_art.py` into `assets/art/`; the app shows them with `Medal` and `Sticker` (`lib/ui/glyphs.dart`). Locked medals are greyed behind a padlock with a progress ring. Points are a gold coin (`Coin`); categories and rows use glossy gradient tiles (`IconTile`).
@@ -26,6 +26,17 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Add transaction: voice banner with a pulsing mic, Expense / Credit segments, a large amount with the currency symbol at the same weight and a money keypad that stays open, Yesterday / Today / Tomorrow chips, Paid by chips, four payment-mode tiles, group split (equal or custom) and a note. Saving floods the screen with the accent colour and a tick springs in, then a points toast with the coin floats up on Home.
 - Celebrations for level-ups, badges, streak milestones and festivals are a card over looping confetti (or the festival's own particle show): the badge's medal, the flame or the dressed avatar on rotating rays, with the household sound and haptics. They wait until no sheet or pushed page is on top.
 - Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 24 themes.
+
+### Added in 1.10.0
+- **Edit after adding:** shopping-list items (pencil on the row), gold items and chit funds (tap the card). `ShopItem`, `GoldItem` and `Chit` fields are mutable for this; a chit's months cannot go below the instalments already paid.
+- **Reopen a settled loan** from its card.
+- **Goal history:** every "Add money" is kept with its date (`Goal.history`); the History button lists them and lets one be removed, which takes it back off the saved total. Money added before 1.10.0 has no entries.
+- **Renewed** on a paper that has expired or has 30 days or less left: pick the new expiry date (the picker opens a year ahead).
+- **Share cards remember their look** per card type (`Settings.cardLooks`, keyed by the card's file name).
+- **Native text in the app's language:** `AppState._syncNative` hands the "Payment spotted" wording to `PaymentListener.kt` through the preferences file, as it already did for the widget. The widget's text before the app has run comes from `res/values{,-hi,-gu}/widget_strings.xml`, which follow the phone's language.
+- **Quick tips:** a four-step sheet (`screens/tour.dart`) shown once on the first start with nothing else pending, and replayable from Settings → More. `Settings.tourSeen` records it.
+- **Website download:** `website/vite.config.js` now links whichever `.apk` the workflow placed in `public/downloads`, so the button works even if the repository still carries an older workflow that names the file differently.
+- Repository hygiene found while checking the live repo: its `.github/workflows/build.yml` and `.gitignore` were older than the project's (the workflow still published `Kharchili.apk`, and `/test/` was ignored so the unit tests never ran). Both are hidden files, which Finder does not copy unless hidden files are shown (Cmd+Shift+.).
 
 ### Added in 1.9.1: more notifications
 All are scheduled in `AppState._schedule` under the existing Reminders switch; the last three are skipped on the Quiet tone. Each opens its own screen through `Shell._followRoute` (new routes `services` and `savings`).
@@ -59,7 +70,7 @@ All are scheduled in `AppState._schedule` under the existing Reminders switch; t
 ### Added in 1.8.0
 - **Home-screen widget (Android):** this month's spending, then "Safe to spend today" (or today's spending without a budget), with Add and Voice buttons. Tapping the card opens the app. Light and dark follow the phone.
   - Native side: `platform/android/kotlin/SpendWidget.kt`, `res/layout/spend_widget.xml`, `res/xml/spend_widget_info.xml`, `res/values*/widget_colors.xml`; `tool/patch_platforms.py` copies every file in `platform/android/kotlin` and adds the `<receiver>`.
-  - Data: `AppState._refreshWidget` writes three ready-to-show lines through `Store.saveWidget` and broadcasts `app.gharcha.WIDGET_REFRESH` (via android_intent_plus); it runs at load and with the debounced notification sync. The widget also redraws itself every 30 minutes from the saved lines.
+  - Data: `AppState._syncNative` writes three ready-to-show lines through `Store.saveForNative` and broadcasts `app.gharcha.WIDGET_REFRESH` (via android_intent_plus); it runs at load and with the debounced notification sync. The widget also redraws itself every 30 minutes from the saved lines.
   - Buttons reuse the launcher-shortcut route: the intent carries the extra the quick_actions plugin reads (`SpendWidget.SHORTCUT`), so `Notifier.open` handles them. If a quick_actions update renames that extra, the buttons would only open the app.
   - The widget shows amounts on the home screen even when the app lock is on; it is only there if the user adds it.
 - **8 new themes:** Mango, Mint, Lavender, Coffee, Peacock, Sunset, Rose gold, Ink (220–550 points).
@@ -225,6 +236,7 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.10.0 | 2026-11-19 | Edit shopping, gold and chit entries; reopen loans; goal history; renew papers; remembered card looks; native text in app language; quick tips; website download link fix. |
 | 1.9.1 | 2026-11-19 | Notifications for loans, chit instalments, home help pay, savings goals, month recap and a weekly dues digest. |
 | 1.9.0 | 2026-11-19 | Home quick access, five looks for share cards, loan reminder card, editable goals / papers / loans, back-twice-to-exit, keyboard and tab-size fixes. |
 | 1.8.2 | 2026-11-19 | Restore picker no longer filters by file ending (a backup sent through WhatsApp loses `.json`). |

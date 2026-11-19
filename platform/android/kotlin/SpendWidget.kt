@@ -9,7 +9,7 @@ import android.content.Intent
 import android.widget.RemoteViews
 
 /**
- * Home-screen widget. It shows the three lines the Flutter side last saved (Store.saveWidget) and redraws when the app
+ * Home-screen widget. It shows the three lines the Flutter side last saved (Store.saveForNative) and redraws when the app
  * broadcasts REFRESH. Its buttons open the app with the extra the quick_actions plugin reads, so they follow the same
  * routes as the launcher shortcuts.
  */

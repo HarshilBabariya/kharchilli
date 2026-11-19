@@ -1,7 +1,7 @@
 export const REPO_URL = `https://github.com/${__REPO__}`
 export const APP_VERSION = __APP_VERSION__
 
-export const download = { file: 'Gharcha.apk', url: `${import.meta.env.BASE_URL}downloads/Gharcha.apk` }
+export const download = { file: 'Gharcha.apk', url: `${import.meta.env.BASE_URL}downloads/${__APK__}` }
 
 export const stats = [
   { value: 33, label: 'badges to earn' },

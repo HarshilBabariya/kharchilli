@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_default_note">શરૂ કરવા ઍપ ખોલો</string>
+    <string name="widget_voice">બોલીને ઉમેરો</string>
+    <string name="widget_add">ખર્ચ ઉમેરો</string>
+</resources>
