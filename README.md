@@ -22,6 +22,8 @@ Steps for Google Play (upload key and four repo secrets) and the App Store (Appl
 ## Version history
 | Version | Date | Notes |
 |---|---|---|
+| 1.8.1 | 2026-11-19 | Install fix: payment capture moved to the Play Store build |
+| 1.8.0 | 2026-11-19 | Home-screen widget, 8 themes, 18 avatar items |
 | 1.7.1 | 2026-11-19 | Build fix, shortcut icons, simpler export, Rewards tabs |
 | 1.7.0 | 2026-11-19 | Quick picks, daily limit, bill calendar, goals, month recap, shopping list, loans, advances, warranties, accounts |
 | 1.6.0 | 2026-11-19 | Payment capture from bank / UPI message notifications (Android) |

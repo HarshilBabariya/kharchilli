@@ -25,6 +25,14 @@ const _outfits = <String, (int, int, int)>{
   'outfit_lehenga': (0xFFDB2777, 0xFFFDE047, 5),
   'outfit_spacesuit': (0xFFE5E7EB, 0xFFEF4444, 6),
   'outfit_hero': (0xFFDC2626, 0xFFFACC15, 6),
+  'outfit_tracksuit': (0xFF111827, 0xFF22D3EE, 2),
+  'outfit_raincoat': (0xFFFACC15, 0xFF1F2937, 2),
+  'outfit_pathani': (0xFF334155, 0xFFE2E8F0, 4),
+  'outfit_anarkali': (0xFF0D9488, 0xFFFDE68A, 5),
+  'outfit_bandhgala': (0xFF7F1D1D, 0xFFF5B301, 4),
+  'outfit_gown': (0xFF6D28D9, 0xFFE9D5FF, 5),
+  'outfit_tuxedo': (0xFF0B0B0F, 0xFFFFFFFF, 3),
+  'outfit_pilot': (0xFF1E3A8A, 0xFFFACC15, 6),
   'outfit_diwali_silk': (0xFFB4231F, 0xFFF5B301, 4),
   'outfit_holi': (0xFFFFFFFF, 0xFFE91E8C, 4),
   'outfit_garba': (0xFFD9271C, 0xFF16A34A, 4),
@@ -459,8 +467,13 @@ class _AvatarPainter extends CustomPainter {
         canvas.drawCircle(const Offset(50, 31), 31, p);
       case 'hair_ponytail':
         canvas.drawPath(Path()..moveTo(68, 26)..quadraticBezierTo(90, 30, 82, 66)..quadraticBezierTo(74, 58, 72, 44)..close(), p);
-      case 'hair_bun':
+      case 'hair_bun' || 'hair_top_knot':
         canvas.drawCircle(const Offset(50, 11), 9, p);
+      case 'hair_pigtails':
+        canvas.drawCircle(const Offset(22, 54), 8.5, p);
+        canvas.drawCircle(const Offset(78, 54), 8.5, p);
+      case 'hair_long_curls':
+        canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(21, 14, 79, 84), const Radius.circular(22)), p);
       case 'hair_man_bun':
         canvas.drawCircle(const Offset(52, 12), 6.5, p);
       default:
@@ -473,10 +486,15 @@ class _AvatarPainter extends CustomPainter {
     final shine = _line(Colors.white.withValues(alpha: 0.2), 2);
     final crop = Path()..moveTo(29, 44)..cubicTo(27, 24, 38, 15, 51, 15)..cubicTo(64, 15, 73, 24, 71, 44)..cubicTo(69, 36, 66, 31, 61, 29)..cubicTo(54, 33, 42, 33, 35, 30)..cubicTo(32, 33, 30, 38, 29, 44)..close();
     final swept = Path()..moveTo(29, 44)..cubicTo(27, 24, 38, 15, 50, 15)..cubicTo(62, 15, 73, 24, 71, 44)..cubicTo(68, 34, 62, 28, 52, 26)..cubicTo(46, 32, 36, 34, 29, 44)..close();
+    final buzz = Path()..moveTo(29, 42)..cubicTo(28, 24, 38, 16, 50, 16)..cubicTo(62, 16, 72, 24, 71, 42)..cubicTo(69, 34, 64, 27, 50, 27)..cubicTo(36, 27, 31, 34, 29, 42)..close();
+    final puff = Path()..moveTo(36, 26)..cubicTo(34, 8, 62, 6, 66, 24)..cubicTo(58, 20, 46, 20, 36, 26)..close();
     switch (c.hairId) {
       case 'hair_buzz':
-        canvas.drawPath(Path()..moveTo(29, 42)..cubicTo(28, 24, 38, 16, 50, 16)..cubicTo(62, 16, 72, 24, 71, 42)..cubicTo(69, 34, 64, 27, 50, 27)..cubicTo(36, 27, 31, 34, 29, 42)..close(), _fill(hair.withValues(alpha: 0.82)));
-      case 'hair_long' || 'hair_wavy' || 'hair_bob' || 'hair_ponytail' || 'hair_bun' || 'hair_braids':
+        canvas.drawPath(buzz, _fill(hair.withValues(alpha: 0.82)));
+      case 'hair_undercut':
+        canvas.drawPath(buzz, _fill(hair.withValues(alpha: 0.82)));
+        canvas.drawPath(puff, p);
+      case 'hair_long' || 'hair_wavy' || 'hair_bob' || 'hair_ponytail' || 'hair_bun' || 'hair_braids' || 'hair_pigtails':
         canvas.drawPath(swept, p);
         if (c.hairId == 'hair_braids') {
           for (final x in [25.5, 74.5]) {
@@ -491,14 +509,14 @@ class _AvatarPainter extends CustomPainter {
         canvas.drawPath(Path()..moveTo(29, 44)..cubicTo(27, 24, 38, 15, 50, 15)..cubicTo(62, 15, 73, 24, 71, 44)..cubicTo(70, 38, 68, 34, 64, 31)..cubicTo(56, 40, 40, 38, 33, 30)..cubicTo(31, 34, 30, 38, 29, 44)..close(), p);
       case 'hair_quiff':
         canvas.drawPath(crop, p);
-        canvas.drawPath(Path()..moveTo(36, 26)..cubicTo(34, 8, 62, 6, 66, 24)..cubicTo(58, 20, 46, 20, 36, 26)..close(), p);
+        canvas.drawPath(puff, p);
       case 'hair_spiky':
         canvas.drawPath(crop, p);
         for (var i = 0; i < 5; i++) {
           final x = 34 + i * 8.0;
           canvas.drawPath(Path()..moveTo(x - 5, 22)..lineTo(x + (i - 2) * 1.5, 7)..lineTo(x + 5, 22)..close(), p);
         }
-      case 'hair_curly' || 'hair_afro':
+      case 'hair_curly' || 'hair_afro' || 'hair_long_curls':
         for (var i = 0; i < 9; i++) {
           final a = pi + i * pi / 8;
           canvas.drawCircle(Offset(50 + cos(a) * 20.5, 33 + sin(a) * 17), 7.6, p);
@@ -594,6 +612,27 @@ class _AvatarPainter extends CustomPainter {
     switch (c.accessoryId) {
       case 'acc_bindi':
         canvas.drawCircle(const Offset(50, 33.5), 1.7, _fill(const Color(0xFFD60036)));
+      case 'acc_tilak':
+        canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromCenter(center: const Offset(50, 32.5), width: 2.2, height: 6.5), const Radius.circular(1.1)), _fill(const Color(0xFFD60036)));
+      case 'acc_round_glasses':
+        for (final x in [40.0, 60.0]) {
+          canvas.drawCircle(Offset(x, 45.5), 6.2, _line(gold, 1.4));
+        }
+        canvas.drawLine(const Offset(46.2, 45), const Offset(53.8, 45), _line(gold, 1.4));
+      case 'acc_bandana':
+        canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(head.left - 1, head.top + 9, head.width + 2, 6), const Radius.circular(3)), _fill(const Color(0xFFDC2626)));
+        canvas.drawPath(Path()..moveTo(head.right, head.top + 12)..lineTo(head.right + 8, head.top + 8)..lineTo(head.right + 7, head.top + 18)..close(), _fill(const Color(0xFFB91C1C)));
+      case 'acc_scarf':
+        canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(37, 70, 63, 78), const Radius.circular(4)), _fill(const Color(0xFF0EA5E9)));
+        canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTRB(54, 76, 61, 92), const Radius.circular(3)), _fill(const Color(0xFF0284C7)));
+      case 'acc_flower_crown':
+        for (var i = 0; i < 5; i++) {
+          final a = pi * (1.15 + i * 0.175);
+          canvas.drawCircle(Offset(50 + cos(a) * 21, head.top + 20 + sin(a) * 19), 3.6, _fill(i.isEven ? const Color(0xFFF472B6) : const Color(0xFFFDE047)));
+        }
+      case 'acc_tiara':
+        canvas.drawArc(Rect.fromLTRB(head.left + 5, head.top - 1, head.right - 5, head.top + 22), pi * 1.15, pi * 0.7, false, _line(gold, 2));
+        canvas.drawCircle(Offset(50, head.top - 2), 2.4, _fill(const Color(0xFF38BDF8)));
       case 'acc_earrings':
         canvas.drawCircle(Offset(head.left - 0.5, 53.5), 2.2, _fill(gold));
         canvas.drawCircle(Offset(head.right + 0.5, 53.5), 2.2, _fill(gold));

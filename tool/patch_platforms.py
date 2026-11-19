@@ -47,7 +47,8 @@ PERMISSIONS = '''    <!-- gharcha-patched -->
     </queries>
     <application'''
 
-RECEIVERS = '''        <service
+# Only added with --capture (the Play Store build): Play Protect blocks a sideloaded APK that declares a notification listener.
+CAPTURE = '''        <service
             android:name=".PaymentListener"
             android:exported="false"
             android:label="Gharcha payment capture"
@@ -56,6 +57,14 @@ RECEIVERS = '''        <service
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+'''
+
+RECEIVERS = '''        <receiver android:name=".SpendWidget" android:exported="true" android:label="Gharcha">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/spend_widget_info" />
+        </receiver>
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
             <intent-filter>
@@ -81,6 +90,8 @@ if android.exists():
     manifest = android / 'src' / 'main' / 'AndroidManifest.xml'
     patch(manifest, [('    <application', PERMISSIONS), ('    </application>', RECEIVERS)])
     manifest.write_text(re.sub(r'android:label="[^"]*"', 'android:label="Gharcha"', manifest.read_text(), count=1))
+    if '--capture' in sys.argv and CAPTURE not in manifest.read_text():
+        manifest.write_text(manifest.read_text().replace('    </application>', CAPTURE + '    </application>', 1))
     shutil.copytree(ROOT / 'platform' / 'android' / 'res', android / 'src' / 'main' / 'res', dirs_exist_ok=True)
     # The fingerprint prompt needs a FragmentActivity and, on Android 8 and below, an AppCompat theme.
     for folder, parent in (('values', 'Theme.AppCompat.Light.NoActionBar'), ('values-night', 'Theme.AppCompat.NoActionBar')):
@@ -89,7 +100,7 @@ if android.exists():
             styles.write_text(re.sub(r'parent="@android:style/Theme\.[A-Za-z.]+"', f'parent="{parent}"', styles.read_text()))
     for activity in (android / 'src' / 'main').rglob('MainActivity.kt'):
         activity.write_text(activity.read_text().replace('FlutterActivity', 'FlutterFragmentActivity'))
-        shutil.copy(ROOT / 'platform' / 'android' / 'kotlin' / 'PaymentListener.kt', activity.parent)
+        shutil.copytree(ROOT / 'platform' / 'android' / 'kotlin', activity.parent, dirs_exist_ok=True)
     shutil.copy(ROOT / 'platform' / 'android' / 'sideload.keystore', android / 'sideload.keystore')
 
 plist_path = ROOT / 'ios' / 'Runner' / 'Info.plist'

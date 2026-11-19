@@ -39,3 +39,6 @@ class PaymentParser {
     return (amount: credit ? -amount : amount, merchant: (party ?? '').trim().split('@').first.trim().capitalised);
   }
 }
+
+/// True only in the Play Store build, the one whose manifest declares the notification listener.
+const captureBuild = bool.fromEnvironment('CAPTURE');

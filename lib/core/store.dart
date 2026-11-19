@@ -51,6 +51,13 @@ class Store {
 
   Future<void> saveSettings(Settings settings) => _prefs.setString(_settingsKey, jsonEncode(settings.toJson()));
 
+  /// The lines the Android home-screen widget shows; platform/android/kotlin/SpendWidget.kt reads the same keys.
+  Future<void> saveWidget({required String title, required String amount, required String note}) async {
+    await _prefs.setString('widget_title', title);
+    await _prefs.setString('widget_amount', amount);
+    await _prefs.setString('widget_note', note);
+  }
+
   /// Keys the Android notification listener writes to (see tool/patch_platforms.py).
   static const _captureQueueKey = 'capture_queue', _captureOnKey = 'capture_connected';
 

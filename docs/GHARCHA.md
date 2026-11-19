@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Gharcha is
 Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/Kharchili`; the repo kept the app's previous working name). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.7.1+15`.
+- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.8.1+17`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Gharcha → Me → Your data → Import CSV.
 - Names: 1.0.x shipped as Kharchili (`app.kharchili`); 1.1.0 renamed it to Gharcha with a new id, so it installs as a separate app from a 1.0.x test build (move data with CSV export / import). Name check (Nov 2026): "Chillar" and "GharKharch" are taken by other expense apps; no app named Gharcha turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -16,7 +16,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Every handover updates this document and the README in the same pass.
 - Fixes are verified in a fresh review pass before a zip is handed over.
 
-## 3. Features in 1.7.1
+## 3. Features in 1.8.1
 ### Look, feel and flows (new in the rewrite)
 - Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment plays on the brand red: the house rises, three gold coins drop into it (it bounces with each), the rupee writes itself, the saffron dot pops and the Gharcha wordmark and tagline slide in. It is the app's own story (money coming home); the earlier letter-with-orbiting-dots opening was too close to the reference app and is gone.
 - Illustrated art instead of emoji: 33 badge medals (bronze, silver or gold rim by difficulty, one to three rank stars, an emblem per badge) and 24 sticker icons (groups, home services, empty screens, shop, gold, forecast). They are drawn as SVG and rendered to PNG by `tool/make_art.py` into `assets/art/`; the app shows them with `Medal` and `Sticker` (`lib/ui/glyphs.dart`). Locked medals are greyed behind a padlock with a progress ring. Points are a gold coin (`Coin`); categories and rows use glossy gradient tiles (`IconTile`).
@@ -25,7 +25,22 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Forms: labels sit above their fields (`KField`), two-to-four way choices are sliding segments (`Segmented`), sheets and pinned buttons stay clear of the system navigation bar, and a button ignores taps while its save is running (`KButton`), so nothing is saved or deleted twice.
 - Add transaction: voice banner with a pulsing mic, Expense / Credit segments, a large amount with the currency symbol at the same weight and a money keypad that stays open, Yesterday / Today / Tomorrow chips, Paid by chips, four payment-mode tiles, group split (equal or custom) and a note. Saving floods the screen with the accent colour and a tick springs in, then a points toast with the coin floats up on Home.
 - Celebrations for level-ups, badges, streak milestones and festivals are a card over looping confetti (or the festival's own particle show): the badge's medal, the flame or the dressed avatar on rotating rays, with the household sound and haptics. They wait until no sheet or pushed page is on top.
-- Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 16 themes.
+- Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 24 themes.
+
+### Changed in 1.8.1
+- **Payment capture is now in the Play Store build only.** In India, Play Protect refuses to install an APK from a browser, chat app or file manager when its manifest declares a notification listener ("App blocked to protect your device"), so the website APK no longer declares it and hides the Payment capture row.
+  - `tool/patch_platforms.py --capture` adds the `<service>`; CI runs it only before `flutter build appbundle --dart-define=CAPTURE=true`.
+  - `captureBuild` (`core/capture.dart`) gates the Me row and `AppState.syncCaptures`.
+  - A local APK with capture: `python3 tool/patch_platforms.py --capture && flutter build apk --dart-define=CAPTURE=true`, installed with `adb install` (adb is not blocked).
+
+### Added in 1.8.0
+- **Home-screen widget (Android):** this month's spending, then "Safe to spend today" (or today's spending without a budget), with Add and Voice buttons. Tapping the card opens the app. Light and dark follow the phone.
+  - Native side: `platform/android/kotlin/SpendWidget.kt`, `res/layout/spend_widget.xml`, `res/xml/spend_widget_info.xml`, `res/values*/widget_colors.xml`; `tool/patch_platforms.py` copies every file in `platform/android/kotlin` and adds the `<receiver>`.
+  - Data: `AppState._refreshWidget` writes three ready-to-show lines through `Store.saveWidget` and broadcasts `app.gharcha.WIDGET_REFRESH` (via android_intent_plus); it runs at load and with the debounced notification sync. The widget also redraws itself every 30 minutes from the saved lines.
+  - Buttons reuse the launcher-shortcut route: the intent carries the extra the quick_actions plugin reads (`SpendWidget.SHORTCUT`), so `Notifier.open` handles them. If a quick_actions update renames that extra, the buttons would only open the app.
+  - The widget shows amounts on the home screen even when the app lock is on; it is only there if the user adds it.
+- **8 new themes:** Mango, Mint, Lavender, Coffee, Peacock, Sunset, Rose gold, Ink (220–550 points).
+- **Avatar:** 8 outfits (Tracksuit, Raincoat, Pathani, Anarkali, Bandhgala, Gown, Tuxedo, Pilot), 4 hairstyles (Top knot, Pigtails, Undercut, Long curls), 6 accessories (Tilak, Scarf, Bandana, Round glasses, Flower crown, Tiara). Outfits reuse the existing cuts with new colours; hair and accessories are new drawing in `ui/avatar.dart`.
 
 ### Changed in 1.7.1
 - Build fix: `screens/shell.dart` now imports `core/app_state.dart` (1.7.0 failed `flutter analyze` on `AppScope`).
@@ -102,7 +117,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Budgets: monthly and per category, 80% / 100% alerts once per month per budget, plain-words forecast, +100 for a month under budget.
 - Insights (shop unlock): Week / Month / Year with paging, hero stats, trend, category donut with change vs the previous period, payment-mode split, who paid.
 - Reminders and bills: Once / Daily / Weekly / Monthly / Yearly, presets, optional amount and category, auto-log, a 30-day strip of what is due.
-- Points, 10 levels, 33 badges with progress and how-to, current-streak rules and milestones, points history, shop with 7 themes shown as miniature screens, 18 outfits, 16 hair styles and 13 accessories shown on your own avatar, and 2 features.
+- Points, 10 levels, 33 badges with progress and how-to, current-streak rules and milestones, points history, shop with 15 themes shown as miniature screens, 18 outfits, 16 hair styles and 13 accessories shown on your own avatar, and 2 features.
 - Avatar studio: gender, 10 moods or Auto, 6 skin tones, 7 hair colours, 5 face shapes, 6 beards, 7 actions, idle gestures; the avatar is drawn in code (shaded face, layered hair, outfit cuts, drawn mood marks, no emoji) and the studio keeps the preview pinned above Face / Hair / Outfits / Accessories tabs.
 - Festivals: the same calendar for 2026–2030, nine packs, 3-day window, festive theme, banner with countdown and replay, first-open celebration, claim gifts (+50 ⭐, outfit and accessory), 9:00 greeting.
 - Household money: kirana khata, milk / maid / services month grid with the bill maths and Mark paid, gold and chit funds.
@@ -118,7 +133,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 ### Not in the Flutter app (deliberate, with the reason)
 | HomeQuest feature | Status | Why |
 |---|---|---|
-| SMS / UPI auto-capture | Back since 1.6.0, Android only | See "Added in 1.6.0". iOS has no way to read another app's notifications. HomeQuest shipped this only in its sideloaded "full" flavour and left it out of the Play "lite" flavour; Gharcha has one build, so check Google Play's notification-access and prominent-disclosure rules before a store upload and drop the `<service>` entry in `tool/patch_platforms.py` if it has to go. |
+| SMS / UPI auto-capture | Back since 1.6.0, Android only, Play Store build only since 1.8.1 | See "Added in 1.6.0". iOS has no way to read another app's notifications. HomeQuest shipped this only in its sideloaded "full" flavour and left it out of the Play "lite" flavour; Gharcha has one build, so check Google Play's notification-access and prominent-disclosure rules before a store upload and drop the `<service>` entry in `tool/patch_platforms.py` if it has to go. |
 | Points packs paid by UPI | Removed | Both stores require their own billing for digital goods; a UPI top-up would get the app rejected. |
 | Festival launcher icon and animated splash | Left out | Android activity-aliases and iOS alternate icons need native code per platform. |
 | Hanging festival decor and the three "Lights" styles | Replaced | The banner now carries a looping particle show; the decor art was Compose-only. |
@@ -187,6 +202,8 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.8.1 | 2026-11-19 | Website APK no longer declares the notification listener (Play Protect blocked its install); payment capture ships in the Play Store bundle only. |
+| 1.8.0 | 2026-11-19 | Android home-screen widget; 8 themes; 8 outfits, 4 hairstyles and 6 accessories for the avatar. No new packages. |
 | 1.7.1 | 2026-11-19 | Build fix (missing import in shell), launcher shortcuts with icons, export sheet with month chips and format switch, shorter Rewards tabs. |
 | 1.7.0 | 2026-11-19 | Daily-use release: quick picks, remembered categories, safe-to-spend tile, bill calendar and early bill notice, savings goals, month recap card, shopping list, lent and borrowed, advances for home help, warranties and papers, payment-spotted alert, search by amount, accounts. No new packages. |
 | 1.6.0 | 2026-11-19 | Payment capture from SMS notifications on Android, ported from HomeQuest (native listener, queue in shared preferences, capture inbox). New package: `android_intent_plus`. |

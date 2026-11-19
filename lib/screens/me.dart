@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/biometrics.dart';
+import '../core/capture.dart';
 import '../core/catalogs.dart';
 import '../core/format.dart';
 import '../core/l10n.dart';
@@ -27,7 +26,7 @@ import 'lock.dart';
 import 'reminders.dart';
 import 'rewards.dart';
 
-const appVersion = '1.7.1';
+const appVersion = '1.8.1';
 
 class MeTab extends StatelessWidget {
   const MeTab({super.key});
@@ -106,7 +105,7 @@ class MeTab extends StatelessWidget {
           NavRow(icon: Icons.storefront_rounded, color: const Color(0xFF8D6E63), title: tr('khata'), subtitle: tr('khata_sub'), onTap: () => open(context, const KhataScreen())),
           NavRow(icon: Icons.local_drink_rounded, color: const Color(0xFF29B6F6), title: tr('services'), subtitle: tr('services_sub'), onTap: () => open(context, const ServicesScreen())),
           NavRow(icon: Icons.diamond_rounded, color: const Color(0xFFFFB300), title: tr('savings'), subtitle: tr('savings_sub'), onTap: () => open(context, const SavingsScreen())),
-          if (Platform.isAndroid) NavRow(icon: Icons.sms_rounded, color: const Color(0xFF26A69A), title: tr('capture'), subtitle: app.captures.isEmpty ? tr('capture_sub') : tr('capture_pending', [app.captures.length]), onTap: () => open(context, const CaptureScreen())),
+          if (captureBuild) NavRow(icon: Icons.sms_rounded, color: const Color(0xFF26A69A), title: tr('capture'), subtitle: app.captures.isEmpty ? tr('capture_sub') : tr('capture_pending', [app.captures.length]), onTap: () => open(context, const CaptureScreen())),
         ]),
         const SizedBox(height: 22),
         KCard(

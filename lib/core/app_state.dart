@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart' show DateTimeComponents;
 import 'package:path_provider/path_provider.dart';
@@ -112,6 +113,7 @@ class AppState extends ChangeNotifier {
     locked = settings.onboarded && (settings.appLock || me == null);
     if (settings.onboarded) await _dailyChecks();
     await syncCaptures();
+    await _refreshWidget();
   }
 
   void _applyGlobals() {
@@ -477,10 +479,29 @@ class AppState extends ChangeNotifier {
     await _checkBadges();
     await _persist();
     _syncSoon?.cancel();
-    _syncSoon = Timer(const Duration(seconds: 2), syncNotifications);
+    _syncSoon = Timer(const Duration(seconds: 2), () {
+      syncNotifications();
+      _refreshWidget();
+    });
   }
 
   Timer? _syncSoon;
+
+  Future<void> _refreshWidget() async {
+    if (!Platform.isAndroid || !settings.onboarded) return;
+    final today = Days.today();
+    final safe = safeToday;
+    try {
+      await _store.saveWidget(
+        title: tr('widget_month', [Fmt.month(today)]),
+        amount: Fmt.money(spentIn(today)),
+        note: safe == null ? tr('widget_today', [Fmt.money(max(net(onDay(today)), 0.0))]) : tr('widget_safe', [Fmt.money(max(safe, 0.0))]),
+      );
+      await const AndroidIntent(action: 'app.gharcha.WIDGET_REFRESH', package: 'app.gharcha', componentName: 'app.gharcha.SpendWidget').sendBroadcast();
+    } on Exception {
+      return;
+    }
+  }
 
   Future<bool> unlock(RewardItem item) async {
     if (isUnlocked(item.id)) return true;
@@ -896,7 +917,7 @@ class AppState extends ChangeNotifier {
   /// Turns the messages queued by the notification listener into pending captures, skipping anything that is not a
   /// completed payment or that repeats a capture or expense of the same amount from the last ten minutes.
   Future<void> syncCaptures() async {
-    if (!Platform.isAndroid) return;
+    if (!captureBuild) return;
     captureOn = await _store.captureConnected();
     for (final raw in await _store.takeCaptured()) {
       final sender = (raw['sender'] as String? ?? '').trim();
