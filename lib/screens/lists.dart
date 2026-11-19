@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../core/app_state.dart';
 import '../core/format.dart';
@@ -11,7 +10,9 @@ import '../core/parsers.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'add_expense.dart';
+import 'cards.dart';
 import 'common.dart';
+import 'export.dart';
 
 Future<DateTime?> _pickDay(BuildContext context, {DateTime? initial}) {
   final today = Days.today();
@@ -127,17 +128,17 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
 class LoansScreen extends StatelessWidget {
   const LoansScreen({super.key});
 
-  Future<void> _add(BuildContext context) async {
+  Future<void> _edit(BuildContext context, Loan? existing) async {
     final app = AppScope.read(context);
-    final person = TextEditingController(), amount = TextEditingController();
-    var lent = true;
-    DateTime? due;
+    final person = TextEditingController(text: existing?.person ?? ''), amount = TextEditingController(text: existing == null ? '' : Fmt.number(existing.amount.abs()).replaceAll(',', ''));
+    var lent = (existing?.amount ?? 1) > 0;
+    var due = existing?.dueDay == null ? null : Days.fromKey(existing!.dueDay!);
     await showKSheet<void>(
       context,
-      title: tr('loan_new'),
+      title: existing?.person ?? tr('loan_new'),
       builder: (sheet) => StatefulBuilder(
         builder: (_, setState) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Segmented<bool>(options: {true: tr('loan_lent'), false: tr('loan_borrowed')}, value: lent, color: lent ? good : bad, onChanged: (v) => setState(() => lent = v)),
+          Segmented<bool>(options: {true: tr('loan_lent'), false: tr('loan_borrowed')}, value: lent, color: lent ? good : warn, onChanged: (v) => setState(() => lent = v)),
           const SizedBox(height: 14),
           KField(controller: person, label: tr('loan_person'), hint: tr('loan_person_hint'), onChanged: (_) => setState(() {})),
           const SizedBox(height: 14),
@@ -149,7 +150,12 @@ class LoansScreen extends StatelessWidget {
               : () {
                   Navigator.of(sheet).pop();
                   final value = double.parse(amount.text);
-                  app.put(app.loans, Loan(person: person.text.trim().capitalised, amount: lent ? value : -value, day: Days.key(Days.today()), dueDay: due == null ? null : Days.key(due!)));
+                  final loan = existing ?? Loan(person: '', amount: 0, day: Days.key(Days.today()));
+                  loan
+                    ..person = person.text.trim().capitalised
+                    ..amount = lent ? value : -value
+                    ..dueDay = due == null ? null : Days.key(due!);
+                  app.put(app.loans, loan);
                 }),
         ]),
       ),
@@ -171,15 +177,16 @@ class LoansScreen extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 10),
         child: KCard(
           padding: const EdgeInsets.fromLTRB(14, 14, 6, 14),
+          onTap: () => _edit(context, l),
           child: Column(children: [
             Row(children: [
-              IconTile(lent ? Icons.north_east_rounded : Icons.south_west_rounded, color: l.settled ? context.cs.onSurfaceVariant : lent ? good : bad),
+              IconTile(lent ? Icons.north_east_rounded : Icons.south_west_rounded, color: (lent ? good : warn).withValues(alpha: l.settled ? 0.5 : 1)),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(l.person, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium),
                   Text(
-                    [lent ? tr('loan_lent') : tr('loan_borrowed'), Fmt.date(Days.fromKey(l.day), 'd MMM'), if (!l.settled && left != null) left < 0 ? tr('overdue_days', [-left]) : tr('loan_due_in', [left])].join(' · '),
+                    [lent ? tr('loan_lent') : tr('loan_borrowed'), Fmt.date(Days.fromKey(l.day), 'd MMM'), if (!l.settled && left != null) left < 0 ? trPlural('overdue_days', -left) : trPlural('loan_due_in', left)].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: context.tt.bodySmall!.copyWith(color: !l.settled && left != null && left < 0 ? bad : null),
@@ -200,7 +207,7 @@ class LoansScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 10, right: 8),
                 child: Row(children: [
                   if (lent) ...[
-                    Expanded(child: KButton(tr('remind'), tonal: true, icon: Icons.send_rounded, onTap: () => Share.share(tr('loan_remind_message', [l.person, Fmt.money(l.amount)])))),
+                    Expanded(child: KButton(tr('remind'), tonal: true, icon: Icons.send_rounded, onTap: () => shareCard(context, LoanCard(l), file: 'gharcha-reminder', text: tr('loan_remind_message', [l.person, Fmt.money(l.amount)])))),
                     const SizedBox(width: 10),
                   ],
                   Expanded(
@@ -218,7 +225,7 @@ class LoansScreen extends StatelessWidget {
 
     return KPage(
       title: tr('loans'),
-      bottom: KButton(tr('loan_new'), icon: Icons.add_rounded, onTap: () => _add(context)),
+      bottom: KButton(tr('loan_new'), icon: Icons.add_rounded, onTap: () => _edit(context, null)),
       children: [
         KCard(
           gradient: context.heroGradient,
@@ -245,13 +252,13 @@ class LoansScreen extends StatelessWidget {
 class GoalsScreen extends StatelessWidget {
   const GoalsScreen({super.key});
 
-  Future<void> _add(BuildContext context) async {
+  Future<void> _edit(BuildContext context, Goal? existing) async {
     final app = AppScope.read(context);
-    final name = TextEditingController(), target = TextEditingController();
-    DateTime? due;
+    final name = TextEditingController(text: existing?.name ?? ''), target = TextEditingController(text: existing == null ? '' : Fmt.number(existing.target).replaceAll(',', ''));
+    var due = existing?.dueMonth == null ? null : DateTime(existing!.dueMonth! ~/ 100, existing.dueMonth! % 100);
     await showKSheet<void>(
       context,
-      title: tr('goal_new'),
+      title: existing?.name ?? tr('goal_new'),
       builder: (sheet) => StatefulBuilder(
         builder: (_, setState) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           KField(controller: name, label: tr('goal_name'), hint: tr('goal_name_hint'), onChanged: (_) => setState(() {})),
@@ -263,7 +270,12 @@ class GoalsScreen extends StatelessWidget {
               ? null
               : () {
                   Navigator.of(sheet).pop();
-                  app.put(app.goals, Goal(name: name.text.trim().capitalised, target: double.parse(target.text), dueMonth: due == null ? null : Days.monthKey(due!)));
+                  final goal = existing ?? Goal(name: '', target: 0);
+                  goal
+                    ..name = name.text.trim().capitalised
+                    ..target = double.parse(target.text)
+                    ..dueMonth = due == null ? null : Days.monthKey(due!);
+                  app.put(app.goals, goal);
                 }),
         ]),
       ),
@@ -276,13 +288,14 @@ class GoalsScreen extends StatelessWidget {
     final today = Days.today();
     return KPage(
       title: tr('goals'),
-      bottom: KButton(tr('goal_new'), icon: Icons.add_rounded, onTap: () => _add(context)),
+      bottom: KButton(tr('goal_new'), icon: Icons.add_rounded, onTap: () => _edit(context, null)),
       children: [
         if (app.goals.isEmpty) EmptyState(art: 'gold', title: tr('goals_empty_title'), body: tr('goals_empty_body')),
         for (final g in app.goals)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: KCard(
+              onTap: () => _edit(context, g),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
                   Expanded(child: Text(g.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge)),
@@ -322,14 +335,14 @@ class GoalsScreen extends StatelessWidget {
 class PapersScreen extends StatelessWidget {
   const PapersScreen({super.key});
 
-  Future<void> _add(BuildContext context) async {
+  Future<void> _edit(BuildContext context, Paper? existing) async {
     final app = AppScope.read(context);
-    final name = TextEditingController();
-    DateTime? expiry;
-    var photo = '';
+    final name = TextEditingController(text: existing?.name ?? '');
+    var expiry = existing == null ? null : Days.fromKey(existing.expiryDay);
+    var photo = existing?.photo ?? '';
     await showKSheet<void>(
       context,
-      title: tr('paper_new'),
+      title: existing?.name ?? tr('paper_new'),
       builder: (sheet) => StatefulBuilder(
         builder: (_, setState) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           KField(controller: name, label: tr('paper_name'), hint: tr('paper_name_hint'), onChanged: (_) => setState(() {})),
@@ -348,7 +361,12 @@ class PapersScreen extends StatelessWidget {
               ? null
               : () {
                   Navigator.of(sheet).pop();
-                  app.put(app.papers, Paper(name: name.text.trim().capitalised, expiryDay: Days.key(expiry!), photo: photo));
+                  final paper = existing ?? Paper(name: '', expiryDay: 0);
+                  paper
+                    ..name = name.text.trim().capitalised
+                    ..expiryDay = Days.key(expiry!)
+                    ..photo = photo;
+                  app.put(app.papers, paper);
                 }),
         ]),
       ),
@@ -362,7 +380,7 @@ class PapersScreen extends StatelessWidget {
     final sorted = [...app.papers]..sort((a, b) => a.expiryDay.compareTo(b.expiryDay));
     return KPage(
       title: tr('papers'),
-      bottom: KButton(tr('paper_new'), icon: Icons.add_rounded, onTap: () => _add(context)),
+      bottom: KButton(tr('paper_new'), icon: Icons.add_rounded, onTap: () => _edit(context, null)),
       children: [
         if (sorted.isEmpty) EmptyState(art: 'lock', title: tr('papers_empty_title'), body: tr('papers_empty_body')),
         for (final p in sorted)
@@ -370,12 +388,12 @@ class PapersScreen extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 10),
             child: KCard(
               padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
-              onTap: p.photo.isEmpty ? null : () => showKSheet<void>(context, title: p.name, builder: (_) => ClipRRect(borderRadius: BorderRadius.circular(18), child: InteractiveViewer(child: Image.file(File('${app.photosDir}/${p.photo}'), fit: BoxFit.contain)))),
+              onTap: () => _edit(context, p),
               child: Builder(builder: (context) {
                 final left = Days.between(today, Days.fromKey(p.expiryDay));
                 final tone = left < 0 ? bad : left <= 30 ? warn : good;
                 return Row(children: [
-                  if (p.photo.isEmpty) IconTile(Icons.description_rounded, color: tone) else ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File('${app.photosDir}/${p.photo}'), width: 44, height: 44, fit: BoxFit.cover)),
+                  if (p.photo.isEmpty) IconTile(Icons.description_rounded, color: tone) else Pressable(onTap: () => showKSheet<void>(context, title: p.name, builder: (_) => ClipRRect(borderRadius: BorderRadius.circular(18), child: InteractiveViewer(child: Image.file(File('${app.photosDir}/${p.photo}'), fit: BoxFit.contain)))), child: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File('${app.photosDir}/${p.photo}'), width: 44, height: 44, fit: BoxFit.cover))),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -383,7 +401,7 @@ class PapersScreen extends StatelessWidget {
                       Text(Fmt.date(Days.fromKey(p.expiryDay), 'd MMM yyyy'), style: context.tt.bodySmall),
                     ]),
                   ),
-                  Pill(left < 0 ? tr('expired') : tr('days_left', [left]), color: tone),
+                  Pill(left < 0 ? tr('expired') : trPlural('days_left', left), color: tone),
                   IconButton(
                     icon: Icon(Icons.delete_outline_rounded, color: context.cs.onSurfaceVariant),
                     onPressed: () {

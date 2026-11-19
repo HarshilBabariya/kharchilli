@@ -1039,7 +1039,6 @@
 "bills_in": "Bills in %1$s",
 "to_pay": "%1$s to pay",
 "recurring_cost": "Recurring bills cost about %1$s a month, %2$s a year.",
-"days_left": "%1$d days left",
 "expired": "Expired",
 "not_set": "Not set",
 "safe_today": "Safe to spend today",
@@ -1063,7 +1062,6 @@
 "loan_person": "Person",
 "loan_person_hint": "Who was it?",
 "loan_due": "Return by",
-"overdue_days": "%1$d days overdue",
 "loan_remind_message": "Hi %1$s, a small reminder about the %2$s I lent you. Sent from Gharcha.",
 "loan_to_get": "To get back",
 "loan_to_pay": "To pay back",
@@ -1095,7 +1093,6 @@
 "paper_notice_title": "%1$s is running out",
 "paper_notice_week": "It expires on %1$s. Renew it this week.",
 "paper_notice_today": "It expires today, %1$s.",
-"loan_due_in": "due in %1$d days",
 "tab_history": "History",
 "tab_badges": "Badges",
 "shortcut_bills": "Bills",
@@ -1156,7 +1153,13 @@
 "rw_tiara_d": "A little sparkle",
 "widget_month": "Spent in %1$s",
 "widget_today": "Today %1$s",
-"widget_safe": "Safe to spend today %1$s"
+"widget_safe": "Safe to spend today %1$s",
+"back_again_exit": "Press back again to exit",
+"quick_access": "Quick access",
+"quick_access_hint": "%1$d of %2$d picked. Tap to add or remove.",
+"loan_card_title": "Hi %1$s, a small reminder",
+"loan_card_since": "Lent on %1$s",
+"loan_card_due": "Return by %1$s"
 },
 "arrays": {
 "mood_lines_happy": [
@@ -1501,6 +1504,18 @@
 "rem_active": {
 "one": "%1$d reminder active",
 "other": "%1$d reminders active"
+},
+"overdue_days": {
+"one": "1 day overdue",
+"other": "%1$d days overdue"
+},
+"loan_due_in": {
+"one": "due in 1 day",
+"other": "due in %1$d days"
+},
+"days_left": {
+"one": "1 day left",
+"other": "%1$d days left"
 }
 }
 }

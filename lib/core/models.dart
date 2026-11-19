@@ -790,10 +790,10 @@ class ShopItem extends Doc {
 class Loan extends Doc {
   Loan({required this.person, required this.amount, required this.day, this.dueDay, this.settled = false});
 
-  final String person;
-  final double amount;
+  String person;
+  double amount;
   final int day;
-  final int? dueDay;
+  int? dueDay;
   bool settled;
 
   @override
@@ -809,11 +809,11 @@ class Loan extends Doc {
 class Paper extends Doc {
   Paper({required this.name, required this.expiryDay, this.photo = ''});
 
-  final String name;
-  final int expiryDay;
+  String name;
+  int expiryDay;
 
   /// File name inside the app's documents folder; empty when there is no picture.
-  final String photo;
+  String photo;
 
   @override
   String get kind => 'paper';
@@ -897,6 +897,10 @@ class Settings {
   bool reminderNotifs = true;
   bool rewardNotifs = true;
   NotifTone tone = NotifTone.spicy;
+
+  /// Routes of the Home quick-access row, at most [quickAccessMax].
+  List<String> quickAccess = ['reminders', 'shopping', 'goals', 'loans'];
+  static const quickAccessMax = 4;
   bool soundEffects = true;
   bool festiveMode = true;
   double goldRate = 0;
@@ -932,6 +936,7 @@ class Settings {
         'reminderNotifs': reminderNotifs,
         'rewardNotifs': rewardNotifs,
         'tone': tone.name,
+        'quickAccess': quickAccess,
         'soundEffects': soundEffects,
         'festiveMode': festiveMode,
         'goldRate': goldRate,
@@ -969,6 +974,7 @@ class Settings {
       ..reminderNotifs = j['reminderNotifs'] as bool? ?? true
       ..rewardNotifs = j['rewardNotifs'] as bool? ?? true
       ..tone = _enum(NotifTone.values, j['tone'], NotifTone.spicy)
+      ..quickAccess = (j['quickAccess'] as List?)?.cast<String>().toList() ?? ['reminders', 'shopping', 'goals', 'loans']
       ..soundEffects = j['soundEffects'] as bool? ?? true
       ..festiveMode = j['festiveMode'] as bool? ?? true
       ..goldRate = (j['goldRate'] as num? ?? 0).toDouble()

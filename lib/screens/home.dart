@@ -69,11 +69,12 @@ class _HomeTabState extends State<HomeTab> {
         const SizedBox(height: 14),
       ],
       _HeroCard(spent: spent),
+      const _QuickAccess(),
       SizedBox(
         height: 118,
-        child: ListView(scrollDirection: Axis.horizontal, clipBehavior: Clip.none, physics: const BouncingScrollPhysics(), children: [
+        child: ListView(scrollDirection: Axis.horizontal, clipBehavior: Clip.none, physics: const BouncingScrollPhysics(), children: <Widget>[
           if (app.safeToday != null)
-            _Stat(icon: Icons.shield_moon_rounded, color: app.safeToday! >= 0 ? good : bad, label: app.safeToday! >= 0 ? tr('safe_today') : tr('over_today'), value: Fmt.money(app.safeToday!.abs()), onTap: () => open(context, const BudgetsScreen())),
+            _Stat(icon: Icons.shield_moon_rounded, color: app.safeToday! >= 0 ? good : bad, label: app.safeToday! >= 0 ? tr('safe_today') : tr('over_today'), value: Fmt.money(app.safeToday!.abs().roundToDouble()), onTap: () => open(context, const BudgetsScreen())),
           _Stat(icon: Icons.wb_sunny_rounded, color: const Color(0xFFFF9F1C), label: tr('today'), value: Fmt.ledger(AppState.net(app.onDay(today))), onTap: () => open(context, const AddExpenseScreen(), rise: true)),
           _Stat(
             icon: spent <= previous ? Icons.trending_down_rounded : Icons.trending_up_rounded,
@@ -98,7 +99,7 @@ class _HomeTabState extends State<HomeTab> {
             value: categories.isEmpty ? tr('nothing_logged') : categories.first.key.name,
             onTap: () => Shell.switchTab(context, 1),
           ),
-        ]),
+        ].take(4).toList()),
       ),
       _StreakCard(),
       KCard(
@@ -387,5 +388,64 @@ class _FestivalBanner extends StatelessWidget {
         ]),
       ),
     );
+  }
+}
+
+/// Screens the quick-access row can open: route (handled by Shell), icon, colour, label key.
+const _quickActions = <(String, IconData, int, String)>[
+  ('reminders', Icons.notifications_active_rounded, 0xFFFF7043, 'shortcut_bills'),
+  ('shopping', Icons.shopping_cart_rounded, 0xFF43A047, 'shopping_list'),
+  ('goals', Icons.flag_rounded, 0xFFFFB300, 'goals'),
+  ('loans', Icons.handshake_rounded, 0xFF7C4DFF, 'loans'),
+  ('budgets', Icons.pie_chart_rounded, 0xFF039BE5, 'budgets'),
+  ('insights', Icons.insights_rounded, 0xFFEC407A, 'insights'),
+  ('papers', Icons.description_rounded, 0xFF8D6E63, 'papers'),
+  ('accounts', Icons.account_balance_wallet_rounded, 0xFF26A69A, 'accounts'),
+  ('rewards', Icons.emoji_events_rounded, 0xFFFFA000, 'rewards'),
+  ('voice', Icons.mic_rounded, 0xFF5C6BC0, 'shortcut_voice'),
+];
+
+/// Up to four app-icon style shortcuts the user picks.
+class _QuickAccess extends StatelessWidget {
+  const _QuickAccess();
+
+  void _choose(BuildContext context) {
+    showKSheet<void>(
+      context,
+      title: tr('quick_access'),
+      builder: (sheet) {
+        final app = AppScope.of(sheet);
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(tr('quick_access_hint', [app.settings.quickAccess.length, Settings.quickAccessMax]), style: sheet.tt.bodySmall),
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final (route, icon, color, label) in _quickActions)
+              KChip(tr(label), icon: icon, color: Color(color), selected: app.settings.quickAccess.contains(route), onTap: () => app.toggleQuickAccess(route)),
+          ]),
+        ]);
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final picked = AppScope.of(context).settings.quickAccess;
+    return Column(children: [
+      SectionTitle(tr('quick_access'), action: tr('a11y_edit'), onAction: () => _choose(context)),
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        for (final (route, icon, color, label) in _quickActions.where((a) => picked.contains(a.$1)))
+          Expanded(
+            child: Pressable(
+              onTap: () => Notifier.open(route),
+              child: Column(children: [
+                IconTile(icon, color: Color(color), size: 58),
+                const SizedBox(height: 6),
+                Text(tr(label), maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall!.copyWith(fontWeight: FontWeight.w600, color: context.cs.onSurface)),
+              ]),
+            ),
+          ),
+      ]),
+      const SizedBox(height: 14),
+    ]);
   }
 }

@@ -726,6 +726,12 @@ class AppState extends ChangeNotifier {
     await _persist();
   }
 
+  Future<void> toggleQuickAccess(String route) async {
+    final list = settings.quickAccess;
+    if (!list.remove(route) && list.length < Settings.quickAccessMax) list.add(route);
+    await _persist();
+  }
+
   Future<void> setMonthlyIncome(double value) async {
     settings.monthlyIncome = value;
     await _persist();

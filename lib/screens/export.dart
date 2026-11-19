@@ -16,6 +16,7 @@ import '../core/parsers.dart';
 import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import 'cards.dart';
 
 Future<File> _temp(String name, List<int> bytes) async {
   final file = File('${(await getTemporaryDirectory()).path}/$name');
@@ -94,26 +95,65 @@ Future<void> importCsvFile(BuildContext context) async {
 }
 
 /// Previews [card] and shares it as an image named [file], with [text] as the caption.
-Future<void> shareCard(BuildContext context, Widget card, {required String file, required String text}) async {
-  final boundary = GlobalKey();
-  await showDialog<void>(
-    context: context,
-    builder: (d) => Dialog(
+Future<void> shareCard(BuildContext context, Widget card, {required String file, required String text}) =>
+    showDialog<void>(context: context, builder: (_) => _SharePreview(card: card, file: file, text: text));
+
+/// The card as it will be sent, with a row of backgrounds to pick from; swiping the card steps through them too.
+class _SharePreview extends StatefulWidget {
+  const _SharePreview({required this.card, required this.file, required this.text});
+  final Widget card;
+  final String file;
+  final String text;
+
+  @override
+  State<_SharePreview> createState() => _SharePreviewState();
+}
+
+class _SharePreviewState extends State<_SharePreview> {
+  final _boundary = GlobalKey();
+  int _look = 0;
+
+  Future<void> _share() async {
+    final render = _boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final image = await render.toImage(pixelRatio: 3);
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    final png = await _temp('${widget.file}.png', data!.buffer.asUint8List());
+    await Share.shareXFiles([XFile(png.path, mimeType: 'image/png')], text: widget.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(24),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Flexible(child: RepaintBoundary(key: boundary, child: card)),
+        Flexible(
+          child: GestureDetector(
+            onHorizontalDragEnd: (drag) {
+              final speed = drag.primaryVelocity ?? 0;
+              if (speed != 0) setState(() => _look = (_look + (speed < 0 ? 1 : -1)) % cardLooks.length);
+            },
+            child: RepaintBoundary(key: _boundary, child: CardLook(index: _look, child: widget.card)),
+          ),
+        ),
         const SizedBox(height: 14),
-        KButton(tr('share'), icon: Icons.ios_share_rounded, onTap: () async {
-          final render = boundary.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-          final image = await render.toImage(pixelRatio: 3);
-          final data = await image.toByteData(format: ui.ImageByteFormat.png);
-          final png = await _temp('$file.png', data!.buffer.asUint8List());
-          await Share.shareXFiles([XFile(png.path, mimeType: 'image/png')], text: text);
-        }),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          for (var i = 0; i < cardLooks.length; i++)
+            Pressable(
+              onTap: () => setState(() => _look = i),
+              child: Container(
+                width: 38,
+                height: 38,
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                decoration: BoxDecoration(shape: BoxShape.circle, gradient: CardLook.gradient(context, i), border: Border.all(color: Colors.white, width: i == _look ? 3.5 : 1.2)),
+              ),
+            ),
+        ]),
+        const SizedBox(height: 14),
+        KButton(tr('share'), icon: Icons.ios_share_rounded, onTap: _share),
       ]),
-    ),
-  );
+    );
+  }
 }
 
 Future<void> shareWeeklyCard(BuildContext context) => shareCard(context, const _WeeklyCard(), file: 'gharcha-week', text: tr('weekly_card_footer'));
@@ -127,7 +167,7 @@ Future<void> shareBackup(AppState app) async {
 Future<void> restoreBackupFile(BuildContext context) async {
   final app = AppScope.read(context);
   if (!await confirm(context, title: tr('restore_q'), body: tr('restore_body'), action: tr('restore'))) return;
-  final picked = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json'], withData: true);
+  final picked = await FilePicker.platform.pickFiles(withData: true);
   final bytes = picked?.files.single.bytes;
   if (bytes == null) return;
   final ok = await app.restoreBackup(utf8.decode(bytes, allowMalformed: true));
@@ -152,7 +192,7 @@ class _WeeklyCard extends StatelessWidget {
       aspectRatio: 1080 / 1350,
       child: Container(
         padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(gradient: context.heroGradient, borderRadius: BorderRadius.circular(28)),
+        decoration: BoxDecoration(gradient: CardLook.of(context), borderRadius: BorderRadius.circular(28)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(tr('weekly_card_title'), style: context.tt.titleLarge!.copyWith(color: white)),
           const Spacer(),
@@ -179,9 +219,9 @@ class _WeeklyCard extends StatelessWidget {
             Pill('${app.streak}', onDark: true, icon: const Icon(Icons.local_fire_department_rounded, size: 15, color: Colors.white)),
             const SizedBox(width: 8),
             Pill(Fmt.number(app.settings.points), onDark: true, icon: const Coin(size: 15)),
-            const Spacer(),
-            Flexible(child: Text(tr('weekly_card_footer'), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: white.withValues(alpha: 0.8), fontSize: 11))),
           ]),
+          const SizedBox(height: 8),
+          Text(tr('weekly_card_footer'), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: white.withValues(alpha: 0.8), fontSize: 11)),
         ]),
       ),
     );

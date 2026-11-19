@@ -31,6 +31,7 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> {
   late final AppLifecycleListener _lifecycle;
   int _tab = 0;
+  DateTime? _lastBack;
 
   @override
   void initState() {
@@ -55,6 +56,20 @@ class _ShellState extends State<Shell> {
 
   void _select(int index) => setState(() => _tab = index);
 
+  void _back() {
+    if (_tab != 0) {
+      _select(0);
+      return;
+    }
+    final now = DateTime.now();
+    if (_lastBack != null && now.difference(_lastBack!) < const Duration(seconds: 2)) {
+      SystemNavigator.pop();
+      return;
+    }
+    _lastBack = now;
+    toast(context, tr('back_again_exit'));
+  }
+
   void _followRoute() {
     final route = Notifier.pendingRoute;
     if (!mounted || route == null) return;
@@ -77,6 +92,14 @@ class _ShellState extends State<Shell> {
         open(context, const RemindersScreen());
       case 'shopping':
         open(context, const ShoppingScreen());
+      case 'goals':
+        open(context, const GoalsScreen());
+      case 'loans':
+        open(context, const LoansScreen());
+      case 'papers':
+        open(context, const PapersScreen());
+      case 'accounts':
+        open(context, const AccountsScreen());
       case 'insights':
         open(context, const InsightsScreen());
       case 'expenses':
@@ -90,7 +113,12 @@ class _ShellState extends State<Shell> {
   Widget build(BuildContext context) {
     const tabs = [HomeTab(), ExpensesTab(), GroupsTab(), MeTab()];
     return CelebrationHost(
-      child: Scaffold(
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _back();
+        },
+        child: Scaffold(
         extendBody: true,
         body: Stack(children: [
           for (var i = 0; i < tabs.length; i++)
@@ -106,6 +134,7 @@ class _ShellState extends State<Shell> {
             ),
         ]),
         bottomNavigationBar: _NavBar(tab: _tab, onSelect: _select, onAdd: () => open(context, const AddExpenseScreen(), rise: true)),
+        ),
       ),
     );
   }

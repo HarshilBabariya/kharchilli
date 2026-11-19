@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Gharcha is
 Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/Kharchili`; the repo kept the app's previous working name). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.8.1+17`.
+- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.9.0+19`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Gharcha → Me → Your data → Import CSV.
 - Names: 1.0.x shipped as Kharchili (`app.kharchili`); 1.1.0 renamed it to Gharcha with a new id, so it installs as a separate app from a 1.0.x test build (move data with CSV export / import). Name check (Nov 2026): "Chillar" and "GharKharch" are taken by other expense apps; no app named Gharcha turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -16,7 +16,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Every handover updates this document and the README in the same pass.
 - Fixes are verified in a fresh review pass before a zip is handed over.
 
-## 3. Features in 1.8.1
+## 3. Features in 1.9.0
 ### Look, feel and flows (new in the rewrite)
 - Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment plays on the brand red: the house rises, three gold coins drop into it (it bounces with each), the rupee writes itself, the saffron dot pops and the Gharcha wordmark and tagline slide in. It is the app's own story (money coming home); the earlier letter-with-orbiting-dots opening was too close to the reference app and is gone.
 - Illustrated art instead of emoji: 33 badge medals (bronze, silver or gold rim by difficulty, one to three rank stars, an emblem per badge) and 24 sticker icons (groups, home services, empty screens, shop, gold, forecast). They are drawn as SVG and rendered to PNG by `tool/make_art.py` into `assets/art/`; the app shows them with `Medal` and `Sticker` (`lib/ui/glyphs.dart`). Locked medals are greyed behind a padlock with a progress ring. Points are a gold coin (`Coin`); categories and rows use glossy gradient tiles (`IconTile`).
@@ -26,6 +26,19 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Add transaction: voice banner with a pulsing mic, Expense / Credit segments, a large amount with the currency symbol at the same weight and a money keypad that stays open, Yesterday / Today / Tomorrow chips, Paid by chips, four payment-mode tiles, group split (equal or custom) and a note. Saving floods the screen with the accent colour and a tick springs in, then a points toast with the coin floats up on Home.
 - Celebrations for level-ups, badges, streak milestones and festivals are a card over looping confetti (or the festival's own particle show): the badge's medal, the flame or the dressed avatar on rotating rays, with the household sound and haptics. They wait until no sheet or pushed page is on top.
 - Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 24 themes.
+
+### Added and fixed in 1.9.0 (device feedback on 1.8.x)
+- **Quick access on Home:** a titled row of up to four app-icon style shortcuts under the hero card. "Edit" opens a sheet to pick them from ten screens (Bills, Shopping list, Savings goals, Lent and borrowed, Budgets, Insights, Papers, Accounts, Rewards, Voice entry). Stored as routes in `Settings.quickAccess`; taps go through `Notifier.open`, so `Shell._followRoute` is the one place that maps a route to a screen. The stat tiles below it now show at most four.
+- **Share card looks:** every share preview offers five backgrounds (the theme's, Sunset, Emerald, Violet, Charcoal); tap a swatch or swipe the card. `CardLook` (an InheritedWidget in `screens/cards.dart`) carries the choice, and `ShareCard` and the weekly card paint `CardLook.of(context)`.
+- **Loan reminder is a card:** Remind on a lent entry shares `LoanCard` (person, amount, lent date, return date) with the text as caption.
+- **Goals, papers and loans can be edited:** tapping a card opens the same sheet used to add it. A paper's photo opens from its thumbnail. `Loan` and `Paper` fields are now mutable for this.
+- **Back button:** on a tab other than Home, back goes to Home; on Home the first press shows "Press back again to exit" and a second press within two seconds closes the app (`PopScope` in `Shell`).
+- **Keyboard:** a navigator observer in `main.dart` drops text focus whenever a screen or sheet closes, so the keyboard no longer reappears on Home.
+- **Tabs:** `Segmented` gives each option width in proportion to its label, so a long label such as Accessories keeps the same text size as the others.
+- Lent entries are green and borrowed ones orange, also when settled (faded). Day counts use plurals ("1 day overdue"). "Safe to spend today" is rounded to whole currency.
+
+### Changed in 1.8.2
+- **Restore accepts any file.** WhatsApp saves a shared backup as `DOC-…-WA0014.` with the `.json` ending stripped, and the picker only offered `.json` files, so the backup could not be chosen. The picker is now unfiltered; `Store.restore` already rejects anything that is not a Gharcha backup.
 
 ### Changed in 1.8.1
 - **Payment capture is now in the Play Store build only.** In India, Play Protect refuses to install an APK from a browser, chat app or file manager when its manifest declares a notification listener ("App blocked to protect your device"), so the website APK no longer declares it and hides the Payment capture row.
@@ -202,6 +215,8 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.9.0 | 2026-11-19 | Home quick access, five looks for share cards, loan reminder card, editable goals / papers / loans, back-twice-to-exit, keyboard and tab-size fixes. |
+| 1.8.2 | 2026-11-19 | Restore picker no longer filters by file ending (a backup sent through WhatsApp loses `.json`). |
 | 1.8.1 | 2026-11-19 | Website APK no longer declares the notification listener (Play Protect blocked its install); payment capture ships in the Play Store bundle only. |
 | 1.8.0 | 2026-11-19 | Android home-screen widget; 8 themes; 8 outfits, 4 hairstyles and 6 accessories for the avatar. No new packages. |
 | 1.7.1 | 2026-11-19 | Build fix (missing import in shell), launcher shortcuts with icons, export sheet with month chips and format switch, shorter Rewards tabs. |

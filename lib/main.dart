@@ -42,6 +42,7 @@ class GharchaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Gharcha',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [_closeKeyboard],
       theme: buildTheme(app.activeThemeId, Brightness.light),
       darkTheme: buildTheme(app.activeThemeId, Brightness.dark),
       themeMode: switch (s.themeMode) { ThemeModeSetting.light => ThemeMode.light, ThemeModeSetting.dark => ThemeMode.dark, ThemeModeSetting.system => ThemeMode.system },
@@ -211,4 +212,12 @@ class _MarkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MarkPainter old) => old.t != t;
+}
+
+final _closeKeyboard = _CloseKeyboard();
+
+/// Drops text focus when a screen or sheet closes, so the keyboard does not come back on the screen underneath.
+class _CloseKeyboard extends NavigatorObserver {
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) => FocusManager.instance.primaryFocus?.unfocus();
 }

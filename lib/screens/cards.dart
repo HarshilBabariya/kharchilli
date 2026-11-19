@@ -12,6 +12,25 @@ import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
+/// Backgrounds a shared card can take; the first follows the app theme.
+const cardLooks = <List<int>?>[null, [0xFFF97316, 0xFFDB2777], [0xFF059669, 0xFF0E7490], [0xFF312E81, 0xFF7C3AED], [0xFF111827, 0xFF374151]];
+
+/// Tells the cards below it which of [cardLooks] to paint.
+class CardLook extends InheritedWidget {
+  const CardLook({super.key, required this.index, required super.child});
+  final int index;
+
+  static Gradient gradient(BuildContext context, int index) {
+    final colors = cardLooks[index];
+    return colors == null ? context.heroGradient : LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [for (final c in colors) Color(c)]);
+  }
+
+  static Gradient of(BuildContext context) => gradient(context, context.dependOnInheritedWidgetOfExactType<CardLook>()?.index ?? 0);
+
+  @override
+  bool updateShouldNotify(CardLook oldWidget) => oldWidget.index != index;
+}
+
 /// The frame every shared image uses: brand gradient, the mark and name on top, the tagline at the bottom.
 class ShareCard extends StatelessWidget {
   const ShareCard({super.key, required this.label, required this.child});
@@ -24,7 +43,7 @@ class ShareCard extends StatelessWidget {
       aspectRatio: 1080 / 1350,
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(gradient: context.heroGradient, borderRadius: BorderRadius.circular(28)),
+        decoration: BoxDecoration(gradient: CardLook.of(context), borderRadius: BorderRadius.circular(28)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(children: [
             ClipRRect(borderRadius: BorderRadius.circular(9), child: Image.asset('assets/brand/icon.png', width: 30, height: 30)),
@@ -98,6 +117,35 @@ class ReminderCard extends StatelessWidget {
               child: Text('UPI · ${to!.upiId}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: _ink)),
             ),
           ],
+        ]),
+      ),
+    );
+  }
+}
+
+/// A reminder for money lent to someone outside the groups.
+class LoanCard extends StatelessWidget {
+  const LoanCard(this.loan, {super.key});
+  final Loan loan;
+
+  @override
+  Widget build(BuildContext context) {
+    final due = loan.dueDay;
+    return ShareCard(
+      label: tr('remind'),
+      child: _Panel(
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Sticker('friends', size: 84),
+          const SizedBox(height: 16),
+          Text(tr('loan_card_title', [loan.person]), textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w500, fontSize: 16, color: _ink)),
+          const SizedBox(height: 4),
+          FittedBox(fit: BoxFit.scaleDown, child: Text(Fmt.money(loan.amount.abs()), style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 46, color: _ink))),
+          const SizedBox(height: 10),
+          Text(
+            [tr('loan_card_since', [Fmt.date(Days.fromKey(loan.day), 'd MMM yyyy')]), if (due != null) tr('loan_card_due', [Fmt.date(Days.fromKey(due), 'd MMM yyyy')])].join('\n'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _muted),
+          ),
         ]),
       ),
     );

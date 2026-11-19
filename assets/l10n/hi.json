@@ -1039,7 +1039,6 @@
 "bills_in": "%1$s के बिल",
 "to_pay": "%1$s चुकाना बाकी",
 "recurring_cost": "बार-बार आने वाले बिल लगभग %1$s महीना, %2$s साल के पड़ते हैं।",
-"days_left": "%1$d दिन बाकी",
 "expired": "समाप्त",
 "not_set": "तय नहीं",
 "safe_today": "आज इतना खर्च ठीक",
@@ -1063,7 +1062,6 @@
 "loan_person": "व्यक्ति",
 "loan_person_hint": "किसे या किससे?",
 "loan_due": "वापसी की तारीख़",
-"overdue_days": "%1$d दिन देर",
 "loan_remind_message": "नमस्ते %1$s, जो %2$s मैंने दिए थे उनकी एक छोटी याद। Gharcha से भेजा गया।",
 "loan_to_get": "वापस मिलने हैं",
 "loan_to_pay": "वापस देने हैं",
@@ -1095,7 +1093,6 @@
 "paper_notice_title": "%1$s समाप्त होने वाला है",
 "paper_notice_week": "यह %1$s को समाप्त होगा। इसी हफ़्ते नवीनीकरण करें।",
 "paper_notice_today": "यह आज, %1$s को समाप्त हो रहा है।",
-"loan_due_in": "%1$d दिन में वापसी",
 "tab_history": "इतिहास",
 "tab_badges": "बैज",
 "shortcut_bills": "बिल",
@@ -1156,7 +1153,13 @@
 "rw_tiara_d": "थोड़ी सी चमक",
 "widget_month": "%1$s में खर्च",
 "widget_today": "आज %1$s",
-"widget_safe": "आज इतना खर्च ठीक %1$s"
+"widget_safe": "आज इतना खर्च ठीक %1$s",
+"back_again_exit": "बाहर निकलने के लिए दोबारा बैक दबाएँ",
+"quick_access": "झटपट पहुँच",
+"quick_access_hint": "%2$d में से %1$d चुने। जोड़ने या हटाने के लिए टैप करें।",
+"loan_card_title": "नमस्ते %1$s, एक छोटा सा रिमाइंडर",
+"loan_card_since": "%1$s को दिए",
+"loan_card_due": "%1$s तक लौटाएँ"
 },
 "arrays": {
 "mood_lines_happy": [
@@ -1501,6 +1504,18 @@
 "rem_active": {
 "one": "%1$d रिमाइंडर चालू",
 "other": "%1$d रिमाइंडर चालू"
+},
+"overdue_days": {
+"one": "%1$d दिन देर",
+"other": "%1$d दिन देर"
+},
+"loan_due_in": {
+"one": "%1$d दिन में वापसी",
+"other": "%1$d दिन में वापसी"
+},
+"days_left": {
+"one": "%1$d दिन बाकी",
+"other": "%1$d दिन बाकी"
 }
 }
 }

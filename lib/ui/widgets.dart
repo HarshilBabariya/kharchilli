@@ -232,6 +232,7 @@ class Segmented<T> extends StatelessWidget {
       child: Row(children: [
         for (final option in options.entries)
           Expanded(
+            flex: max(option.value.length, 6) + 4,
             child: Pressable(
               onTap: () => onChanged(option.key),
               child: AnimatedContainer(

@@ -22,6 +22,8 @@ Steps for Google Play (upload key and four repo secrets) and the App Store (Appl
 ## Version history
 | Version | Date | Notes |
 |---|---|---|
+| 1.9.0 | 2026-11-19 | Quick access, share card looks, editable lists, back-to-exit |
+| 1.8.2 | 2026-11-19 | Restore works with backups sent through WhatsApp |
 | 1.8.1 | 2026-11-19 | Install fix: payment capture moved to the Play Store build |
 | 1.8.0 | 2026-11-19 | Home-screen widget, 8 themes, 18 avatar items |
 | 1.7.1 | 2026-11-19 | Build fix, shortcut icons, simpler export, Rewards tabs |
