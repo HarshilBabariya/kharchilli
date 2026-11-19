@@ -22,6 +22,7 @@ Steps for Google Play (upload key and four repo secrets) and the App Store (Appl
 ## Version history
 | Version | Date | Notes |
 |---|---|---|
+| 1.9.1 | 2026-11-19 | Notifications for loans, chits, home help, goals, recap, dues |
 | 1.9.0 | 2026-11-19 | Quick access, share card looks, editable lists, back-to-exit |
 | 1.8.2 | 2026-11-19 | Restore works with backups sent through WhatsApp |
 | 1.8.1 | 2026-11-19 | Install fix: payment capture moved to the Play Store build |

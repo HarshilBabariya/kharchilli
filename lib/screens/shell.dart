@@ -13,6 +13,7 @@ import 'budgets.dart';
 import 'expenses.dart';
 import 'groups.dart';
 import 'home.dart';
+import 'household.dart';
 import 'insights.dart';
 import 'lists.dart';
 import 'me.dart';
@@ -100,6 +101,10 @@ class _ShellState extends State<Shell> {
         open(context, const PapersScreen());
       case 'accounts':
         open(context, const AccountsScreen());
+      case 'services':
+        open(context, const ServicesScreen());
+      case 'savings':
+        open(context, const SavingsScreen());
       case 'insights':
         open(context, const InsightsScreen());
       case 'expenses':

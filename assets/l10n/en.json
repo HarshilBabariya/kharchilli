@@ -1159,7 +1159,23 @@
 "quick_access_hint": "%1$d of %2$d picked. Tap to add or remove.",
 "loan_card_title": "Hi %1$s, a small reminder",
 "loan_card_since": "Lent on %1$s",
-"loan_card_due": "Return by %1$s"
+"loan_card_due": "Return by %1$s",
+"loan_notice_title": "Money with %1$s",
+"loan_notice_get": "%1$s is due back to you today.",
+"loan_notice_get_late": "%1$s is still to come back. A gentle reminder may help.",
+"loan_notice_pay": "You planned to return %1$s today.",
+"loan_notice_pay_late": "%1$s is still to be returned.",
+"chit_notice_title": "%1$s instalment",
+"chit_notice_body": "%1$s is due this month.",
+"service_notice_title": "%1$s pay is due",
+"service_notice_body": "Settle up with: %1$s",
+"goal_notice_title": "Savings goals check-in",
+"goal_notice_body": "Put aside %1$s this month to stay on track.",
+"goal_notice_open": "New month. Add a little to your goals.",
+"digest_title": "Dues this week",
+"digest_owed": "You are owed %1$s",
+"digest_owe": "You owe %1$s",
+"digest_khata": "%1$s pending at shops"
 },
 "arrays": {
 "mood_lines_happy": [

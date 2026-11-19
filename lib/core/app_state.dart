@@ -215,7 +215,7 @@ class AppState extends ChangeNotifier {
     await _store.save(doc);
     if (!list.contains(doc)) list.add(doc);
     notifyListeners();
-    if (doc is Paper) unawaited(syncNotifications());
+    _syncLater();
   }
 
   Future<void> drop<T extends Doc>(List<T> list, T doc) async {
@@ -223,6 +223,7 @@ class AppState extends ChangeNotifier {
     await _store.remove(doc);
     doc.id = 0;
     notifyListeners();
+    _syncLater();
   }
 
   double get budgetProgress => settings.monthlyBudget <= 0 ? 0 : spentIn(Days.today()) / settings.monthlyBudget;
@@ -478,14 +479,18 @@ class AppState extends ChangeNotifier {
   Future<void> _afterChange() async {
     await _checkBadges();
     await _persist();
+    _syncLater();
+  }
+
+  Timer? _syncSoon;
+
+  void _syncLater() {
     _syncSoon?.cancel();
     _syncSoon = Timer(const Duration(seconds: 2), () {
       syncNotifications();
       _refreshWidget();
     });
   }
-
-  Timer? _syncSoon;
 
   Future<void> _refreshWidget() async {
     if (!Platform.isAndroid || !settings.onboarded) return;
@@ -1116,6 +1121,22 @@ class AppState extends ChangeNotifier {
           if (when.isAfter(now)) await Notifier.schedule(NotificationIds.paper(p.id) * 2 + slot, Channel.bills, when, tr('paper_notice_title', [p.name]), tr(daysBefore == 0 ? 'paper_notice_today' : 'paper_notice_week', [Fmt.date(expiry, 'd MMM yyyy')]), route: 'reminders');
         }
       }
+      for (final l in loans.where((l) => !l.settled && l.dueDay != null)) {
+        final due = Days.fromKey(l.dueDay!);
+        for (final (slot, daysAfter) in const [0, 3].indexed) {
+          final body = l.amount > 0 ? (daysAfter == 0 ? 'loan_notice_get' : 'loan_notice_get_late') : (daysAfter == 0 ? 'loan_notice_pay' : 'loan_notice_pay_late');
+          await Notifier.schedule(NotificationIds.loan(l.id) * 2 + slot, Channel.bills, DateTime(due.year, due.month, due.day + daysAfter, 10), tr('loan_notice_title', [l.person]), tr(body, [Fmt.money(l.amount.abs())]), route: 'loans');
+        }
+      }
+      for (final c in chits.where((c) => !c.done)) {
+        final due = c.nextDue;
+        await Notifier.schedule(NotificationIds.chit(c.id), Channel.bills, DateTime(due.year, due.month, 1, 9, 15), tr('chit_notice_title', [c.name]), tr('chit_notice_body', [Fmt.money(c.monthlyAmount)]), route: 'savings');
+      }
+      final nextMonth = DateTime(now.year, now.month + 1, 1, 9);
+      final unpaid = services.where((s) => !s.paidMonths.containsKey(Days.monthKey(now))).map((s) => s.name).join(', ');
+      if (unpaid.isNotEmpty) {
+        await Notifier.schedule(NotificationIds.services, Channel.bills, nextMonth, tr('service_notice_title', [Fmt.month(now)]), tr('service_notice_body', [unpaid]), route: 'services');
+      }
       final days = streak;
       if (days >= 2 && settings.tone != NotifTone.quiet) {
         final tonight = DateTime(now.year, now.month, now.day, 21, 30);
@@ -1128,6 +1149,20 @@ class AppState extends ChangeNotifier {
         final sunday = DateTime(now.year, now.month, now.day + (DateTime.sunday - now.weekday) % 7, 10);
         await Notifier.schedule(NotificationIds.weekly, Channel.nudges, sunday.isAfter(now) ? sunday : sunday.add(const Duration(days: 7)), _copy('weekly', 0), _copy('weekly', 1, [me?.name ?? '']),
             route: 'insights', repeat: DateTimeComponents.dayOfWeekAndTime);
+        final open = goals.where((g) => g.left > 0);
+        if (open.isNotEmpty) {
+          final aside = open.fold(0.0, (sum, g) => sum + (g.monthly(nextMonth) ?? 0));
+          await Notifier.schedule(NotificationIds.goals, Channel.nudges, nextMonth.add(const Duration(hours: 1)), tr('goal_notice_title'), aside > 0 ? tr('goal_notice_body', [Fmt.money(aside.roundToDouble())]) : tr('goal_notice_open'), route: 'goals');
+        }
+        if (inMonth(now).isNotEmpty) {
+          await Notifier.schedule(NotificationIds.recap, Channel.nudges, nextMonth.add(const Duration(minutes: 30)), tr('recap_title', [Fmt.monthYear(now)]), tr('recap_sub'), route: 'home');
+        }
+        final owed = myDues.values.where((d) => d > 0).fold(0.0, (sum, d) => sum + d), owe = myDues.values.where((d) => d < 0).fold(0.0, (sum, d) => sum - d);
+        final pending = [if (owed > 0) tr('digest_owed', [Fmt.money(owed)]), if (owe > 0) tr('digest_owe', [Fmt.money(owe)]), if (totalKhataDue > 0) tr('digest_khata', [Fmt.money(totalKhataDue)])];
+        if (pending.isNotEmpty) {
+          final saturday = DateTime(now.year, now.month, now.day + (DateTime.saturday - now.weekday) % 7, 10);
+          await Notifier.schedule(NotificationIds.dues, Channel.nudges, saturday.isAfter(now) ? saturday : saturday.add(const Duration(days: 7)), tr('digest_title'), pending.join(' · '), route: 'home');
+        }
       }
     }
     final greeting = FestivalCalendar.nextGreeting(now);

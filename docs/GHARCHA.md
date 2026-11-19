@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Gharcha is
 Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/Kharchili`; the repo kept the app's previous working name). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.9.0+19`.
+- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.9.1+20`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Gharcha → Me → Your data → Import CSV.
 - Names: 1.0.x shipped as Kharchili (`app.kharchili`); 1.1.0 renamed it to Gharcha with a new id, so it installs as a separate app from a 1.0.x test build (move data with CSV export / import). Name check (Nov 2026): "Chillar" and "GharKharch" are taken by other expense apps; no app named Gharcha turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -16,7 +16,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Every handover updates this document and the README in the same pass.
 - Fixes are verified in a fresh review pass before a zip is handed over.
 
-## 3. Features in 1.9.0
+## 3. Features in 1.9.1
 ### Look, feel and flows (new in the rewrite)
 - Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment plays on the brand red: the house rises, three gold coins drop into it (it bounces with each), the rupee writes itself, the saffron dot pops and the Gharcha wordmark and tagline slide in. It is the app's own story (money coming home); the earlier letter-with-orbiting-dots opening was too close to the reference app and is gone.
 - Illustrated art instead of emoji: 33 badge medals (bronze, silver or gold rim by difficulty, one to three rank stars, an emblem per badge) and 24 sticker icons (groups, home services, empty screens, shop, gold, forecast). They are drawn as SVG and rendered to PNG by `tool/make_art.py` into `assets/art/`; the app shows them with `Medal` and `Sticker` (`lib/ui/glyphs.dart`). Locked medals are greyed behind a padlock with a progress ring. Points are a gold coin (`Coin`); categories and rows use glossy gradient tiles (`IconTile`).
@@ -26,6 +26,16 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Add transaction: voice banner with a pulsing mic, Expense / Credit segments, a large amount with the currency symbol at the same weight and a money keypad that stays open, Yesterday / Today / Tomorrow chips, Paid by chips, four payment-mode tiles, group split (equal or custom) and a note. Saving floods the screen with the accent colour and a tick springs in, then a points toast with the coin floats up on Home.
 - Celebrations for level-ups, badges, streak milestones and festivals are a card over looping confetti (or the festival's own particle show): the badge's medal, the flame or the dressed avatar on rotating rays, with the household sound and haptics. They wait until no sheet or pushed page is on top.
 - Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 24 themes.
+
+### Added in 1.9.1: more notifications
+All are scheduled in `AppState._schedule` under the existing Reminders switch; the last three are skipped on the Quiet tone. Each opens its own screen through `Shell._followRoute` (new routes `services` and `savings`).
+- **Lent and borrowed:** 10:00 on the return date and again three days later while unsettled (`NotificationIds.loan`).
+- **Chit instalment:** 9:15 on the 1st of the month the next instalment falls in (`NotificationIds.chit`).
+- **Home help pay:** 9:00 on the 1st of next month, naming the services whose current month is not marked paid.
+- **Savings goals:** 10:00 on the 1st, with the total to put aside across goals that have a due month.
+- **Month recap:** 9:30 on the 1st when the month has entries.
+- **Dues digest:** Saturday 10:00, only when group dues or shop khata are pending.
+- Limits: these are computed when the app last ran, so amounts can be stale if the app is not opened for weeks, and a service left unpaid from an earlier month gets no second notice.
 
 ### Added and fixed in 1.9.0 (device feedback on 1.8.x)
 - **Quick access on Home:** a titled row of up to four app-icon style shortcuts under the hero card. "Edit" opens a sheet to pick them from ten screens (Bills, Shopping list, Savings goals, Lent and borrowed, Budgets, Insights, Papers, Accounts, Rewards, Voice entry). Stored as routes in `Settings.quickAccess`; taps go through `Notifier.open`, so `Shell._followRoute` is the one place that maps a route to a screen. The stat tiles below it now show at most four.
@@ -215,6 +225,7 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.9.1 | 2026-11-19 | Notifications for loans, chit instalments, home help pay, savings goals, month recap and a weekly dues digest. |
 | 1.9.0 | 2026-11-19 | Home quick access, five looks for share cards, loan reminder card, editable goals / papers / loans, back-twice-to-exit, keyboard and tab-size fixes. |
 | 1.8.2 | 2026-11-19 | Restore picker no longer filters by file ending (a backup sent through WhatsApp loses `.json`). |
 | 1.8.1 | 2026-11-19 | Website APK no longer declares the notification listener (Play Protect blocked its install); payment capture ships in the Play Store bundle only. |

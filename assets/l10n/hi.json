@@ -1159,7 +1159,23 @@
 "quick_access_hint": "%2$d में से %1$d चुने। जोड़ने या हटाने के लिए टैप करें।",
 "loan_card_title": "नमस्ते %1$s, एक छोटा सा रिमाइंडर",
 "loan_card_since": "%1$s को दिए",
-"loan_card_due": "%1$s तक लौटाएँ"
+"loan_card_due": "%1$s तक लौटाएँ",
+"loan_notice_title": "%1$s के साथ लेन-देन",
+"loan_notice_get": "%1$s आज आपको वापस मिलने हैं।",
+"loan_notice_get_late": "%1$s अभी वापस नहीं आए। एक हल्का रिमाइंडर काम आ सकता है।",
+"loan_notice_pay": "आपको आज %1$s लौटाने थे।",
+"loan_notice_pay_late": "%1$s अभी लौटाने बाकी हैं।",
+"chit_notice_title": "%1$s की किस्त",
+"chit_notice_body": "इस महीने %1$s देने हैं।",
+"service_notice_title": "%1$s का भुगतान बाकी",
+"service_notice_body": "इनका हिसाब करें: %1$s",
+"goal_notice_title": "बचत के लक्ष्य",
+"goal_notice_body": "रास्ते पर रहने के लिए इस महीने %1$s अलग रखें।",
+"goal_notice_open": "नया महीना। अपने लक्ष्यों में थोड़ा जोड़ें।",
+"digest_title": "इस हफ़्ते का हिसाब",
+"digest_owed": "आपको %1$s मिलने हैं",
+"digest_owe": "आपको %1$s देने हैं",
+"digest_khata": "दुकानों पर %1$s बाकी"
 },
 "arrays": {
 "mood_lines_happy": [

@@ -32,6 +32,10 @@ class NotificationIds {
   static const festival = 900010;
   static const comeback = 900020;
   static const weekly = 900030;
+  static const goals = 900040;
+  static const services = 900050;
+  static const dues = 900060;
+  static const recap = 900070;
   static int _instant = 910000;
   static int nextInstant() => _instant++;
   static int reminder(int reminderId, int slot) => reminderId * 10 + slot;
@@ -39,6 +43,8 @@ class NotificationIds {
   /// The slot of a bill's three-days-early notice; slots 0 to 6 are the reminder itself.
   static const earlySlot = 7;
   static int paper(int paperId) => 800000 + paperId;
+  static int loan(int loanId) => 700000 + loanId;
+  static int chit(int chitId) => 600000 + chitId;
 }
 
 class Notifier {
