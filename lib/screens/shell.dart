@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quick_actions/quick_actions.dart';
 
+import '../core/app_state.dart';
 import '../core/l10n.dart';
 import '../core/notifier.dart';
 import '../ui/effects.dart';
@@ -13,6 +14,7 @@ import 'expenses.dart';
 import 'groups.dart';
 import 'home.dart';
 import 'insights.dart';
+import 'lists.dart';
 import 'me.dart';
 import 'reminders.dart';
 import 'rewards.dart';
@@ -38,7 +40,10 @@ class _ShellState extends State<Shell> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _followRoute());
     const QuickActions()
       ..initialize(Notifier.open)
-      ..setShortcutItems([ShortcutItem(type: 'add', localizedTitle: tr('add_transaction')), ShortcutItem(type: 'voice', localizedTitle: tr('shortcut_voice'))]);
+      ..setShortcutItems([
+        for (final (route, title) in [('add', 'add_transaction'), ('voice', 'shortcut_voice'), ('reminders', 'shortcut_bills'), ('shopping', 'shopping_list')])
+          ShortcutItem(type: route, localizedTitle: tr(title), icon: 'shortcut_$route'),
+      ]);
   }
 
   @override
@@ -70,6 +75,8 @@ class _ShellState extends State<Shell> {
         open(context, const BudgetsScreen());
       case 'reminders':
         open(context, const RemindersScreen());
+      case 'shopping':
+        open(context, const ShoppingScreen());
       case 'insights':
         open(context, const InsightsScreen());
       case 'expenses':

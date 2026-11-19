@@ -34,7 +34,6 @@ class _RewardsScreenState extends State<RewardsScreen> {
     final s = app.settings;
     final level = app.level;
     final statuses = app.badgeStatuses;
-    final earned = statuses.where((b) => b.earned).length;
     final white80 = Colors.white.withValues(alpha: 0.8);
     return KPage(
       title: tr('rewards'),
@@ -82,7 +81,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
           ]),
         ),
         const SizedBox(height: 14),
-        Segmented<int>(options: {0: tr('points_history'), 1: tr('badges_count', [earned, statuses.length]), 2: tr('shop')}, value: _tab, onChanged: (i) => setState(() => _tab = i)),
+        Segmented<int>(options: {0: tr('tab_history'), 1: tr('tab_badges'), 2: tr('shop')}, value: _tab, onChanged: (i) => setState(() => _tab = i)),
         const SizedBox(height: 6),
         if (_tab == 0) ..._history(context, app),
         if (_tab == 1) ..._badges(context, statuses),

@@ -27,7 +27,7 @@ import 'lock.dart';
 import 'reminders.dart';
 import 'rewards.dart';
 
-const appVersion = '1.7.0';
+const appVersion = '1.7.1';
 
 class MeTab extends StatelessWidget {
   const MeTab({super.key});
@@ -276,20 +276,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _export(BuildContext context) {
-    final app = AppScope.read(context);
-    final month = Days.today();
-    showKSheet<void>(
-      context,
-      title: tr('export_data'),
-      builder: (sheet) => Column(children: [
-        for (final scope in [(tr('export_all'), tr('export_all_sub'), null), (Fmt.monthYear(month), tr('export_month_sub'), month)]) ...[
-          NavRow(icon: Icons.table_chart_rounded, color: good, title: '${scope.$1} (CSV)', subtitle: scope.$2, onTap: () => shareCsv(app, month: scope.$3)),
-          NavRow(icon: Icons.picture_as_pdf_rounded, color: bad, title: '${scope.$1} (PDF)', subtitle: scope.$2, onTap: () => sharePdf(app, month: scope.$3)),
-        ],
-      ]),
-    );
-  }
+  void _export(BuildContext context) => showKSheet<void>(context, title: tr('export_data'), builder: (_) => const _ExportSheet());
 
   void _faqs(BuildContext context) {
     showKSheet<void>(
@@ -304,5 +291,38 @@ class SettingsScreen extends StatelessWidget {
         ],
       ]),
     );
+  }
+}
+
+class _ExportSheet extends StatefulWidget {
+  const _ExportSheet();
+
+  @override
+  State<_ExportSheet> createState() => _ExportSheetState();
+}
+
+class _ExportSheetState extends State<_ExportSheet> {
+  DateTime? _month;
+  bool _pdf = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final app = AppScope.of(context);
+    final months = {for (final e in app.expenses) Days.monthKey(e.date)}.toList()..sort((a, b) => b.compareTo(a));
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      Text(tr('export_which'), style: context.tt.titleSmall),
+      const SizedBox(height: 10),
+      Wrap(spacing: 8, runSpacing: 8, children: [
+        KChip(tr('export_all'), selected: _month == null, onTap: () => setState(() => _month = null)),
+        for (final key in months)
+          KChip(Fmt.monthYear(DateTime(key ~/ 100, key % 100)), selected: _month != null && Days.monthKey(_month!) == key, onTap: () => setState(() => _month = DateTime(key ~/ 100, key % 100))),
+      ]),
+      const SizedBox(height: 18),
+      Text(tr('export_format'), style: context.tt.titleSmall),
+      const SizedBox(height: 10),
+      Segmented<bool>(options: const {false: 'CSV', true: 'PDF'}, value: _pdf, onChanged: (pdf) => setState(() => _pdf = pdf)),
+      const SizedBox(height: 18),
+      KButton(tr('export_go'), icon: Icons.ios_share_rounded, onTap: () => _pdf ? sharePdf(app, month: _month) : shareCsv(app, month: _month)),
+    ]);
   }
 }

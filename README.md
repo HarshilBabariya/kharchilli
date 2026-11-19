@@ -22,6 +22,7 @@ Steps for Google Play (upload key and four repo secrets) and the App Store (Appl
 ## Version history
 | Version | Date | Notes |
 |---|---|---|
+| 1.7.1 | 2026-11-19 | Build fix, shortcut icons, simpler export, Rewards tabs |
 | 1.7.0 | 2026-11-19 | Quick picks, daily limit, bill calendar, goals, month recap, shopping list, loans, advances, warranties, accounts |
 | 1.6.0 | 2026-11-19 | Payment capture from bank / UPI message notifications (Android) |
 | 1.5.1 | 2026-11-19 | Fixes: Undo bar closes itself and is readable, swipe strip fills the row, clearer selected category, paste explained |

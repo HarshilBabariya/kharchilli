@@ -291,7 +291,6 @@
 "rewards": "इनाम",
 "points_to_spend": "खर्च करने के लिए पॉइंट",
 "lifetime_level": "कुल %1$d XP · लेवल %2$d %3$s",
-"badges_count": "बैज · %1$d/%2$d",
 "shop": "दुकान",
 "points_history": "पॉइंट इतिहास",
 "earned_on": "%1$s को मिला · +%2$d पॉइंट",
@@ -573,8 +572,6 @@
 "import_csv": "CSV इम्पोर्ट करें",
 "import_sub": "Gharcha CSV फ़ाइल से खर्च जोड़ें",
 "export_all": "सभी खर्च",
-"export_all_sub": "पूरा हिसाब एक फ़ाइल में",
-"export_month_sub": "सिर्फ़ इस महीने के खर्च",
 "import_done": "इम्पोर्ट पूरा",
 "import_failed": "इम्पोर्ट नहीं हो सका",
 "import_failed_body": "यह फ़ाइल पढ़ने योग्य CSV नहीं है। इसमें कम से कम date, title और amount कॉलम होने चाहिए।",
@@ -1098,7 +1095,13 @@
 "paper_notice_title": "%1$s समाप्त होने वाला है",
 "paper_notice_week": "यह %1$s को समाप्त होगा। इसी हफ़्ते नवीनीकरण करें।",
 "paper_notice_today": "यह आज, %1$s को समाप्त हो रहा है।",
-"loan_due_in": "%1$d दिन में वापसी"
+"loan_due_in": "%1$d दिन में वापसी",
+"tab_history": "इतिहास",
+"tab_badges": "बैज",
+"shortcut_bills": "बिल",
+"export_which": "क्या एक्सपोर्ट करें",
+"export_format": "फ़ॉर्मैट",
+"export_go": "एक्सपोर्ट करें"
 },
 "arrays": {
 "mood_lines_happy": [

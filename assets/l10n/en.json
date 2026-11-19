@@ -291,7 +291,6 @@
 "rewards": "Rewards",
 "points_to_spend": "Points to spend",
 "lifetime_level": "Lifetime %1$d XP · Level %2$d %3$s",
-"badges_count": "Badges · %1$d/%2$d",
 "shop": "Shop",
 "points_history": "Points history",
 "earned_on": "Earned on %1$s · +%2$d points",
@@ -573,8 +572,6 @@
 "import_csv": "Import CSV",
 "import_sub": "Add expenses from a Gharcha CSV file",
 "export_all": "All expenses",
-"export_all_sub": "Your full ledger in one file",
-"export_month_sub": "Only this month's expenses",
 "import_done": "Import finished",
 "import_failed": "Couldn't import",
 "import_failed_body": "This file isn't a readable CSV. It needs at least date, title and amount columns.",
@@ -1098,7 +1095,13 @@
 "paper_notice_title": "%1$s is running out",
 "paper_notice_week": "It expires on %1$s. Renew it this week.",
 "paper_notice_today": "It expires today, %1$s.",
-"loan_due_in": "due in %1$d days"
+"loan_due_in": "due in %1$d days",
+"tab_history": "History",
+"tab_badges": "Badges",
+"shortcut_bills": "Bills",
+"export_which": "What to export",
+"export_format": "Format",
+"export_go": "Export"
 },
 "arrays": {
 "mood_lines_happy": [

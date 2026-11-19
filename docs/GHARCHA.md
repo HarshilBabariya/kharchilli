@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Gharcha is
 Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/Kharchili`; the repo kept the app's previous working name). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.7.0+14`.
+- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.7.1+15`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Gharcha → Me → Your data → Import CSV.
 - Names: 1.0.x shipped as Kharchili (`app.kharchili`); 1.1.0 renamed it to Gharcha with a new id, so it installs as a separate app from a 1.0.x test build (move data with CSV export / import). Name check (Nov 2026): "Chillar" and "GharKharch" are taken by other expense apps; no app named Gharcha turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -16,7 +16,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Every handover updates this document and the README in the same pass.
 - Fixes are verified in a fresh review pass before a zip is handed over.
 
-## 3. Features in 1.7.0
+## 3. Features in 1.7.1
 ### Look, feel and flows (new in the rewrite)
 - Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment plays on the brand red: the house rises, three gold coins drop into it (it bounces with each), the rupee writes itself, the saffron dot pops and the Gharcha wordmark and tagline slide in. It is the app's own story (money coming home); the earlier letter-with-orbiting-dots opening was too close to the reference app and is gone.
 - Illustrated art instead of emoji: 33 badge medals (bronze, silver or gold rim by difficulty, one to three rank stars, an emblem per badge) and 24 sticker icons (groups, home services, empty screens, shop, gold, forecast). They are drawn as SVG and rendered to PNG by `tool/make_art.py` into `assets/art/`; the app shows them with `Medal` and `Sticker` (`lib/ui/glyphs.dart`). Locked medals are greyed behind a padlock with a progress ring. Points are a gold coin (`Coin`); categories and rows use glossy gradient tiles (`IconTile`).
@@ -26,6 +26,12 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Add transaction: voice banner with a pulsing mic, Expense / Credit segments, a large amount with the currency symbol at the same weight and a money keypad that stays open, Yesterday / Today / Tomorrow chips, Paid by chips, four payment-mode tiles, group split (equal or custom) and a note. Saving floods the screen with the accent colour and a tick springs in, then a points toast with the coin floats up on Home.
 - Celebrations for level-ups, badges, streak milestones and festivals are a card over looping confetti (or the festival's own particle show): the badge's medal, the flame or the dressed avatar on rotating rays, with the household sound and haptics. They wait until no sheet or pushed page is on top.
 - Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 16 themes.
+
+### Changed in 1.7.1
+- Build fix: `screens/shell.dart` now imports `core/app_state.dart` (1.7.0 failed `flutter analyze` on `AppScope`).
+- **Launcher shortcuts** (long-press the app icon): Add transaction, Voice entry, Bills, Shopping list, each with its own icon (`platform/android/res/drawable/shortcut_<route>.xml`; the route name is the icon name). Android shows at most four.
+- **Export sheet:** one chip per month that has expenses plus "All expenses", a CSV / PDF switch and a single Export button (`_ExportSheet` in `screens/me.dart`).
+- **Rewards tabs** read History / Badges / Shop so all three labels render at the same size.
 
 ### Added in 1.7.0
 - **Quick picks on Add transaction:** under the title field, chips offer past expenses. With nothing typed they are the most repeated ones (used at least twice); while typing they are the titles containing the text. A tap fills title, amount, category, payment mode and account (`AppState.quickPicks`).
@@ -181,6 +187,7 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.7.1 | 2026-11-19 | Build fix (missing import in shell), launcher shortcuts with icons, export sheet with month chips and format switch, shorter Rewards tabs. |
 | 1.7.0 | 2026-11-19 | Daily-use release: quick picks, remembered categories, safe-to-spend tile, bill calendar and early bill notice, savings goals, month recap card, shopping list, lent and borrowed, advances for home help, warranties and papers, payment-spotted alert, search by amount, accounts. No new packages. |
 | 1.6.0 | 2026-11-19 | Payment capture from SMS notifications on Android, ported from HomeQuest (native listener, queue in shared preferences, capture inbox). New package: `android_intent_plus`. |
 | 1.5.1 | 2026-11-19 | Fixes from device testing: the Undo message closes itself after five seconds (it no longer uses a `SnackBarAction`, which newer Flutter keeps on screen) and Undo is a solid yellow button on a dark bar; a swiped expense row's red / blue strip fills the row with no gap above or below; the selected category in the picker has a matching rounded outline and a tick instead of a circle around a square; paste is a labelled row with an explanation instead of an icon in the header. |
