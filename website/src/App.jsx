@@ -3,8 +3,9 @@ import { animate } from 'animejs'
 import DownloadButton from './components/DownloadButton.jsx'
 import Nav from './components/Nav.jsx'
 import Hero from './components/Hero.jsx'
-import Showcase from './components/Showcase.jsx'
-import Features from './components/Features.jsx'
+import Moments from './components/Moments.jsx'
+import More from './components/More.jsx'
+import Looks from './components/Looks.jsx'
 import Festivals from './components/Festivals.jsx'
 import Rewards from './components/Rewards.jsx'
 import Downloads from './components/Downloads.jsx'
@@ -52,8 +53,9 @@ export default function App() {
       <Nav />
       <main>
         <Hero />
-        <Showcase />
-        <Features />
+        <Moments />
+        <More />
+        <Looks />
         <Festivals />
         <Rewards />
         <Downloads />

@@ -18,7 +18,7 @@ export default function Downloads() {
             <h3>{p.title}</h3>
             <p>{p.tagline}</p>
             <ul>{p.rows.map((r) => <li key={r}>{r}</li>)}</ul>
-            {p.live && <DownloadButton />}
+            {p.live && (p.url ? <a className="btn btn-primary" href={p.url} target="_blank" rel="noreferrer">{p.cta}</a> : <DownloadButton />)}
           </article>
         ))}
       </div>

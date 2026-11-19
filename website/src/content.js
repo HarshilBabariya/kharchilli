@@ -1,91 +1,96 @@
 export const REPO_URL = `https://github.com/${__REPO__}`
 export const APP_VERSION = __APP_VERSION__
 
+// Paste the store pages here once they exist; a platform with a link goes live on the site, an empty one shows "Coming soon".
+export const storeLinks = { play: '', ios: '' }
+
 export const download = { file: 'Gharcha.apk', url: `${import.meta.env.BASE_URL}downloads/${__APK__}` }
 
 export const stats = [
   { value: 33, label: 'badges to earn' },
-  { value: 6130, label: 'bonus points on offer' },
-  { value: 16, label: 'themes, 9 of them festive' },
-  { value: 18, label: 'avatar outfits' }
+  { value: 24, label: 'colour themes' },
+  { value: 35, label: 'avatar outfits' },
+  { value: 3, label: 'languages' }
 ]
 
-export const features = [
+// The three things the page leads with; `screen` names a mock in components/Phone.jsx.
+export const moments = [
   {
     key: 'log',
-    title: 'Log in seconds',
-    body: 'Centre + button, amount hero, Yesterday / Today / Tomorrow chips, inline Paid by and Cash · UPI · Card · Bank tiles. Credits (cashback, refunds) subtract from every total.'
+    screen: 'add',
+    eyebrow: 'Log it',
+    title: 'Five seconds, then back to your day.',
+    body: 'Type it, say it, or paste the bank message. Gharcha fills in the rest.',
+    bullets: [
+      ['Say it', '“250 groceries by UPI” in English, Hindi or Gujarati.'],
+      ['One-tap repeats', 'Your usual spends show up as chips under the title.'],
+      ['It remembers', 'A shop keeps the category you gave it last time.']
+    ]
   },
   {
-    key: 'voice',
-    title: 'Say it out loud',
-    body: '“250 groceries by UPI” or “paid 120 for pani puri cash” — amount, category, mode and note are filled for you, in English, Hindi or Gujarati.'
-  },
-  {
-    key: 'budgets',
-    title: 'Budgets & forecast',
-    body: 'Monthly and per-category limits, 80% / 100% alerts, and a plain-words forecast: “At this pace you’ll overspend by ₹4,200 around 24 Nov”.'
-  },
-  {
-    key: 'groups',
-    title: 'Groups & splitting',
-    body: 'Home, trip, party — split equally or with custom amounts, see who owes whom, settle up with a minimal plan and share the summary to WhatsApp.'
-  },
-  {
-    key: 'family',
-    title: 'Family accounts',
-    body: 'Every member has a profile, mobile number, optional PIN and their own avatar. App lock keeps the ledger private; everyone shares one household ledger.'
-  },
-  {
-    key: 'insights',
-    title: 'Insights & calendar',
-    body: 'Week / Month / Year trends, category donut with ▲▼ change, payment-mode split, who paid, and a calendar that colours each day green or red against your daily budget.'
-  },
-  {
-    key: 'khata',
-    title: 'Kirana khata & services',
-    body: 'Shop credit tallies, milk / maid / newspaper month grids with the maths spelt out, gold and chit funds valued at today’s rate.'
-  },
-  {
-    key: 'reminders',
-    title: 'Reminders & bills',
-    body: 'A 30-day strip of what’s due, sassy nudges that never repeat themselves, and bills that log themselves on the due date. Tap a notification and it opens the right screen.'
-  },
-  {
-    key: 'rewards',
-    title: 'Points, levels & badges',
-    body: '+10 per expense, streak bonuses, 10 levels from Rookie to Legend and 33 badges with full-screen celebrations and a cash-register ka-ching.'
-  },
-  {
-    key: 'avatar',
-    title: 'Your avatar',
-    body: '16 hairstyles, 18 outfits, 13 accessories, 10 moods that react to your budget and streak, and seven actions — wave, jump, spin, dance, wink, cheer, laugh.'
-  },
-  {
-    key: 'sounds',
-    title: 'Sounds of a home',
-    body: 'A cooker seeti for the daily nudge, a doorbell for bills, a debit ting for money out, microwave beeps at 80% of a budget, and a POS buzz when you cross it.'
-  },
-  {
-    key: 'data',
-    title: 'Local-first, yours',
-    body: 'No account, no server, no tracking. Everything lives in the phone’s own database. Import and export CSV, export a PDF, or erase it all in one tap.'
+    key: 'see',
+    screen: 'insights',
+    eyebrow: 'See it',
+    title: 'Know what is safe to spend today.',
+    body: 'One number for today, a clear picture of the month, and no surprise bills.',
+    bullets: [
+      ['Safe to spend', 'What is left of the budget, spread over the days remaining.'],
+      ['Where it went', 'Categories, payment modes and who paid, by week, month or year.'],
+      ['Bill calendar', 'Due days on a grid, with a heads-up three days early.']
+    ]
   },
   {
     key: 'share',
-    title: 'Weekly share card',
-    body: 'A 1080×1350 card in your theme colours — week total, ▲▼ vs last week, top three categories, who paid, streak and points — made for the family group.'
-  },
-  {
-    key: 'categories',
-    title: 'Categories your way',
-    body: 'Add your own with one of 26 icons, 40 preset colours or a custom hue; recolour the built-in ones. Voice entry learns your custom names too.'
-  },
-  {
-    key: 'languages',
-    title: 'English · हिन्दी · ગુજરાતી',
-    body: 'Switch from onboarding or Me → Language. Dates, badges, rewards, mood lines and every notification follow — and the Polyglot badge lands when you do.'
+    screen: 'house',
+    eyebrow: 'Share it',
+    title: 'One place for the whole house.',
+    body: 'Splits, shop credit, the maid’s salary, the shopping list and the papers that expire.',
+    bullets: [
+      ['Split fairly', 'Equal, exact amounts, percentages or shares. Settle up in the fewest payments.'],
+      ['Lent and borrowed', 'Who owes whom outside the groups, with a reminder card for WhatsApp.'],
+      ['Nothing lapses', 'Warranties, insurance and PUC with a nudge a week before they expire.']
+    ]
   }
+]
+
+// Everything else, as one-liners. `key` picks art/feature_<key>.png.
+export const more = [
+  { key: 'widget', title: 'Home-screen widget', body: 'This month and today, with Add and Voice buttons.' },
+  { key: 'goals', title: 'Savings goals', body: 'A target, a date and what to put aside each month.' },
+  { key: 'shopping', title: 'Shopping list', body: 'Tick things off, then log the lot as one expense.' },
+  { key: 'accounts', title: 'Accounts', body: 'Cash, bank and wallets, each with a running balance.' },
+  { key: 'budgets', title: 'Budgets & forecast', body: 'Limits per category and a plain-words forecast.' },
+  { key: 'groups', title: 'Groups', body: 'Home, trips and parties, with who owes whom.' },
+  { key: 'family', title: 'Family accounts', body: 'A profile, PIN and avatar for every member.' },
+  { key: 'khata', title: 'Khata & home help', body: 'Shop credit, milk and maid tallies, gold and chits.' },
+  { key: 'reminders', title: 'Reminders', body: 'Bills that log themselves and nudges that never repeat.' },
+  { key: 'rewards', title: 'Points & badges', body: 'Ten levels, 33 badges and a shop to spend points in.' },
+  { key: 'avatar', title: 'Your avatar', body: 'Full outfits, hair and accessories; moods that follow your budget.' },
+  { key: 'sounds', title: 'Sounds of a home', body: 'A cooker whistle for nudges, a doorbell for bills.' },
+  { key: 'categories', title: 'Your categories', body: 'Add your own, recolour the built-in ones.' },
+  { key: 'data', title: 'Backup & lock', body: 'One-file backup, CSV and PDF export, PIN or fingerprint.' },
+  { key: 'languages', title: 'English · हिन्दी · ગુજરાતી', body: 'Every screen, badge and notification follows.' }
+]
+
+// A few of the app's themes; picking one recolours this page (--p and --p2 in styles.css).
+export const themes = [
+  ['Sunrise', '#E8203F', '#FF7A59'],
+  ['Ocean', '#2563EB', '#0EA5E9'],
+  ['Forest', '#15803D', '#22C55E'],
+  ['Midnight', '#7C3AED', '#06B6D4'],
+  ['Candy', '#EC4899', '#A78BFA'],
+  ['Mango', '#F59E0B', '#EF4444'],
+  ['Peacock', '#0E7490', '#10B981'],
+  ['Ink', '#334155', '#0EA5E9']
+]
+
+export const cardLooks = ['Classic', 'Sunset', 'Emerald', 'Night', 'Charcoal']
+
+export const trust = [
+  ['No account', 'Open it and start. Nothing to sign up for.'],
+  ['No server', 'Everything stays in the phone’s own database.'],
+  ['No ads, no tracking', 'Free, and nothing is collected.'],
+  ['Yours to take', 'Back up to one file, export CSV or PDF, erase in one tap.']
 ]
 
 export const festivals = [
@@ -169,15 +174,19 @@ export const platforms = [
     key: 'play',
     title: 'Google Play',
     tagline: 'The same app, with automatic updates.',
-    rows: ['Listing in review', 'Signed release bundle is built on every push'],
-    live: false
+    rows: [storeLinks.play ? 'Installs and updates through the Play Store' : 'Listing in preparation', 'Signed release bundle is built on every push'],
+    url: storeLinks.play,
+    cta: 'Get it on Google Play',
+    live: Boolean(storeLinks.play)
   },
   {
     key: 'ios',
     title: 'iPhone',
     tagline: 'One codebase, so iOS gets every feature on day one.',
-    rows: ['App Store listing in preparation', 'iOS 13 and newer'],
-    live: false
+    rows: [storeLinks.ios ? 'Installs and updates through the App Store' : 'App Store listing in preparation', 'iOS 13 and newer'],
+    url: storeLinks.ios,
+    cta: 'Download on the App Store',
+    live: Boolean(storeLinks.ios)
   }
 ]
 

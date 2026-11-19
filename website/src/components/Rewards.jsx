@@ -23,7 +23,7 @@ export default function Rewards() {
       <div className="section-head">
         <span className="eyebrow">Points, levels, badges</span>
         <h2>Every log earns something. Streaks earn more.</h2>
-        <p>Spend points in the shop on 7 colour themes, 18 outfits, hair and accessories, Advanced Insights and CSV / PDF export — or claim festival packs free in season.</p>
+        <p>Spend points in the shop on colour themes, outfits, hair and accessories, or claim festival packs free in season.</p>
       </div>
       <div className="reward-xp" ref={xp}>
         <div className="xp-head">

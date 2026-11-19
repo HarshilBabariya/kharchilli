@@ -5,8 +5,9 @@ import DownloadButton from './DownloadButton.jsx'
 import { REPO_URL } from '../content.js'
 
 const links = [
-  ['#showcase', 'Why Gharcha'],
+  ['#moments', 'How it works'],
   ['#features', 'Features'],
+  ['#looks', 'Themes'],
   ['#festivals', 'Festivals'],
   ['#rewards', 'Rewards'],
   ['#download', 'Download']

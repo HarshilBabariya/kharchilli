@@ -466,9 +466,10 @@ ICONS = {
 
 # Website feature cards, by feature key.
 WEB = {
-    'log': (e_bolt, '#3949AB'), 'voice': (e_mic, '#EC407A'), 'budgets': (e_target, '#22A861'), 'groups': (e_three, '#FFC83D'), 'family': (e_home_heart, '#7C4DFF'), 'insights': (e_chart, '#1F2A5C'),
+    'budgets': (e_target, '#22A861'), 'groups': (e_three, '#FFC83D'), 'family': (e_home_heart, '#7C4DFF'),
     'khata': (e_shop, '#4DB6AC'), 'reminders': (e_bell, '#FF7A1A'), 'rewards': (e_trophy, '#E8203F'), 'avatar': (e_shades, '#FFC83D'), 'sounds': (e_party, '#26C6DA'), 'data': (e_lock, '#5C6BC0'),
-    'share': (e_gift, '#3949AB'), 'categories': (e_tag, '#FFB300'), 'languages': (e_speech, '#26A69A'),
+    'categories': (e_tag, '#FFB300'), 'languages': (e_speech, '#26A69A'),
+    'widget': (e_home, '#039BE5'), 'goals': (e_gold, '#5D2A8C'), 'shopping': (e_bag, '#FF8FA3'), 'accounts': (e_bank, '#00695C'),
 }
 
 
