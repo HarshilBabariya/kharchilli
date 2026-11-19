@@ -96,7 +96,7 @@ Future<void> importCsvFile(BuildContext context) async {
 
 /// Previews [card] and shares it as an image named [file], with [text] as the caption.
 Future<void> shareCard(BuildContext context, Widget card, {required String file, required String text}) =>
-    showDialog<void>(context: context, builder: (_) => _SharePreview(card: card, file: file, text: text));
+    showDialog<void>(context: context, barrierColor: Colors.black.withValues(alpha: 0.82), builder: (_) => _SharePreview(card: card, file: file, text: text));
 
 /// The card as it will be sent, with a row of backgrounds to pick from; swiping the card steps through them too.
 class _SharePreview extends StatefulWidget {

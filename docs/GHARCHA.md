@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Gharcha is
 Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/Kharchili`; the repo kept the app's previous working name). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.10.2+23`.
+- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.10.3+24`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Gharcha → Me → Your data → Import CSV.
 - Names: 1.0.x shipped as Kharchili (`app.kharchili`); 1.1.0 renamed it to Gharcha with a new id, so it installs as a separate app from a 1.0.x test build (move data with CSV export / import). Name check (Nov 2026): "Chillar" and "GharKharch" are taken by other expense apps; no app named Gharcha turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -16,7 +16,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Every handover updates this document and the README in the same pass.
 - Fixes are verified in a fresh review pass before a zip is handed over.
 
-## 3. Features in 1.10.2
+## 3. Features in 1.10.3
 ### Look, feel and flows (new in the rewrite)
 - Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment plays on the brand red: the house rises, three gold coins drop into it (it bounces with each), the rupee writes itself, the saffron dot pops and the Gharcha wordmark and tagline slide in. It is the app's own story (money coming home); the earlier letter-with-orbiting-dots opening was too close to the reference app and is gone.
 - Illustrated art instead of emoji: 33 badge medals (bronze, silver or gold rim by difficulty, one to three rank stars, an emblem per badge) and 24 sticker icons (groups, home services, empty screens, shop, gold, forecast). They are drawn as SVG and rendered to PNG by `tool/make_art.py` into `assets/art/`; the app shows them with `Medal` and `Sticker` (`lib/ui/glyphs.dart`). Locked medals are greyed behind a padlock with a progress ring. Points are a gold coin (`Coin`); categories and rows use glossy gradient tiles (`IconTile`).
@@ -26,6 +26,10 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Add transaction: voice banner with a pulsing mic, Expense / Credit segments, a large amount with the currency symbol at the same weight and a money keypad that stays open, Yesterday / Today / Tomorrow chips, Paid by chips, four payment-mode tiles, group split (equal or custom) and a note. Saving floods the screen with the accent colour and a tick springs in, then a points toast with the coin floats up on Home.
 - Celebrations for level-ups, badges, streak milestones and festivals are a card over looping confetti (or the festival's own particle show): the badge's medal, the flame or the dressed avatar on rotating rays, with the household sound and haptics. They wait until no sheet or pushed page is on top.
 - Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 24 themes.
+
+### Changed in 1.10.3
+- **Card contents no longer spill out.** `_Fit` (in `screens/cards.dart`) lays a card's details out at full width and scales them down when they are taller than the space; `_Panel` and the badge card use it. The receipt card's last rows used to run past the panel, worst on the looks with a centred header.
+- The share preview's backdrop is darker, so the screen behind no longer shows through around the style swatches.
 
 ### Changed in 1.10.2
 - **Share card looks are full styles, not just colours.** Each `CardStyle` in `cardLooks` sets the gradient, a painted pattern (`CardDeco`: bubbles, stripes, stars, rings), whether the header is centred, and the panel's corner radius, tint and border. `CardBackdrop` paints the background for `ShareCard` and the weekly card; `_Panel` reads the same style. All looks keep a dark background because the cards draw white text on it.
@@ -246,6 +250,7 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.10.3 | 2026-11-19 | Share card contents scale to fit their panel; darker share preview backdrop. |
 | 1.10.2 | 2026-11-19 | Share card looks now differ in pattern, header and panel; themed Undo; khata payments can be removed. |
 | 1.10.1 | 2026-11-19 | CI also produces `Gharcha-capture-apk` (payment capture on) as a separate artifact. |
 | 1.10.0 | 2026-11-19 | Edit shopping, gold and chit entries; reopen loans; goal history; renew papers; remembered card looks; native text in app language; quick tips; website download link fix. |

@@ -157,8 +157,19 @@ class _Panel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: Color(style.panelColor), borderRadius: BorderRadius.circular(style.panelRadius), border: border == null ? null : Border.all(color: Color(border), width: 2.5), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 24, offset: const Offset(0, 10))]),
-      child: DefaultTextStyle.merge(style: const TextStyle(color: Color(0xFF1D1517)), child: child),
+      child: _Fit(child: DefaultTextStyle.merge(style: const TextStyle(color: Color(0xFF1D1517)), child: child)),
     );
+  }
+}
+
+/// Centres [child] at the full width and shrinks it when it is taller than the space, so nothing spills out of a card.
+class _Fit extends StatelessWidget {
+  const _Fit({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, box) => Center(child: FittedBox(fit: BoxFit.scaleDown, child: SizedBox(width: box.maxWidth, child: child))));
   }
 }
 
@@ -332,7 +343,8 @@ class BadgeCard extends StatelessWidget {
     final app = AppScope.of(context);
     return ShareCard(
       label: tr('toast_streak', [app.streak]),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      child: _Fit(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
         Medal(badge.id, size: 150),
         const SizedBox(height: 14),
         Text(tr('card_badge', [app.me?.name ?? '']), textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 14, fontWeight: FontWeight.w600)),
@@ -340,7 +352,8 @@ class BadgeCard extends StatelessWidget {
         Text(badge.name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 26, color: Colors.white, height: 1.15)),
         const SizedBox(height: 8),
         Text(badge.description, textAlign: TextAlign.center, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13.5, height: 1.35)),
-      ]),
+        ]),
+      ),
     );
   }
 }

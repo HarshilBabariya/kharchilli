@@ -27,7 +27,7 @@ import 'reminders.dart';
 import 'rewards.dart';
 import 'tour.dart';
 
-const appVersion = '1.10.2';
+const appVersion = '1.10.3';
 
 class MeTab extends StatelessWidget {
   const MeTab({super.key});
