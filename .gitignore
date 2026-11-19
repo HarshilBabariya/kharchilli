@@ -7,5 +7,5 @@ build/
 pubspec.lock
 /android/
 /ios/
-/test/
 .metadata
+ 
