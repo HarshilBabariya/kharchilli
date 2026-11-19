@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../core/app_state.dart';
 import '../core/catalogs.dart';
@@ -140,6 +143,63 @@ Future<double?> askAmount(BuildContext context, {required String title, double? 
         ],
       ]),
     ),
+  );
+}
+
+/// Asks for one line of text.
+Future<String?> askText(BuildContext context, String title, String label, String hint) {
+  final text = TextEditingController();
+  return showKSheet<String>(
+    context,
+    title: title,
+    builder: (sheet) => StatefulBuilder(
+      builder: (_, setState) => Column(children: [
+        KField(controller: text, label: label, hint: hint, autofocus: true, onChanged: (_) => setState(() {})),
+        const SizedBox(height: 14),
+        KButton(tr('save'), onTap: text.text.trim().isEmpty ? null : () => Navigator.of(sheet).pop(text.text.trim())),
+      ]),
+    ),
+  );
+}
+
+/// A sheet to take, choose, view or remove a photo kept in the app's documents folder. Answers the new file name,
+/// an empty string when the photo was removed, or null when nothing changed.
+Future<String?> pickPhoto(BuildContext context, {required String title, required String current}) {
+  final app = AppScope.read(context);
+  return showKSheet<String>(
+    context,
+    title: title,
+    builder: (sheet) {
+      Future<void> pick(ImageSource source) async {
+        final nav = Navigator.of(sheet);
+        try {
+          final shot = await ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 80);
+          if (shot == null) return;
+          final name = 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          await File(shot.path).copy('${app.photosDir}/$name');
+          nav.pop(name);
+        } catch (_) {
+          nav.pop();
+          if (context.mounted) toast(context, tr('photo_failed'));
+        }
+      }
+
+      return Column(children: [
+        if (current.isNotEmpty) ...[
+          ClipRRect(borderRadius: BorderRadius.circular(18), child: InteractiveViewer(child: Image.file(File('${app.photosDir}/$current'), height: 320, fit: BoxFit.contain))),
+          const SizedBox(height: 14),
+        ],
+        Row(children: [
+          Expanded(child: KButton(tr('photo_camera'), icon: Icons.photo_camera_rounded, onTap: () => pick(ImageSource.camera))),
+          const SizedBox(width: 10),
+          Expanded(child: KButton(tr('photo_gallery'), tonal: true, icon: Icons.photo_library_rounded, onTap: () => pick(ImageSource.gallery))),
+        ]),
+        if (current.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          KButton(tr('remove'), tonal: true, danger: true, onTap: () => Navigator.of(sheet).pop('')),
+        ],
+      ]);
+    },
   );
 }
 

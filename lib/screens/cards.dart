@@ -211,3 +211,45 @@ class BadgeCard extends StatelessWidget {
     );
   }
 }
+
+/// A finished month at a glance: spent, saved, the biggest category and the change from the month before.
+class MonthCard extends StatelessWidget {
+  const MonthCard(this.month, {super.key});
+  final DateTime month;
+
+  @override
+  Widget build(BuildContext context) {
+    final app = AppScope.of(context);
+    final spent = app.spentIn(month), before = app.spentIn(Days.addMonths(month, -1));
+    final income = app.settings.monthlyIncome;
+    final top = app.byCategory(app.inMonth(month)).firstOrNull;
+    Widget fact(IconData icon, String label, String value, [Color? colour]) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          child: Row(children: [
+            Icon(icon, size: 20, color: _muted),
+            const SizedBox(width: 10),
+            Expanded(child: Text(label, style: const TextStyle(color: _muted, fontSize: 13, fontWeight: FontWeight.w600))),
+            Text(value, style: TextStyle(color: colour ?? _ink, fontSize: 14.5, fontWeight: FontWeight.w800)),
+          ]),
+        );
+    return ShareCard(
+      label: Fmt.monthYear(month),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Text(tr('spent_in', [Fmt.monthYear(month)]), style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontWeight: FontWeight.w600)),
+        FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(Fmt.money(spent), style: const TextStyle(fontFamily: 'Poppins', fontWeight: FontWeight.w700, fontSize: 44, color: Colors.white))),
+        const SizedBox(height: 10),
+        Expanded(
+          child: _Panel(
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              fact(Icons.receipt_long_rounded, tr('recap_entries'), '${app.inMonth(month).length}'),
+              if (before > 0) fact(spent <= before ? Icons.trending_down_rounded : Icons.trending_up_rounded, tr('vs_last_month'), '${spent <= before ? '-' : '+'}${((spent - before).abs() / before * 100).round()}%', spent <= before ? good : bad),
+              if (top != null) fact(top.key.icon, tr('recap_top'), '${top.key.name} · ${Fmt.money(top.value)}'),
+              if (income > 0) fact(Icons.savings_rounded, tr('recap_saved'), spent > income ? '-${Fmt.money(spent - income)}' : Fmt.money(income - spent), spent > income ? bad : good),
+              fact(Icons.local_fire_department_rounded, tr('stat_streak'), '${app.streak}'),
+            ]),
+          ),
+        ),
+      ]),
+    );
+  }
+}

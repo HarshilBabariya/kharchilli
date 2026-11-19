@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
@@ -13,17 +15,19 @@ import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'avatar_studio.dart';
 import 'budgets.dart';
+import 'capture.dart';
 import 'categories.dart';
 import 'expenses.dart';
 import 'export.dart';
 import 'family.dart';
 import 'household.dart';
 import 'insights.dart';
+import 'lists.dart';
 import 'lock.dart';
 import 'reminders.dart';
 import 'rewards.dart';
 
-const appVersion = '1.5.1';
+const appVersion = '1.7.0';
 
 class MeTab extends StatelessWidget {
   const MeTab({super.key});
@@ -88,15 +92,21 @@ class MeTab extends StatelessWidget {
           NavRow(icon: Icons.track_changes_rounded, color: good, title: tr('budgets'), subtitle: tr('budgets_sub'), onTap: () => open(context, const BudgetsScreen())),
           NavRow(icon: Icons.notifications_active_rounded, color: const Color(0xFFFB8C00), title: tr('reminders_bills'), subtitle: tr('reminders_sub'), onTap: () => open(context, const RemindersScreen())),
           NavRow(icon: Icons.category_rounded, color: const Color(0xFF039BE5), title: tr('categories'), subtitle: tr('categories_sub'), onTap: () => open(context, const CategoriesScreen())),
+          NavRow(icon: Icons.shopping_basket_rounded, color: const Color(0xFF22A861), title: tr('shopping_list'), subtitle: tr('shopping_count', [app.shopping.where((i) => !i.done).length]), onTap: () => open(context, const ShoppingScreen())),
+          NavRow(icon: Icons.description_rounded, color: const Color(0xFF8D6E63), title: tr('papers'), subtitle: tr('papers_sub'), onTap: () => open(context, const PapersScreen())),
         ]),
         _section(context, tr('views'), [
           NavRow(icon: Icons.insights_rounded, color: const Color(0xFFEC407A), title: tr('insights'), subtitle: tr('insights_sub'), onTap: () => open(context, const InsightsScreen())),
           NavRow(icon: Icons.calendar_month_rounded, color: const Color(0xFF26A69A), title: tr('calendar'), onTap: () => open(context, const CalendarScreen())),
         ]),
         _section(context, tr('household_money'), [
+          NavRow(icon: Icons.account_balance_wallet_rounded, color: const Color(0xFF039BE5), title: tr('accounts'), subtitle: tr('accounts_sub'), onTap: () => open(context, const AccountsScreen())),
+          NavRow(icon: Icons.flag_rounded, color: const Color(0xFFEC407A), title: tr('goals'), subtitle: tr('goals_sub'), onTap: () => open(context, const GoalsScreen())),
+          NavRow(icon: Icons.swap_horiz_rounded, color: const Color(0xFF7C4DFF), title: tr('loans'), subtitle: tr('loans_sub'), onTap: () => open(context, const LoansScreen())),
           NavRow(icon: Icons.storefront_rounded, color: const Color(0xFF8D6E63), title: tr('khata'), subtitle: tr('khata_sub'), onTap: () => open(context, const KhataScreen())),
           NavRow(icon: Icons.local_drink_rounded, color: const Color(0xFF29B6F6), title: tr('services'), subtitle: tr('services_sub'), onTap: () => open(context, const ServicesScreen())),
           NavRow(icon: Icons.diamond_rounded, color: const Color(0xFFFFB300), title: tr('savings'), subtitle: tr('savings_sub'), onTap: () => open(context, const SavingsScreen())),
+          if (Platform.isAndroid) NavRow(icon: Icons.sms_rounded, color: const Color(0xFF26A69A), title: tr('capture'), subtitle: app.captures.isEmpty ? tr('capture_sub') : tr('capture_pending', [app.captures.length]), onTap: () => open(context, const CaptureScreen())),
         ]),
         const SizedBox(height: 22),
         KCard(

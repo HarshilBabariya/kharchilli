@@ -16,6 +16,9 @@ import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'add_expense.dart';
 import 'budgets.dart';
+import 'capture.dart';
+import 'cards.dart';
+import 'export.dart';
 import 'common.dart';
 import 'insights.dart';
 import 'reminders.dart';
@@ -49,10 +52,28 @@ class _HomeTabState extends State<HomeTab> {
     final sections = <Widget>[
       _Header(action: _hello),
       if (festival != null) _FestivalBanner(festival, onReplay: () => setState(() => _festiveReplay++)),
+      if (app.captures.isNotEmpty) ...[
+        KCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          onTap: () => open(context, const CaptureScreen()),
+          child: NavRow(icon: Icons.sms_rounded, color: const Color(0xFF26A69A), title: tr('capture_pending', [app.captures.length]), subtitle: tr('capture_review')),
+        ),
+        const SizedBox(height: 14),
+      ],
+      if (today.day <= 5 && app.inMonth(Days.addMonths(today, -1)).isNotEmpty) ...[
+        KCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          onTap: () => shareCard(context, MonthCard(Days.addMonths(today, -1)), file: 'gharcha-month', text: tr('recap_title', [Fmt.monthYear(Days.addMonths(today, -1))])),
+          child: NavRow(icon: Icons.auto_awesome_rounded, color: const Color(0xFFFFB300), title: tr('recap_title', [Fmt.monthYear(Days.addMonths(today, -1))]), subtitle: tr('recap_sub')),
+        ),
+        const SizedBox(height: 14),
+      ],
       _HeroCard(spent: spent),
       SizedBox(
         height: 118,
         child: ListView(scrollDirection: Axis.horizontal, clipBehavior: Clip.none, physics: const BouncingScrollPhysics(), children: [
+          if (app.safeToday != null)
+            _Stat(icon: Icons.shield_moon_rounded, color: app.safeToday! >= 0 ? good : bad, label: app.safeToday! >= 0 ? tr('safe_today') : tr('over_today'), value: Fmt.money(app.safeToday!.abs()), onTap: () => open(context, const BudgetsScreen())),
           _Stat(icon: Icons.wb_sunny_rounded, color: const Color(0xFFFF9F1C), label: tr('today'), value: Fmt.ledger(AppState.net(app.onDay(today))), onTap: () => open(context, const AddExpenseScreen(), rise: true)),
           _Stat(
             icon: spent <= previous ? Icons.trending_down_rounded : Icons.trending_up_rounded,

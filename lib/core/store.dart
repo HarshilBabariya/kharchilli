@@ -51,6 +51,28 @@ class Store {
 
   Future<void> saveSettings(Settings settings) => _prefs.setString(_settingsKey, jsonEncode(settings.toJson()));
 
+  /// Keys the Android notification listener writes to (see tool/patch_platforms.py).
+  static const _captureQueueKey = 'capture_queue', _captureOnKey = 'capture_connected';
+
+  /// Whether the user has given the listener notification access.
+  Future<bool> captureConnected() async {
+    await _prefs.reload();
+    return _prefs.getBool(_captureOnKey) ?? false;
+  }
+
+  /// Messages the listener has queued since the last call, oldest first; the queue is emptied.
+  Future<List<Json>> takeCaptured() async {
+    await _prefs.reload();
+    final raw = _prefs.getString(_captureQueueKey);
+    if (raw == null) return [];
+    await _prefs.remove(_captureQueueKey);
+    try {
+      return [for (final item in jsonDecode(raw) as List) (item as Map).cast<String, dynamic>()];
+    } on FormatException {
+      return [];
+    }
+  }
+
   /// Everything in the store as one JSON document, for a backup file.
   Future<String> dump() async => jsonEncode({
         'app': 'gharcha',

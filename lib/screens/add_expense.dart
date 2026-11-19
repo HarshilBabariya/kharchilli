@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../core/app_state.dart';
@@ -19,12 +18,19 @@ import 'common.dart';
 import 'export.dart';
 
 class AddExpenseScreen extends StatefulWidget {
-  const AddExpenseScreen({super.key, this.editing, this.startWithVoice = false, this.firstTime = false, this.groupId});
+  const AddExpenseScreen({super.key, this.editing, this.startWithVoice = false, this.firstTime = false, this.groupId, this.draft, this.draftDay, this.onSaved});
   final Expense? editing;
   final bool startWithVoice;
 
   /// Opened straight after setup: greets the user and asks for their first entry.
   final bool firstTime;
+
+  /// Values to start a new entry from (a captured payment, a shopping trip), with its date if it has one.
+  final VoiceResult? draft;
+  final DateTime? draftDay;
+
+  /// Runs after the new entry is saved.
+  final VoidCallback? onSaved;
   final int? groupId;
 
   @override
@@ -45,6 +51,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
   bool _saved = false;
   bool _repeat = false;
   String _photo = '';
+  int? _account;
   String _heard = '';
   String _category = BuiltInCategories.other;
   DateTime _day = Days.today();
@@ -71,6 +78,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
       _title.text = e.title;
       _note.text = e.note;
       _photo = e.photo;
+      _account = e.accountId;
       _category = e.category;
       _day = e.date;
       _paidBy = e.paidBy;
@@ -78,6 +86,20 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
       _groupId = e.groupId;
       _split = e.splitType == SplitType.none ? SplitType.equal : e.splitType;
       e.shares.forEach((id, share) => _custom[id] = Fmt.number(_split == SplitType.percent && e.amount != 0 ? share / e.amount * 100 : share).replaceAll(',', ''));
+    }
+    final d = widget.draft;
+    if (d != null) {
+      if (d.amount != null) {
+        _amount = Fmt.number(d.amount!).replaceAll(',', '');
+        _keypad = false;
+      }
+      _credit = d.credit;
+      _title.text = d.title;
+      _note.text = d.note ?? '';
+      _category = app.categoryFor(d.title) ?? d.categoryKey ?? VoiceParser.parse(d.title, _customCategories()).categoryKey ?? _category;
+      _mode = d.mode ?? _mode;
+      final day = widget.draftDay;
+      if (day != null) _day = Days.of(day.isAfter(DateTime.now()) ? DateTime.now() : day);
     }
     if (widget.startWithVoice) WidgetsBinding.instance.addPostFrameCallback((_) => _listen());
   }
@@ -145,13 +167,26 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
     _fill(parsed!, text);
   }
 
+  void _usePick(Expense p) {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _title.text = p.title;
+      _amount = Fmt.number(p.amount).replaceAll(',', '');
+      _category = p.category;
+      _mode = p.mode;
+      _account = p.accountId;
+      _keypad = false;
+    });
+    _bump.forward(from: 0);
+  }
+
   void _fill(VoiceResult parsed, String words) {
     setState(() {
       _listening = false;
       _credit = parsed.credit;
       if (parsed.amount != null) _amount = Fmt.number(parsed.amount!).replaceAll(',', '');
       if (parsed.title.isNotEmpty) _title.text = parsed.title;
-      if (parsed.categoryKey != null) _category = parsed.categoryKey!;
+      _category = AppScope.read(context).categoryFor(parsed.title) ?? parsed.categoryKey ?? _category;
       if (parsed.mode != null) _mode = parsed.mode!;
       if (_note.text.isEmpty || _noteFromVoice) {
         _note.text = parsed.note ?? words.capitalised;
@@ -192,10 +227,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
       ..splitType = group == null || _credit ? SplitType.none : _split
       ..shares = shares
       ..note = _note.text
-      ..photo = _photo;
+      ..photo = _photo
+      ..accountId = app.accounts.any((a) => a.id == _account) ? _account : null;
     HapticFeedback.heavyImpact();
     setState(() => _saved = true);
     await app.saveExpense(e, voice: _voiceUsed && widget.editing == null);
+    widget.onSaved?.call();
     if (_repeat) await app.saveReminder(Reminder(title: e.title, hour: 9, minute: 0, dayOfMonth: _day.day, amount: _value, category: _category, autoLog: true, lastLoggedDay: e.day));
     await Future<void>.delayed(const Duration(milliseconds: 650));
     if (mounted) Navigator.of(context).pop();
@@ -210,44 +247,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
   }
 
   Future<void> _photoSheet() async {
-    final app = AppScope.read(context);
-    await showKSheet<void>(
-      context,
-      title: tr('receipt_photo'),
-      builder: (sheet) {
-        Future<void> pick(ImageSource source) async {
-          Navigator.of(sheet).pop();
-          try {
-            final shot = await ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 80);
-            if (shot == null) return;
-            final name = 'receipt_${DateTime.now().millisecondsSinceEpoch}.jpg';
-            await File(shot.path).copy('${app.photosDir}/$name');
-            if (mounted) setState(() => _photo = name);
-          } catch (_) {
-            if (mounted) toast(context, tr('photo_failed'));
-          }
-        }
-
-        return Column(children: [
-          if (_photo.isNotEmpty) ...[
-            ClipRRect(borderRadius: BorderRadius.circular(18), child: InteractiveViewer(child: Image.file(File('${app.photosDir}/$_photo'), height: 320, fit: BoxFit.contain))),
-            const SizedBox(height: 14),
-          ],
-          Row(children: [
-            Expanded(child: KButton(tr('photo_camera'), icon: Icons.photo_camera_rounded, onTap: () => pick(ImageSource.camera))),
-            const SizedBox(width: 10),
-            Expanded(child: KButton(tr('photo_gallery'), tonal: true, icon: Icons.photo_library_rounded, onTap: () => pick(ImageSource.gallery))),
-          ]),
-          if (_photo.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            KButton(tr('remove'), tonal: true, danger: true, onTap: () {
-              Navigator.of(sheet).pop();
-              setState(() => _photo = '');
-            }),
-          ],
-        ]);
-      },
-    );
+    final name = await pickPhoto(context, title: tr('receipt_photo'), current: _photo);
+    if (name != null && mounted) setState(() => _photo = name);
   }
 
   Future<void> _pickDate() async {
@@ -286,6 +287,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
     final today = Days.today();
     final quickDays = {tr('yesterday'): DateTime(today.year, today.month, today.day - 1), tr('today'): today, tr('tomorrow'): DateTime(today.year, today.month, today.day + 1)};
     final editing = widget.editing != null;
+    final picks = app.quickPicks(_title.text);
     final accent = _credit ? good : cs.primary;
 
     return Scaffold(
@@ -422,7 +424,15 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                       index: 3,
                       child: KCard(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          KField(controller: _title, label: tr('what_for'), hint: tr('what_for_hint'), onTap: () => setState(() => _keypad = false)),
+                          KField(controller: _title, label: tr('what_for'), hint: tr('what_for_hint'), onTap: () => setState(() => _keypad = false), onChanged: (_) => setState(() {})),
+                          if (!editing && picks.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Wrap(spacing: 8, runSpacing: 8, children: [
+                                for (final p in picks)
+                                  KChip('${p.title} · ${Fmt.money(p.amount)}', selected: false, icon: app.category(p.category).icon, color: app.category(p.category).tint, onTap: () => _usePick(p)),
+                              ]),
+                            ),
                           const SizedBox(height: 14),
                           NavRow(
                             icon: cat.icon,
@@ -466,6 +476,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                           const SizedBox(height: 10),
                           Wrap(spacing: 8, runSpacing: 8, children: [for (final m in app.members) MemberChip(m, selected: _paidBy == m.id, onTap: () => setState(() => _paidBy = m.id))]),
                           const SizedBox(height: 18),
+                          if (app.accounts.isNotEmpty) ...[
+                            Text(tr('account'), style: context.tt.labelMedium),
+                            const SizedBox(height: 10),
+                            Wrap(spacing: 8, runSpacing: 8, children: [
+                              for (final a in app.accounts) KChip(a.name, selected: _account == a.id, onTap: () => setState(() => _account = _account == a.id ? null : a.id)),
+                            ]),
+                            const SizedBox(height: 18),
+                          ],
                           Text(tr('payment_mode'), style: context.tt.labelMedium),
                           const SizedBox(height: 10),
                           Row(children: [

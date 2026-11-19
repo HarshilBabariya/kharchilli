@@ -35,6 +35,10 @@ class NotificationIds {
   static int _instant = 910000;
   static int nextInstant() => _instant++;
   static int reminder(int reminderId, int slot) => reminderId * 10 + slot;
+
+  /// The slot of a bill's three-days-early notice; slots 0 to 6 are the reminder itself.
+  static const earlySlot = 7;
+  static int paper(int paperId) => 800000 + paperId;
 }
 
 class Notifier {

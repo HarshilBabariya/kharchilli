@@ -116,3 +116,4 @@ extension ThemeX on BuildContext {
 
 const good = Color(0xFF22A861);
 const bad = Color(0xFFE5484D);
+const warn = Color(0xFFFB8C00);

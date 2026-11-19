@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart' show DateTimeComponents;
 import 'package:path_provider/path_provider.dart';
 
+import 'capture.dart';
 import 'catalogs.dart';
 import 'format.dart';
 import 'l10n.dart';
@@ -59,6 +61,15 @@ class AppState extends ChangeNotifier {
   List<KhataEntry> khata = [];
   List<HomeService> services = [];
   List<GoldItem> gold = [];
+  List<Capture> captures = [];
+  List<Goal> goals = [];
+  List<ShopItem> shopping = [];
+  List<Loan> loans = [];
+  List<Paper> papers = [];
+  List<Account> accounts = [];
+
+  /// Whether Android notification access is granted, so payments can be captured.
+  bool captureOn = false;
   List<Chit> chits = [];
 
   bool locked = true;
@@ -84,6 +95,12 @@ class AppState extends ChangeNotifier {
     services = await _store.load('service', HomeService.fromJson);
     gold = await _store.load('gold', GoldItem.fromJson);
     chits = await _store.load('chit', Chit.fromJson);
+    captures = await _store.load('capture', Capture.fromJson);
+    goals = await _store.load('goal', Goal.fromJson);
+    shopping = await _store.load('shopitem', ShopItem.fromJson);
+    loans = await _store.load('loan', Loan.fromJson);
+    papers = await _store.load('paper', Paper.fromJson);
+    accounts = await _store.load('account', Account.fromJson);
     if (categories.isEmpty) {
       categories = BuiltInCategories.seed();
       for (final c in categories) {
@@ -94,6 +111,7 @@ class AppState extends ChangeNotifier {
     await L10n.load(settings.language);
     locked = settings.onboarded && (settings.appLock || me == null);
     if (settings.onboarded) await _dailyChecks();
+    await syncCaptures();
   }
 
   void _applyGlobals() {
@@ -149,6 +167,60 @@ class AppState extends ChangeNotifier {
       for (final e in totals.entries)
         if (e.value > 0 && member(e.key) != null) MapEntry(member(e.key)!, e.value),
     ]..sort((a, b) => b.value.compareTo(a.value));
+  }
+
+  /// What can still be spent today without breaking the monthly budget: the money left at the start of today spread
+  /// over the days remaining, less what today has already cost. Null without a budget.
+  double? get safeToday {
+    if (settings.monthlyBudget <= 0) return null;
+    final today = Days.today();
+    final spentToday = max(net(onDay(today)), 0.0);
+    final leftThisMorning = settings.monthlyBudget - (spentIn(today) - spentToday);
+    return leftThisMorning / (Days.inMonth(today) - today.day + 1) - spentToday;
+  }
+
+  /// One-tap templates for the add screen: the latest expense for each distinct title, most used first. With a
+  /// [query] only titles containing it are offered.
+  List<Expense> quickPicks(String query, {int limit = 6}) {
+    final q = query.trim().toLowerCase();
+    final uses = <String, int>{};
+    final latest = <String, Expense>{};
+    for (final e in expenses) {
+      final key = e.title.trim().toLowerCase();
+      if (key.isEmpty || e.isCredit || (q.isNotEmpty && (!key.contains(q) || key == q))) continue;
+      uses[key] = (uses[key] ?? 0) + 1;
+      if (e.createdAt >= (latest[key]?.createdAt ?? 0)) latest[key] = e;
+    }
+    final keys = latest.keys.where((k) => q.isNotEmpty || uses[k]! >= 2).toList()..sort((a, b) => uses[b]!.compareTo(uses[a]!));
+    return [for (final k in keys.take(limit)) latest[k]!];
+  }
+
+  /// The category last used for an expense with this title, so a shop is filed the same way every time.
+  String? categoryFor(String title) {
+    final key = title.trim().toLowerCase();
+    if (key.isEmpty) return null;
+    Expense? match;
+    for (final e in expenses) {
+      if (e.title.trim().toLowerCase() == key && e.createdAt >= (match?.createdAt ?? 0)) match = e;
+    }
+    return match?.category;
+  }
+
+  double balanceOf(Account a) => a.opening - net(expenses.where((e) => e.accountId == a.id));
+
+  /// Saves [doc] and keeps it in [list]; a doc removed by [drop] comes back as a new record.
+  Future<void> put<T extends Doc>(List<T> list, T doc) async {
+    await _store.save(doc);
+    if (!list.contains(doc)) list.add(doc);
+    notifyListeners();
+    if (doc is Paper) unawaited(syncNotifications());
+  }
+
+  Future<void> drop<T extends Doc>(List<T> list, T doc) async {
+    list.remove(doc);
+    await _store.remove(doc);
+    doc.id = 0;
+    notifyListeners();
   }
 
   double get budgetProgress => settings.monthlyBudget <= 0 ? 0 : spentIn(Days.today()) / settings.monthlyBudget;
@@ -742,7 +814,17 @@ class AppState extends ChangeNotifier {
     final amount = s.billFullMonth(month);
     s.paidMonths[key] = amount;
     await _store.save(s);
-    await saveExpense(Expense(title: tr('service_payment_title', [s.name, Fmt.monthYear(month)]), amount: amount, category: s.category, day: Days.key(Days.today()), paidBy: settings.activeMemberId));
+    final due = amount - (s.advances[key] ?? 0);
+    if (due > 0) await saveExpense(Expense(title: tr('service_payment_title', [s.name, Fmt.monthYear(month)]), amount: due, category: s.category, day: Days.key(Days.today()), paidBy: settings.activeMemberId));
+    notifyListeners();
+  }
+
+  /// Records money handed over early against [month]'s bill; it is logged as an expense now and taken off the final payment.
+  Future<void> payAdvance(HomeService s, DateTime month, double amount) async {
+    final key = Days.monthKey(month);
+    s.advances[key] = (s.advances[key] ?? 0) + amount;
+    await _store.save(s);
+    await saveExpense(Expense(title: tr('service_advance_title', [s.name]), amount: amount, category: s.category, day: Days.key(Days.today()), paidBy: settings.activeMemberId));
   }
 
   double get goldValue => gold.fold(0.0, (sum, g) => sum + g.valueAt(settings.goldRate));
@@ -804,6 +886,35 @@ class AppState extends ChangeNotifier {
     await _store.wipe();
     celebrations.clear();
     await load();
+    notifyListeners();
+  }
+
+  // ---- Payment capture (Android)
+
+  static const _captureWindowMs = 10 * 60 * 1000;
+
+  /// Turns the messages queued by the notification listener into pending captures, skipping anything that is not a
+  /// completed payment or that repeats a capture or expense of the same amount from the last ten minutes.
+  Future<void> syncCaptures() async {
+    if (!Platform.isAndroid) return;
+    captureOn = await _store.captureConnected();
+    for (final raw in await _store.takeCaptured()) {
+      final sender = (raw['sender'] as String? ?? '').trim();
+      final parsed = PaymentParser.parse('$sender ${raw['text'] ?? ''}');
+      if (parsed == null) continue;
+      final at = raw['at'] as int? ?? DateTime.now().millisecondsSinceEpoch;
+      final since = at - _captureWindowMs;
+      if (captures.any((c) => c.amount == parsed.amount && c.at >= since) || expenses.any((e) => e.amount == parsed.amount && e.createdAt >= since)) continue;
+      final capture = Capture(amount: parsed.amount, merchant: parsed.merchant, source: sender, at: at);
+      await _store.save(capture);
+      captures.add(capture);
+    }
+    notifyListeners();
+  }
+
+  Future<void> dismissCapture(Capture c) async {
+    captures.remove(c);
+    await _store.remove(c);
     notifyListeners();
   }
 
@@ -965,6 +1076,17 @@ class AppState extends ChangeNotifier {
             _ => null,
           };
           await Notifier.schedule(NotificationIds.reminder(r.id, 0), channel, next, line[0], line[1], route: route, repeat: repeat);
+          final early = next.subtract(const Duration(days: 3));
+          if (r.isBill && early.isAfter(now)) {
+            await Notifier.schedule(NotificationIds.reminder(r.id, NotificationIds.earlySlot), channel, early, tr('bill_early_title', [r.title]), tr('bill_early_body', [Fmt.money(r.amount!), Fmt.date(next, 'd MMM')]), route: route);
+          }
+        }
+      }
+      for (final p in papers) {
+        final expiry = Days.fromKey(p.expiryDay);
+        for (final (slot, daysBefore) in const [7, 0].indexed) {
+          final when = DateTime(expiry.year, expiry.month, expiry.day - daysBefore, 9);
+          if (when.isAfter(now)) await Notifier.schedule(NotificationIds.paper(p.id) * 2 + slot, Channel.bills, when, tr('paper_notice_title', [p.name]), tr(daysBefore == 0 ? 'paper_notice_today' : 'paper_notice_week', [Fmt.date(expiry, 'd MMM yyyy')]), route: 'reminders');
         }
       }
       final days = streak;

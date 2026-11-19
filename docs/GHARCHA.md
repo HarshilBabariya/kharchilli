@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Gharcha is
 Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/Kharchili`; the repo kept the app's previous working name). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.5.1+12`.
+- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.7.0+14`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Gharcha → Me → Your data → Import CSV.
 - Names: 1.0.x shipped as Kharchili (`app.kharchili`); 1.1.0 renamed it to Gharcha with a new id, so it installs as a separate app from a 1.0.x test build (move data with CSV export / import). Name check (Nov 2026): "Chillar" and "GharKharch" are taken by other expense apps; no app named Gharcha turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -16,7 +16,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Every handover updates this document and the README in the same pass.
 - Fixes are verified in a fresh review pass before a zip is handed over.
 
-## 3. Features in 1.5.0
+## 3. Features in 1.7.0
 ### Look, feel and flows (new in the rewrite)
 - Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment plays on the brand red: the house rises, three gold coins drop into it (it bounces with each), the rupee writes itself, the saffron dot pops and the Gharcha wordmark and tagline slide in. It is the app's own story (money coming home); the earlier letter-with-orbiting-dots opening was too close to the reference app and is gone.
 - Illustrated art instead of emoji: 33 badge medals (bronze, silver or gold rim by difficulty, one to three rank stars, an emblem per badge) and 24 sticker icons (groups, home services, empty screens, shop, gold, forecast). They are drawn as SVG and rendered to PNG by `tool/make_art.py` into `assets/art/`; the app shows them with `Medal` and `Sticker` (`lib/ui/glyphs.dart`). Locked medals are greyed behind a padlock with a progress ring. Points are a gold coin (`Coin`); categories and rows use glossy gradient tiles (`IconTile`).
@@ -26,6 +26,29 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Add transaction: voice banner with a pulsing mic, Expense / Credit segments, a large amount with the currency symbol at the same weight and a money keypad that stays open, Yesterday / Today / Tomorrow chips, Paid by chips, four payment-mode tiles, group split (equal or custom) and a note. Saving floods the screen with the accent colour and a tick springs in, then a points toast with the coin floats up on Home.
 - Celebrations for level-ups, badges, streak milestones and festivals are a card over looping confetti (or the festival's own particle show): the badge's medal, the flame or the dressed avatar on rotating rays, with the household sound and haptics. They wait until no sheet or pushed page is on top.
 - Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 16 themes.
+
+### Added in 1.7.0
+- **Quick picks on Add transaction:** under the title field, chips offer past expenses. With nothing typed they are the most repeated ones (used at least twice); while typing they are the titles containing the text. A tap fills title, amount, category, payment mode and account (`AppState.quickPicks`).
+- **A shop keeps its category:** captured, pasted and spoken entries take the category last used for the same title (`AppState.categoryFor`) before falling back to keyword guessing.
+- **Safe to spend today** tile on Home when a budget is set: what was left this morning spread over the remaining days, less today's spending (`AppState.safeToday`).
+- **Bill calendar** on Reminders: this month as a grid with due days marked, the amount still to pay, and what recurring bills cost per month and per year. Bills also notify three days early (`NotificationIds.earlySlot`).
+- **Savings goals** (Me → Household money): target, optional due month, progress, the monthly amount needed, Add money.
+- **Month recap:** during the first five days of a month Home offers last month's recap as a share card (`MonthCard`): spent, entries, change, biggest category, saved.
+- **Shopping list** (Me → Household): add and tick items; "Log ticked items" opens Add transaction as Groceries with the items in the note and clears them once saved.
+- **Lent and borrowed** (Me → Household money): person, amount, optional return date, overdue marker, Remind (share sheet) and Settled.
+- **Advances for home help:** a monthly service can record an advance; it is logged as an expense at once and taken off the amount due when the month is marked paid (`HomeService.advances`, `AppState.payAdvance`).
+- **Warranties and papers** (Me → Household): name, expiry date, optional photo; sorted by expiry with days left, notified a week before and on the day.
+- **Payment-spotted alert:** the Android listener posts a notification as soon as a payment-looking SMS arrives; tapping it opens the app, where Home shows the capture banner. Its text is English only because it comes from native code.
+- **Search by amount** on Expenses.
+- **Accounts** (Me → Household money): named accounts with a starting balance; an expense can be tagged with one and the balance follows (`Expense.accountId`, `AppState.balanceOf`).
+- Shared plumbing: `AppState.put` / `drop` save and remove any simple record list (and make Undo a re-`put`); `askText` and `pickPhoto` live in `screens/common.dart`; `AddExpenseScreen` takes a `draft` and an `onSaved` callback instead of a capture.
+- Not built: **scan a bill** (reading the total from a receipt photo). It needs an on-device text-recognition package that raises the iOS minimum version and adds native libraries, which is too large a risk to add without a device to test on.
+
+### Added in 1.6.0
+- **Payment capture (Android):** with notification access granted, payments in bank and UPI SMS alerts appear under Me → Household money → Payment capture and as a banner on Home, each with Add (opens Add transaction filled in) or Dismiss. How it works:
+  - `platform/android/kotlin/PaymentListener.kt` (copied next to `MainActivity.kt` by `tool/patch_platforms.py`, which also adds the `<service>` entry) is a `NotificationListenerService`. For notifications from SMS apps whose text contains a currency amount it appends `{sender, text, at}` to a JSON array in the `FlutterSharedPreferences` file (`flutter.capture_queue`) and records whether it is connected (`flutter.capture_connected`). No Flutter engine runs in the background.
+  - On start and on every resume `AppState.syncCaptures` drains that queue (`Store.takeCaptured`), runs each message through `PaymentParser` (`core/capture.dart`, a port of HomeQuest's parser: skips OTPs, requests, failures, promotions; negative amount for money received) and stores what passes as `Capture` docs, skipping a repeat of the same amount within ten minutes.
+  - `android_intent_plus` opens the system notification-access screen.
 
 ### Added in 1.5.0
 - **Full-body avatars:** `AvatarView(full: true)` draws the whole standing figure (100 x 190 canvas in `_paintFull`): legs, shoes, arms, a full-length outfit per cut (tee, collar, hoodie, jacket, long kurta over light trousers, saree / dress skirt, one-piece suit) under the portrait's own head, hair, beard, accessories and mood marks. Jump, spin, dance, wave and cheer animate the whole body. Used for the avatar studio preview, outfit tiles in the studio and the shop, and the festival celebration; small round portraits stay everywhere else.
@@ -89,7 +112,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 ### Not in the Flutter app (deliberate, with the reason)
 | HomeQuest feature | Status | Why |
 |---|---|---|
-| SMS / UPI auto-capture | Left out | Needs a notification-listener; Play restricts it and iOS has no equivalent. Voice entry covers the quick-log case. |
+| SMS / UPI auto-capture | Back since 1.6.0, Android only | See "Added in 1.6.0". iOS has no way to read another app's notifications. HomeQuest shipped this only in its sideloaded "full" flavour and left it out of the Play "lite" flavour; Gharcha has one build, so check Google Play's notification-access and prominent-disclosure rules before a store upload and drop the `<service>` entry in `tool/patch_platforms.py` if it has to go. |
 | Points packs paid by UPI | Removed | Both stores require their own billing for digital goods; a UPI top-up would get the app rejected. |
 | Festival launcher icon and animated splash | Left out | Android activity-aliases and iOS alternate icons need native code per platform. |
 | Hanging festival decor and the three "Lights" styles | Replaced | The banner now carries a looping particle show; the decor art was Compose-only. |
@@ -106,10 +129,10 @@ Flutter (stable 3.38.x in CI, Dart 3.8+), Material 3. No state-management packag
 ```
 lib/main.dart            boot, MaterialApp, opening animation
 lib/core/                l10n, format (money, dates), models, catalogs (points, levels, rewards, badges, festivals),
-                         store (sqflite + shared_preferences), app_state (all business rules), notifier (notifications, sounds), parsers (PIN, voice, payment messages, CSV), biometrics
+                         store (sqflite + shared_preferences), app_state (all business rules), notifier (notifications, sounds), parsers (PIN, voice, payment messages, CSV), capture (payment-notification parser), biometrics
 lib/ui/                  theme (16 palettes), widgets (design system), glyphs (stickers, medals, coin, theme preview), charts, avatar, effects (particles, flame, celebrations)
 lib/screens/             shell (tabs), home, expenses + calendar, add_expense, categories, groups, budgets, insights, reminders,
-                         rewards, me, family, avatar_studio, household (khata, services, savings), onboarding, lock, export, common
+                         rewards, me, family, avatar_studio, household (khata, services, savings), lists (shopping, loans, goals, papers, accounts), onboarding, lock, export, common
 assets/l10n/{en,hi,gu}.json   strings, arrays and plurals; assets/sfx/*.mp3; assets/brand; assets/art (badges, icons); assets/fonts (Poppins, OFL)
 platform/                launcher icons and splash for both platforms, raw notification sounds, notification icon, the sideload keystore
 tool/                    bootstrap.sh, patch_platforms.py, check_strings.py, make_brand.py (icons, splash), make_art.py (medals, stickers; also writes website/public/art)
@@ -158,6 +181,8 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.7.0 | 2026-11-19 | Daily-use release: quick picks, remembered categories, safe-to-spend tile, bill calendar and early bill notice, savings goals, month recap card, shopping list, lent and borrowed, advances for home help, warranties and papers, payment-spotted alert, search by amount, accounts. No new packages. |
+| 1.6.0 | 2026-11-19 | Payment capture from SMS notifications on Android, ported from HomeQuest (native listener, queue in shared preferences, capture inbox). New package: `android_intent_plus`. |
 | 1.5.1 | 2026-11-19 | Fixes from device testing: the Undo message closes itself after five seconds (it no longer uses a `SnackBarAction`, which newer Flutter keeps on screen) and Undo is a solid yellow button on a dark bar; a swiped expense row's red / blue strip fills the row with no gap above or below; the selected category in the picker has a matching rounded outline and a tick instead of a circle around a square; paste is a labelled row with an explanation instead of an icon in the header. |
 | 1.5.0 | 2026-11-19 | Full-body avatars; receipt photos (`image_picker`); screen-reader labels and capped text scaling; first unit tests and a non-blocking `flutter test` step in CI. |
 | 1.4.0 | 2026-11-19 | Designed share cards (reminder, group, receipt, badge); percent and shares splits; cross-group dues on the Groups tab; backup and restore file; cached badge progress and debounced notification scheduling. No new packages. |

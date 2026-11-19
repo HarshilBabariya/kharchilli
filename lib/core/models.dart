@@ -304,6 +304,7 @@ class Expense extends Doc {
     Map<int, double>? shares,
     this.note = '',
     this.photo = '',
+    this.accountId,
     int? createdAt,
   })  : shares = shares ?? {},
         createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch;
@@ -323,6 +324,9 @@ class Expense extends Doc {
 
   /// File name of the receipt photo inside the app's documents folder; empty when there is none.
   String photo;
+
+  /// The [Account] the money moved through, when one was picked.
+  int? accountId;
   final int createdAt;
 
   bool get isCredit => amount < 0;
@@ -344,6 +348,7 @@ class Expense extends Doc {
         'shares': shares.map((k, v) => MapEntry('$k', v)),
         'note': note,
         'photo': photo,
+        'accountId': accountId,
         'createdAt': createdAt,
       };
 
@@ -359,6 +364,7 @@ class Expense extends Doc {
         shares: ((j['shares'] ?? const {}) as Map).map((k, v) => MapEntry(int.parse('$k'), (v as num).toDouble())),
         note: j['note'] as String? ?? '',
         photo: j['photo'] as String? ?? '',
+        accountId: j['accountId'] as int?,
         createdAt: j['createdAt'] as int?,
       );
 }
@@ -602,8 +608,10 @@ class HomeService extends Doc {
     required this.startDay,
     Map<int, double>? days,
     Map<int, double>? paidMonths,
+    Map<int, double>? advances,
   })  : days = days ?? {},
-        paidMonths = paidMonths ?? {};
+        paidMonths = paidMonths ?? {},
+        advances = advances ?? {};
 
   String name;
 
@@ -621,6 +629,9 @@ class HomeService extends Doc {
 
   /// Month key (yyyymm) → amount paid.
   final Map<int, double> paidMonths;
+
+  /// Month key (yyyymm) → money already handed over as an advance against that month's bill.
+  final Map<int, double> advances;
 
   double qtyOn(DateTime d) => days[Days.key(d)] ?? defaultQty;
 
@@ -668,6 +679,7 @@ class HomeService extends Doc {
         'startDay': startDay,
         'days': days.map((k, v) => MapEntry('$k', v)),
         'paidMonths': paidMonths.map((k, v) => MapEntry('$k', v)),
+        'advances': advances.map((k, v) => MapEntry('$k', v)),
       };
 
   factory HomeService.fromJson(Json j) => HomeService(
@@ -681,6 +693,7 @@ class HomeService extends Doc {
         startDay: j['startDay'] as int,
         days: ((j['days'] ?? const {}) as Map).map((k, v) => MapEntry(int.parse('$k'), (v as num).toDouble())),
         paidMonths: ((j['paidMonths'] ?? const {}) as Map).map((k, v) => MapEntry(int.parse('$k'), (v as num).toDouble())),
+        advances: ((j['advances'] ?? const {}) as Map).map((k, v) => MapEntry(int.parse('$k'), (v as num).toDouble())),
       );
 }
 
@@ -702,6 +715,129 @@ class GoldItem extends Doc {
 
   factory GoldItem.fromJson(Json j) =>
       GoldItem(label: j['label'] as String, grams: (j['grams'] as num).toDouble(), karat: j['karat'] as int? ?? 22, pricePaid: (j['pricePaid'] as num? ?? 0).toDouble());
+}
+
+/// A payment spotted in a notification, waiting for the user to add it as an expense or dismiss it.
+class Capture extends Doc {
+  Capture({required this.amount, required this.merchant, required this.source, required this.at});
+
+  /// Negative for money received.
+  final double amount;
+  final String merchant;
+
+  /// Who the message came from, as the notification named them.
+  final String source;
+  final int at;
+
+  DateTime get date => DateTime.fromMillisecondsSinceEpoch(at);
+
+  @override
+  String get kind => 'capture';
+
+  @override
+  Json toJson() => {'amount': amount, 'merchant': merchant, 'source': source, 'at': at};
+
+  factory Capture.fromJson(Json j) => Capture(amount: (j['amount'] as num).toDouble(), merchant: j['merchant'] as String, source: j['source'] as String? ?? '', at: j['at'] as int);
+}
+
+/// Something being saved up for.
+class Goal extends Doc {
+  Goal({required this.name, required this.target, this.saved = 0, this.dueMonth});
+
+  String name;
+  double target;
+  double saved;
+
+  /// Month key (yyyymm) the money is wanted by, if a date was set.
+  int? dueMonth;
+
+  double get left => (target - saved).clamp(0, target).toDouble();
+
+  /// What to put aside each month from [today] to reach the target in time; null without a due month.
+  double? monthly(DateTime today) {
+    final due = dueMonth;
+    if (due == null) return null;
+    final months = (due ~/ 100 - today.year) * 12 + due % 100 - today.month + 1;
+    return left / (months < 1 ? 1 : months);
+  }
+
+  @override
+  String get kind => 'goal';
+
+  @override
+  Json toJson() => {'name': name, 'target': target, 'saved': saved, 'dueMonth': dueMonth};
+
+  factory Goal.fromJson(Json j) => Goal(name: j['name'] as String, target: (j['target'] as num).toDouble(), saved: (j['saved'] as num? ?? 0).toDouble(), dueMonth: j['dueMonth'] as int?);
+}
+
+/// One line of the shopping list.
+class ShopItem extends Doc {
+  ShopItem({required this.name, this.done = false});
+
+  final String name;
+  bool done;
+
+  @override
+  String get kind => 'shopitem';
+
+  @override
+  Json toJson() => {'name': name, 'done': done};
+
+  factory ShopItem.fromJson(Json j) => ShopItem(name: j['name'] as String, done: j['done'] as bool? ?? false);
+}
+
+/// Money lent to someone (positive [amount]) or borrowed from them (negative), outside any group.
+class Loan extends Doc {
+  Loan({required this.person, required this.amount, required this.day, this.dueDay, this.settled = false});
+
+  final String person;
+  final double amount;
+  final int day;
+  final int? dueDay;
+  bool settled;
+
+  @override
+  String get kind => 'loan';
+
+  @override
+  Json toJson() => {'person': person, 'amount': amount, 'day': day, 'dueDay': dueDay, 'settled': settled};
+
+  factory Loan.fromJson(Json j) => Loan(person: j['person'] as String, amount: (j['amount'] as num).toDouble(), day: j['day'] as int, dueDay: j['dueDay'] as int?, settled: j['settled'] as bool? ?? false);
+}
+
+/// A warranty, policy or other paper with a date it runs out on.
+class Paper extends Doc {
+  Paper({required this.name, required this.expiryDay, this.photo = ''});
+
+  final String name;
+  final int expiryDay;
+
+  /// File name inside the app's documents folder; empty when there is no picture.
+  final String photo;
+
+  @override
+  String get kind => 'paper';
+
+  @override
+  Json toJson() => {'name': name, 'expiryDay': expiryDay, 'photo': photo};
+
+  factory Paper.fromJson(Json j) => Paper(name: j['name'] as String, expiryDay: j['expiryDay'] as int, photo: j['photo'] as String? ?? '');
+}
+
+/// Where money sits: cash, a bank account, a wallet.
+class Account extends Doc {
+  Account({required this.name, this.opening = 0});
+
+  String name;
+  double opening;
+
+  @override
+  String get kind => 'account';
+
+  @override
+  Json toJson() => {'name': name, 'opening': opening};
+
+  factory Account.fromJson(Json j) => Account(name: j['name'] as String, opening: (j['opening'] as num? ?? 0).toDouble());
 }
 
 class Chit extends Doc {

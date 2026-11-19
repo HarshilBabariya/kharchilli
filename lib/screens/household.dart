@@ -9,21 +9,6 @@ import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'common.dart';
 
-Future<String?> _askText(BuildContext context, String title, String label, String hint) {
-  final text = TextEditingController();
-  return showKSheet<String>(
-    context,
-    title: title,
-    builder: (sheet) => StatefulBuilder(
-      builder: (_, setState) => Column(children: [
-        KField(controller: text, label: label, hint: hint, autofocus: true, onChanged: (_) => setState(() {})),
-        const SizedBox(height: 14),
-        KButton(tr('save'), onTap: text.text.trim().isEmpty ? null : () => Navigator.of(sheet).pop(text.text.trim())),
-      ]),
-    ),
-  );
-}
-
 class KhataScreen extends StatelessWidget {
   const KhataScreen({super.key});
 
@@ -33,7 +18,7 @@ class KhataScreen extends StatelessWidget {
     return KPage(
       title: tr('khata'),
       bottom: KButton(tr('add_shop'), icon: Icons.add_business_rounded, onTap: () async {
-        final name = await _askText(context, tr('add_shop'), tr('shop_name'), tr('shop_name_hint'));
+        final name = await askText(context, tr('add_shop'), tr('shop_name'), tr('shop_name_hint'));
         if (name != null) await app.addShop(name);
       }),
       children: [
@@ -83,7 +68,7 @@ class KhataScreen extends StatelessWidget {
         Future<void> add(bool payment) async {
           final amount = await askAmount(sheet, title: payment ? tr('khata_record_payment') : tr('khata_add_purchase'));
           if (amount == null || amount <= 0 || !sheet.mounted) return;
-          final note = payment ? '' : await _askText(sheet, tr('khata_bought'), tr('note'), tr('khata_note_hint')) ?? '';
+          final note = payment ? '' : await askText(sheet, tr('khata_bought'), tr('note'), tr('khata_note_hint')) ?? '';
           await app.addKhata(shop, amount, payment: payment, note: note);
         }
 
@@ -281,6 +266,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
     final perUnit = s.billing == ServiceBilling.perUnit;
     final paid = s.paidMonths[Days.monthKey(_month)];
     final soFar = s.billSoFar(_month), full = s.billFullMonth(_month);
+    final advance = s.advances[Days.monthKey(_month)] ?? 0;
     final lead = _month.weekday - 1;
 
     Future<void> setQty(DateTime d, double qty) async {
@@ -305,7 +291,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       ],
       bottom: paid != null
           ? KButton(tr('service_paid_on', [Fmt.money(paid)]), tonal: true)
-          : KButton(tr('service_mark_paid', [Fmt.money(full)]), icon: Icons.check_rounded, onTap: () => app.payService(s, _month)),
+          : KButton(tr('service_mark_paid', [Fmt.money((full - advance).clamp(0, full).toDouble())]), icon: Icons.check_rounded, onTap: () => app.payService(s, _month)),
       children: [
         KCard(
           child: Column(children: [
@@ -388,6 +374,14 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
               style: context.tt.titleMedium,
             ),
             if (perUnit && (full - soFar).abs() > 0.005) Padding(padding: const EdgeInsets.only(top: 6), child: Text(tr('service_full_month', [Fmt.money(full)]), style: context.tt.bodySmall)),
+            if (advance > 0) Padding(padding: const EdgeInsets.only(top: 6), child: Text(tr('advance_given', [Fmt.money(advance)]), style: context.tt.bodySmall!.copyWith(color: good, fontWeight: FontWeight.w600))),
+            if (paid == null) ...[
+              const SizedBox(height: 12),
+              KButton(tr('give_advance'), tonal: true, icon: Icons.payments_rounded, onTap: () async {
+                final amount = await askAmount(context, title: tr('give_advance'));
+                if (amount != null && amount > 0) await app.payAdvance(s, _month, amount);
+              }),
+            ],
           ]),
         ),
       ],

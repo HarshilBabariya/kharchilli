@@ -84,7 +84,7 @@ class _ExpensesTabState extends State<ExpensesTab> {
             e.day <= to &&
             (_member == null || e.paidBy == _member) &&
             (_mode == null || e.mode == _mode) &&
-            (query.isEmpty || e.title.toLowerCase().contains(query) || e.note.toLowerCase().contains(query)))
+            (query.isEmpty || e.title.toLowerCase().contains(query) || e.note.toLowerCase().contains(query) || e.amount.abs().toStringAsFixed(2).startsWith(query) || e.amount.abs().round().toString() == query))
         .toList()
       ..sort((a, b) => b.day != a.day ? b.day.compareTo(a.day) : b.createdAt.compareTo(a.createdAt));
     final days = <int, List<Expense>>{};

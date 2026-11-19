@@ -49,6 +49,10 @@ class RemindersScreen extends StatelessWidget {
             Text(tr('rem_bills_ahead', [Fmt.money(billsAhead), upcoming.length]), style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12.5)),
           ]),
         ),
+        if (app.reminders.any((r) => r.enabled && r.isBill)) ...[
+          const SizedBox(height: 14),
+          _BillCalendar(app.reminders.where((r) => r.enabled && r.isBill).toList()),
+        ],
         if (app.reminders.isEmpty) EmptyState(art: 'bell', title: tr('nothing_scheduled_title'), body: tr('nothing_scheduled_body')),
         for (final g in groups.entries)
           if (g.value.isNotEmpty) ...[
@@ -272,5 +276,65 @@ class _Timeline extends StatelessWidget {
           ),
         ),
     ]);
+  }
+}
+
+/// This month as a grid with every bill's due day marked, what is still to pay, and what the recurring bills add up to.
+class _BillCalendar extends StatelessWidget {
+  const _BillCalendar(this.bills);
+  final List<Reminder> bills;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    final today = Days.today();
+    final first = Days.monthStart(today);
+    final end = DateTime(today.year, today.month + 1);
+    final due = <int, double>{};
+    for (final r in bills) {
+      var from = first.subtract(const Duration(minutes: 1));
+      for (var i = 0; i < 31; i++) {
+        final next = r.nextAfter(from);
+        if (next == null || !next.isBefore(end)) break;
+        due[next.day] = (due[next.day] ?? 0) + r.amount!;
+        from = next;
+      }
+    }
+    final toPay = due.entries.where((d) => d.key >= today.day).fold(0.0, (sum, d) => sum + d.value);
+    final monthly = bills.fold(0.0, (sum, r) => sum + r.amount! * switch (r.repeat) { RepeatRule.daily => 30, RepeatRule.weekly => 52 / 12, RepeatRule.monthly => 1, RepeatRule.yearly => 1 / 12, RepeatRule.once => 0 });
+    return KCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: Text(tr('bills_in', [Fmt.month(today)]), style: context.tt.titleLarge)),
+          Text(tr('to_pay', [Fmt.money(toPay)]), style: context.tt.labelMedium!.copyWith(color: cs.primary)),
+        ]),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 7,
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 4,
+          crossAxisSpacing: 4,
+          children: [
+            for (var i = 0; i < first.weekday - 1; i++) const SizedBox(),
+            for (var d = 1; d <= Days.inMonth(today); d++)
+              Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: !due.containsKey(d) ? null : d < today.day ? cs.surfaceContainerHighest : cs.primary,
+                  border: d == today.day ? Border.all(color: cs.onSurface, width: 1.6) : null,
+                ),
+                child: Text('$d', style: TextStyle(fontSize: 12.5, fontWeight: due.containsKey(d) ? FontWeight.w800 : FontWeight.w500, color: due.containsKey(d) && d >= today.day ? Colors.white : cs.onSurfaceVariant)),
+              ),
+          ],
+        ),
+        if (monthly > 0) ...[
+          const SizedBox(height: 12),
+          Text(tr('recurring_cost', [Fmt.money(monthly), Fmt.money(monthly * 12)]), style: context.tt.bodySmall),
+        ],
+      ]),
+    );
   }
 }

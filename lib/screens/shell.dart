@@ -27,12 +27,14 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
+  late final AppLifecycleListener _lifecycle;
   int _tab = 0;
 
   @override
   void initState() {
     super.initState();
     Notifier.routeTaps.addListener(_followRoute);
+    _lifecycle = AppLifecycleListener(onResume: () => AppScope.read(context).syncCaptures());
     WidgetsBinding.instance.addPostFrameCallback((_) => _followRoute());
     const QuickActions()
       ..initialize(Notifier.open)
@@ -42,6 +44,7 @@ class _ShellState extends State<Shell> {
   @override
   void dispose() {
     Notifier.routeTaps.removeListener(_followRoute);
+    _lifecycle.dispose();
     super.dispose();
   }
 

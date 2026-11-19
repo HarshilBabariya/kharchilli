@@ -1,7 +1,7 @@
 name: gharcha
 description: Gharcha - household expenses with spice. Track, split, budget and get roasted for it.
 publish_to: none
-version: 1.5.1+12
+version: 1.7.0+14
 
 environment:
   sdk: ^3.8.0
@@ -28,6 +28,7 @@ dependencies:
   quick_actions: ^1.1.0
   local_auth: 2.3.0
   image_picker: ^1.1.2
+  android_intent_plus: ^5.3.0
 
 dev_dependencies:
   flutter_test:

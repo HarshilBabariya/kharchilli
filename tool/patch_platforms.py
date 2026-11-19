@@ -47,7 +47,16 @@ PERMISSIONS = '''    <!-- gharcha-patched -->
     </queries>
     <application'''
 
-RECEIVERS = '''        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+RECEIVERS = '''        <service
+            android:name=".PaymentListener"
+            android:exported="false"
+            android:label="Gharcha payment capture"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -80,6 +89,7 @@ if android.exists():
             styles.write_text(re.sub(r'parent="@android:style/Theme\.[A-Za-z.]+"', f'parent="{parent}"', styles.read_text()))
     for activity in (android / 'src' / 'main').rglob('MainActivity.kt'):
         activity.write_text(activity.read_text().replace('FlutterActivity', 'FlutterFragmentActivity'))
+        shutil.copy(ROOT / 'platform' / 'android' / 'kotlin' / 'PaymentListener.kt', activity.parent)
     shutil.copy(ROOT / 'platform' / 'android' / 'sideload.keystore', android / 'sideload.keystore')
 
 plist_path = ROOT / 'ios' / 'Runner' / 'Info.plist'
