@@ -46,7 +46,7 @@ class CaptureScreen extends StatelessWidget {
         if (pending.isEmpty)
           EmptyState(art: 'receipt', title: tr('capture_empty_title'), body: tr('capture_empty_body'))
         else ...[
-          SectionTitle(tr('capture_pending', [pending.length])),
+          SectionTitle(trPlural('capture_pending', pending.length)),
           for (final c in pending)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -69,7 +69,7 @@ class CaptureScreen extends StatelessWidget {
                   Row(children: [
                     Expanded(child: KButton(tr('dismiss'), tonal: true, onTap: () => app.dismissCapture(c))),
                     const SizedBox(width: 10),
-                    Expanded(child: KButton(tr('add'), icon: Icons.add_rounded, onTap: () => open(context, AddExpenseScreen(draft: VoiceResult(c.amount.abs(), c.merchant, null, PaymentMode.upi, null, c.amount < 0), draftDay: c.date, onSaved: () => app.dismissCapture(c)), rise: true))),
+                    Expanded(child: KButton(tr('add'), icon: Icons.add_rounded, onTap: () => open(context, AddExpenseScreen(draft: VoiceResult(c.amount.abs(), c.merchant, VoiceParser.guessCategory(c.merchant, app.customCategoryNames) ?? BuiltInCategories.other, PaymentMode.upi, null, c.amount < 0), draftDay: c.date, onSaved: () => app.dismissCapture(c)), rise: true))),
                   ]),
                 ]),
               ),

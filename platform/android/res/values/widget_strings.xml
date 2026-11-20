@@ -3,4 +3,13 @@
     <string name="widget_default_note">Open the app to begin</string>
     <string name="widget_voice">Voice entry</string>
     <string name="widget_add">Add transaction</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_bills">Upcoming bills</string>
+    <string name="widget_bills_none">Nothing due soon</string>
+    <string name="widget_label_add">Add</string>
+    <string name="widget_label_voice">Voice</string>
+    <string name="widget_label_reminders">Bills</string>
+    <string name="widget_label_shopping">Shopping</string>
+    <string name="widget_shop">Shopping list</string>
+    <string name="widget_shop_none">Nothing to buy</string>
 </resources>

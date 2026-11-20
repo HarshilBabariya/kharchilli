@@ -34,6 +34,7 @@ class _ShellState extends State<Shell> {
   late final AppLifecycleListener _lifecycle;
   int _tab = 0;
   DateTime? _lastBack;
+  String? _shortcutLanguage;
 
   @override
   void initState() {
@@ -45,12 +46,7 @@ class _ShellState extends State<Shell> {
       _followRoute();
       if (showTips) showTour(context);
     });
-    const QuickActions()
-      ..initialize(Notifier.open)
-      ..setShortcutItems([
-        for (final (route, title) in [('add', 'add_transaction'), ('voice', 'shortcut_voice'), ('reminders', 'shortcut_bills'), ('shopping', 'shopping_list')])
-          ShortcutItem(type: route, localizedTitle: tr(title), icon: 'shortcut_$route'),
-      ]);
+    const QuickActions().initialize(Notifier.open);
   }
 
   @override
@@ -122,6 +118,14 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     const tabs = [HomeTab(), ExpensesTab(), GroupsTab(), MeTab()];
+    final language = AppScope.of(context).settings.language;
+    if (language != _shortcutLanguage) {
+      _shortcutLanguage = language;
+      const QuickActions().setShortcutItems([
+        for (final (route, title) in [('add', 'add_transaction'), ('voice', 'shortcut_voice'), ('reminders', 'shortcut_bills'), ('shopping', 'shopping_list')])
+          ShortcutItem(type: route, localizedTitle: tr(title), icon: 'shortcut_$route'),
+      ]);
+    }
     return CelebrationHost(
       child: PopScope(
         canPop: false,

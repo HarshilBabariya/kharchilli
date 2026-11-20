@@ -59,13 +59,15 @@ CAPTURE = '''        <service
         </service>
 '''
 
-RECEIVERS = '''        <receiver android:name=".SpendWidget" android:exported="true" android:label="Gharcha">
+WIDGETS = {'Spend': ('spend', 'Gharcha · This month'), 'Quick': ('quick', 'Gharcha · Quick add'), 'Today': ('today', 'Gharcha · Today'), 'Bills': ('bills', 'Gharcha · Upcoming bills'), 'Shopping': ('shopping', 'Gharcha · Shopping list')}
+
+RECEIVERS = ''.join(f'''        <receiver android:name=".{name}Widget" android:exported="true" android:label="{label}">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/spend_widget_info" />
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_{layout}_info" />
         </receiver>
-        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+''' for name, (layout, label) in WIDGETS.items()) + '''        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

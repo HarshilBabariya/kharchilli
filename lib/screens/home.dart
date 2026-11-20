@@ -55,16 +55,14 @@ class _HomeTabState extends State<HomeTab> {
       if (app.captures.isNotEmpty) ...[
         KCard(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          onTap: () => open(context, const CaptureScreen()),
-          child: NavRow(icon: Icons.sms_rounded, color: const Color(0xFF26A69A), title: tr('capture_pending', [app.captures.length]), subtitle: tr('capture_review')),
+          child: NavRow(icon: Icons.sms_rounded, color: const Color(0xFF26A69A), title: trPlural('capture_pending', app.captures.length), subtitle: tr('capture_review'), onTap: () => open(context, const CaptureScreen())),
         ),
         const SizedBox(height: 14),
       ],
       if (today.day <= 5 && app.inMonth(Days.addMonths(today, -1)).isNotEmpty) ...[
         KCard(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          onTap: () => shareCard(context, MonthCard(Days.addMonths(today, -1)), file: 'gharcha-month', text: tr('recap_title', [Fmt.monthYear(Days.addMonths(today, -1))])),
-          child: NavRow(icon: Icons.auto_awesome_rounded, color: const Color(0xFFFFB300), title: tr('recap_title', [Fmt.monthYear(Days.addMonths(today, -1))]), subtitle: tr('recap_sub')),
+          child: NavRow(icon: Icons.auto_awesome_rounded, color: const Color(0xFFFFB300), title: tr('recap_title', [Fmt.monthYear(Days.addMonths(today, -1))]), subtitle: tr('recap_sub'), onTap: () => shareCard(context, MonthCard(Days.addMonths(today, -1)), file: 'gharcha-month', text: tr('recap_title', [Fmt.monthYear(Days.addMonths(today, -1))]))),
         ),
         const SizedBox(height: 14),
       ],
@@ -122,7 +120,7 @@ class _HomeTabState extends State<HomeTab> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(b.key.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall),
+                    Text(b.key.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleSmall),
                     Text(dueLabel(b.value), style: context.tt.bodySmall),
                   ]),
                 ),

@@ -5,7 +5,7 @@ Single source of truth for the product, the engineering handoff and the working 
 ## 1. What Gharcha is
 Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQuest: a gamified household-expense manager for Android and iOS, built for Harshil (GitHub `HarshilBabariya/Kharchili`; the repo kept the app's previous working name). Members of one household log spending on one phone, split it in groups, keep budgets and earn points that unlock themes, avatar looks and features. Everything is local-first; the app has no server, no account and no ads.
 
-- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.10.4+25`.
+- App name: **Gharcha** · app id / bundle id: `app.gharcha` · version `1.11.4+30`.
 - It is a new app with its own id, so it installs beside HomeQuest. Data moves across by CSV: HomeQuest → Me → Your data → export, Gharcha → Me → Your data → Import CSV.
 - Names: 1.0.x shipped as Kharchili (`app.kharchili`); 1.1.0 renamed it to Gharcha with a new id, so it installs as a separate app from a 1.0.x test build (move data with CSV export / import). Name check (Nov 2026): "Chillar" and "GharKharch" are taken by other expense apps; no app named Gharcha turned up in search. Do a store-console and trademark search before the first upload, because the app id cannot change afterwards.
 
@@ -16,7 +16,7 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Every handover updates this document and the README in the same pass.
 - Fixes are verified in a fresh review pass before a zip is handed over.
 
-## 3. Features in 1.10.4
+## 3. Features in 1.11.4
 ### Look, feel and flows (new in the rewrite)
 - Icon: a white house holding a red rupee sign, with a saffron dot, on a red gradient; adaptive, legacy and themed (monochrome) Android icons, the iOS icon, the notification icon and both splash screens are pre-rendered into `platform/` by `tool/make_brand.py`. The Android 12+ splash shows the mark, then the opening moment plays on the brand red: the house rises, three gold coins drop into it (it bounces with each), the rupee writes itself, the saffron dot pops and the Gharcha wordmark and tagline slide in. It is the app's own story (money coming home); the earlier letter-with-orbiting-dots opening was too close to the reference app and is gone.
 - Illustrated art instead of emoji: 33 badge medals (bronze, silver or gold rim by difficulty, one to three rank stars, an emblem per badge) and 24 sticker icons (groups, home services, empty screens, shop, gold, forecast). They are drawn as SVG and rendered to PNG by `tool/make_art.py` into `assets/art/`; the app shows them with `Medal` and `Sticker` (`lib/ui/glyphs.dart`). Locked medals are greyed behind a padlock with a progress ring. Points are a gold coin (`Coin`); categories and rows use glossy gradient tiles (`IconTile`).
@@ -27,13 +27,69 @@ Gharcha (ghar + kharcha: the home's expenses) is the Flutter rewrite of HomeQues
 - Celebrations for level-ups, badges, streak milestones and festivals are a card over looping confetti (or the festival's own particle show): the badge's medal, the flame or the dressed avatar on rotating rays, with the household sound and haptics. They wait until no sheet or pushed page is on top.
 - Poppins for headings and numbers; soft colour glows behind every screen tinted by the active theme; light and dark for all 24 themes.
 
+### Added in 1.11.4
+**App**
+- **Shopping list − and +.** Every row still to buy has a − count + capsule (`step` in `_ShoppingScreenState.build`, `AppState.stepShopItem`). The count stops at one; × removes the row. Ticked rows show "× n" as before.
+- **Hide amounts on widgets.** Settings → Security → "Hide amounts on widgets" (`Settings.hideWidgetAmounts`, shown on Android only). `AppState._syncNative` then writes `₹••••` wherever a widget line carries money: month, today, safe to spend, left or over, bill amounts. The budget bar, dates, bill names and the shopping list stay as they are. Screens inside the app and notifications are not masked. `updateSettings` now refreshes the widgets as well, so this switch, and a changed budget, show at once.
+- **Unit tests in the build.** The `android` job runs `flutter test` and writes "Unit tests passed" or "FAILED", the names of failing tests and the last line of output to the run's summary page. The step does not stop the build yet: the tests have never executed anywhere (no Flutter here), so the first real result decides that. The parser expectations (MessageParser, PaymentParser) were checked against a JavaScript port of the same regular expressions, the rest by reading. The repo needs the `test/` folder; an older `.gitignore` there ignored it.
+- **Translation review sheet.** `python3 tool/review_sheet.py export` writes every string as English, Hindi and Gujarati columns: 1,855 rows (1,491 app, 364 website). `apply reviewed.csv` copies changed cells back and skips any that are empty or lost a placeholder such as `%1$s`. No native speaker has read the Hindi or Gujarati yet; this is what makes that read possible.
+
+**Website**
+- **Hindi and Gujarati.** Every word moved out of the components and `content.js` into `src/i18n/{en,hi,gu}.json`; `content.js` now holds only language-neutral data (colours, keys, the tour's targets). `src/i18n.jsx` (`CopyProvider`, `useCopy`) picks the language from `?lang=hi`, then the last choice (localStorage), then the browser's language, then English, and sets `<html lang>` and the page title. The switch is in the nav: EN / हिं / ગુ. The drawn phone screens are translated too. Names the app already has (badges, levels, festivals, themes, outfits, tabs) were copied from `assets/l10n` so the site and the app say the same thing. `App` is keyed by language, so a switch rebuilds the page and every scroll scene measures the new text; the picked colour theme survives. `tool/check_strings.py` fails when the three files stop holding the same entries.
+- Hindi and Gujarati use the visitor's own system fonts, apart from headings in Poppins, which has Devanagari. Tracking is switched off and heading line height raised for both (`html:lang(hi)`, `html:lang(gu)` in `styles.css`).
+- **Download button** carries the version and file size ("v1.11.4 · 62 MB"). `vite.config.js` measures the APK in `public/downloads` at build time (`__APK_MB__`); without one it reads "APK".
+- **Link preview.** `index.html` has Open Graph and Twitter tags with a title, description and `public/og.jpg` (1200×630, 86 KB). Previews only follow full addresses, so the tags say `%SITE%` and the `fullAddresses` plugin in `vite.config.js` writes `https://<owner>.github.io/<repo>/` there. The image was rendered in headless Chrome from the site's own `Phone` component. The preview is in English whatever language the page then opens in. A custom domain means changing `site` in `vite.config.js`.
+- **3D tour rebuilt.** The phone is still a CSS 3D body pinned while the page scrolls, but nothing leaves it any more. The app runs inside the display: a reel of the four screens slides sideways to change screen, each screen scrolls up and down inside the glass, and a spotlight ring with the rest of the display dimmed lands on one feature per step while the caption beside the phone explains it. Ten steps: month card, quick access, safe to spend, recent transactions, voice entry, one-tap repeats, insights, shopping list, lent money and papers, savings goal. The phone only turns slowly (−24° to 18°).
+  - `tour` in `content.js` lists each step as `[screen, selector]`; the words are `tour.steps` in the language files. `Tour.jsx` draws `.tour-reel` (the screens), `.tour-ring` (the spotlight) and the captions. `tourScene(section, steps)` in `motion.js` measures each target with `offsetTop`/`offsetLeft` inside its `.ph-body`, works out how far that screen must scroll to centre it, and builds one timeline scrubbed by `onScroll` with a from and a to for every move, so it plays backwards as well. It measures again once the web fonts have loaded and when the layout-relevant window size changes (width, or height on wide screens; a phone's address bar hiding does not count).
+  - On phones the body is drawn at full size, taller than the space it has: `.tour-art` clips it with a soft fade and the rig slides so the ring stays in view. Under 700 px of height the tick bar is hidden to give the phone room.
+  - `Phone.jsx`: screens now put their content in `.ph-body` (the part that scrolls) with the tab bar outside it. Home gained the recent-transactions list; the household screen shows the new − count + on the shopping list.
+  - With "reduce motion" on, the section is a plain list of the ten captions beside a still phone.
+- **Tested here:** the real site, bundled with esbuild and React, was run in headless Chrome at 1280×800, 390×800 and 360×640 in all three languages: no script errors, no sideways overflow, no caption taller than its box, no clipped text in the phone or on buttons. Also exercised: switching language halfway through the tour (the step and the theme are kept), reload (the language is remembered), resizing, pressing the tick bar, a Gujarati browser opening in Gujarati, and reduced motion. **Not tested:** the Vite build itself, the real web fonts (the test machine has no Poppins or Sora and only a fallback font for Devanagari and Gujarati), how WhatsApp actually draws the preview, smoothness on a real phone, and the three app changes on a device.
+
+### Fixed in 1.11.3 (text that did not follow a language change)
+- **Ready-made reminder names** ("Log today's expenses", Rent, EMI, Electricity bill, Insurance, School fees) were saved as text in the language of the day. `Reminder.preset` now keeps the translation key and `Reminder.label` is what every screen, notification, widget line and auto-logged expense shows. A reminder saved in English before this is recognised by its English text; one saved in Hindi or Gujarati before this keeps its text until it is edited and saved once. A name the user typed is never touched.
+- **Launcher shortcut labels** are set again whenever the language changes (`Shell.build`), not only at start.
+- Checked while here: no screen has hard-coded English, and only "FAQs" and the UPI ID example are the same in all three languages. Expenses the app writes itself (shop payments, home-help pay) keep the language they were logged in, as records.
+
+### Added in 1.11.2
+- **Shopping list counts repeats.** Adding a name that is already waiting raises its count ("Milk × 2") through `AppState.addShopItem`; `ShopItem.count` holds it and `ShopItem.label` is the text with the count. Renaming a row to match another, or ticking a row that has a ticked twin, joins the two (`renameShopItem`). Lists saved earlier are tidied the same way when the app loads. (1.11.4 added − and + for the count.)
+- **Shopping list widget (4×2):** the items still to buy in two columns of four, the eighth slot becoming "+ N more" when there are more, with the number to buy in the corner. Tapping it opens the list. It is the fifth widget: `ShoppingWidget` in `Widgets.kt`, `res/layout/widget_shopping.xml`, a row in `WIDGETS` in `tool/patch_platforms.py`, and the `widget_shop_*` lines in `AppState._syncNative`. Items cannot be ticked from the widget.
+- "1 item to buy" is singular.
+
+### Website 3D tour (made on 1.11.1, no app change)
+The first pinned 3D phone, which lifted pieces of each screen off the glass. It was rebuilt in 1.11.4 (above) so that everything stays inside the display; only the phone body, the `--k` scaling and the tick bar remain from it.
+
+### Website motion pass (made on 1.11.1, no app change)
+Taken from the patterns in anime.js's own examples (grid stagger, draggable with springs, scroll-synced timelines, SVG line drawing), applied to this page's content.
+- `website/src/motion.js` now holds every animation as a plain function over DOM nodes that returns its clean-up; components call them from `useEffect`.
+- **Hero:** a dot grid behind the phone ripples on its own and from wherever it is pressed (`dotRipple`); the floating cards can be dragged and spring back (`springy`); the underline under "sorted." draws itself (`heroIntro`).
+- **A day with Gharcha** (`components/Day.jsx`, content in `day`): five moments on a line that fills on a loop (`dayLoop`).
+- **Share cards** deal out from a fanned stack as the section scrolls in (`fanCards`).
+- **Badge wall** replaces the scrolling strip: all 33 badges in a grid that ripples from the one pressed (`badgeWall`).
+- Tested by loading the rendered page with the real anime.js 4.0.2 build in headless Chrome at 1280 and 400 px: no script errors, and the screenshots show each animation mid-run. The Vite build itself has still not been run here.
+
+### Fixed in 1.11.1 (payment capture, first device test)
+- **Home banners open again.** "Payments to review" and the month recap put their tap on the `KCard` while the `NavRow` inside had none, and the row swallowed the touch. The tap is now on the row, as on every other card of this kind.
+- **Captured and pasted payments pick a category from the shop name.** `VoiceParser.guessCategory` matches by word start in both directions, so "Xyz Petroleum" finds a custom category called Petrol; `_alike` lists words for the same kind of shop (fuel, dairy, vegetables, food, medical) so a custom category named after one catches the others. Order: the category last used for that exact title, then a custom category, then a built-in keyword, then Other for a captured payment.
+- `AppState.customCategoryNames` replaces the copy of that map in the add screen. "1 payment to review" is singular.
+
+### Added in 1.11.0: four home-screen widgets
+- **This month (4×2):** the brand gradient, the month's spending, a budget bar, "Safe to spend today" and what is left of the budget, with Voice and Add buttons. This replaces the plain dark card from 1.8.0; a widget already on the home screen picks up the new look.
+- **Quick add (4×1):** Add, Voice, Bills and Shopping as four labelled buttons.
+- **Today (2×2):** today's spending, safe to spend, Voice and Add.
+- **Upcoming bills (4×2):** the next three reminders that have an amount or a category; tapping it opens Reminders.
+- Code: `platform/android/kotlin/Widgets.kt` has one base class, `GharchaWidget(layout, rootRoute)`, and four one-line subclasses. It fills every text id in `TEXTS` and every button id `widget_go_<route>` in `ROUTES`; a layout that lacks one is skipped by Android. A REFRESH broadcast to any of them redraws all four.
+- Data: `AppState._syncNative` writes all lines (`widget_*` keys) in the app's language. `tool/patch_platforms.py` builds the four `<receiver>` entries from its `WIDGETS` table; adding a widget means a layout, an info XML, a subclass and a row there.
+- Icons: `glyph_<route>.xml` is the white symbol, `circle_brand.xml` and `circle_glass.xml` the discs; the launcher shortcut icons (`shortcut_<route>.xml`) are now those two layered.
+- The widgets always use the brand red, not the theme picked in the app, because their drawables are fixed at build time.
+
 ### Changed in 1.10.4 (website only)
 - **Store links:** `storeLinks` in `website/src/content.js` holds the Google Play and App Store URLs. An empty value shows "Coming soon"; a filled one turns that platform's card live with its store button. Nothing else needs editing.
 - **Download button by device:** on an iPhone or iPad the Download buttons no longer offer the Android APK; they go to the App Store link when it is set, and to the download section with "iPhone app coming soon" until then.
 - There is still no iOS build anyone can install: CI only compiles iOS unsigned, and an iPhone accepts apps only through the App Store or TestFlight, both of which need an Apple Developer account.
 - Site stats updated to 24 themes and 26 outfits.
 
-### Website redesign (no app change, still 1.10.4)
+### Website redesign (made on 1.10.4, no app change)
 - Only `website/` and the website table in `tool/make_art.py` changed; nothing under `lib/`, `platform/`, `assets/` or the workflow. The store links and device-aware download button from 1.10.4 are kept as they were.
 - The page is now light, like the app: hero with a drawn Home screen, three "moments" (Log it, See it, Share it) each with a drawn phone screen, a compact grid of the remaining features, a trust strip, a theme switcher that recolours the page, the five share-card styles, then festivals, rewards and downloads as before.
 - `components/Phone.jsx` holds the four drawn screens (`home`, `add`, `insights`, `house`); they are mock-ups in HTML and CSS, not screenshots. `components/Moments.jsx`, `More.jsx` and `Looks.jsx` are new; `Showcase.jsx`, `Features.jsx` and `PhoneMock.jsx` are gone.
@@ -97,7 +153,7 @@ All are scheduled in `AppState._schedule` under the existing Reminders switch; t
 
 ### Added in 1.8.0
 - **Home-screen widget (Android):** this month's spending, then "Safe to spend today" (or today's spending without a budget), with Add and Voice buttons. Tapping the card opens the app. Light and dark follow the phone.
-  - Native side: `platform/android/kotlin/SpendWidget.kt`, `res/layout/spend_widget.xml`, `res/xml/spend_widget_info.xml`, `res/values*/widget_colors.xml`; `tool/patch_platforms.py` copies every file in `platform/android/kotlin` and adds the `<receiver>`.
+  - Native side: `platform/android/kotlin/Widgets.kt`, `res/layout/widget_*.xml`, `res/xml/widget_*_info.xml` (renamed in 1.11.0), `res/values*/widget_colors.xml`; `tool/patch_platforms.py` copies every file in `platform/android/kotlin` and adds the `<receiver>`.
   - Data: `AppState._syncNative` writes three ready-to-show lines through `Store.saveForNative` and broadcasts `app.gharcha.WIDGET_REFRESH` (via android_intent_plus); it runs at load and with the debounced notification sync. The widget also redraws itself every 30 minutes from the saved lines.
   - Buttons reuse the launcher-shortcut route: the intent carries the extra the quick_actions plugin reads (`SpendWidget.SHORTCUT`), so `Notifier.open` handles them. If a quick_actions update renames that extra, the buttons would only open the app.
   - The widget shows amounts on the home screen even when the app lock is on; it is only there if the user adds it.
@@ -218,8 +274,9 @@ lib/screens/             shell (tabs), home, expenses + calendar, add_expense, c
                          rewards, me, family, avatar_studio, household (khata, services, savings), lists (shopping, loans, goals, papers, accounts), onboarding, lock, export, common
 assets/l10n/{en,hi,gu}.json   strings, arrays and plurals; assets/sfx/*.mp3; assets/brand; assets/art (badges, icons); assets/fonts (Poppins, OFL)
 platform/                launcher icons and splash for both platforms, raw notification sounds, notification icon, the sideload keystore
-tool/                    bootstrap.sh, patch_platforms.py, check_strings.py, make_brand.py (icons, splash), make_art.py (medals, stickers; also writes website/public/art)
-website/                 Vite + React + anime.js site
+tool/                    bootstrap.sh, patch_platforms.py, check_strings.py, review_sheet.py (translations as a sheet, and back), make_brand.py (icons, splash),
+                         make_art.py (medals, stickers; also writes website/public/art)
+website/                 Vite + React + anime.js site; words in src/i18n/{en,hi,gu}.json
 ```
 
 ### Data
@@ -231,7 +288,7 @@ website/                 Vite + React + anime.js site
 - Points, streak, level-ups, badge checks and budget alerts all run inside `AppState.saveExpense` → `_rewardLog` / `_checkBudgets` / `_afterChange`. Celebrations are queued on `AppState.celebrations` and shown by `CelebrationHost` in the shell.
 - `AppState.syncNotifications` cancels and reschedules everything; it runs at start and after any change. After a change it is not awaited and it never throws (one pass at a time, a second call queues one more pass), so a notification failure can no longer stop a save from finishing. Save and delete handlers close their sheet first and write afterwards. Schedules are inexact (no exact-alarm permission, which Play restricts).
 - `_dailyChecks` at start: last month's under-budget award, auto-logged bills, the festival celebration.
-- Strings: `tr('key', [args])`, `trPick('array')`, `trPlural('key', n)`. `tool/check_strings.py` fails CI when a key is missing in any language or no longer used (`--prune` removes dead keys).
+- Strings: `tr('key', [args])`, `trPick('array')`, `trPlural('key', n)`. `tool/check_strings.py` fails CI when a key is missing in any language or no longer used (`--prune` removes dead keys), and when the website's three language files stop holding the same entries.
 - Name clashes to avoid: do not import `package:flutter/foundation.dart` in a file that imports `core/models.dart` (both define `Category`).
 
 ### Native folders
@@ -239,7 +296,7 @@ website/                 Vite + React + anime.js site
 
 ### CI (`.github/workflows/build.yml`)
 One workflow, three jobs, on every push to `main`:
-1. **android**: string check → bootstrap → `flutter analyze` → release APK (artifact `Gharcha-apk`); with the signing secrets set it also builds the Play bundle (artifact `Gharcha-play-bundle`).
+1. **android**: string check → bootstrap → `flutter analyze` → unit tests (result on the run's summary page, not blocking yet) → release APK (artifact `Gharcha-apk`); with the signing secrets set it also builds the Play bundle (artifact `Gharcha-play-bundle`).
 2. **ios**: bootstrap → `flutter build ios --release --no-codesign` on macOS, to prove the iOS app compiles.
 3. **site**: needs android; downloads that run's APK into `website/public/downloads/Gharcha.apk`, builds the site, checks the file is there and over 1 MB, deploys to GitHub Pages.
 
@@ -264,6 +321,11 @@ The sideload APK is signed with the committed `platform/android/sideload.keystor
 ## 5. Release history
 | Version | Date | Changes |
 |---|---|---|
+| 1.11.4 | 2026-11-20 | Shopping − and +; hide amounts on widgets; unit tests reported in the build; translation review sheet. Website: Hindi and Gujarati, version and size on the download button, link preview, 3D tour rebuilt inside the phone. |
+| 1.11.3 | 2026-11-20 | Ready-made reminder names and launcher shortcut labels follow the app language. |
+| 1.11.2 | 2026-11-20 | Shopping list counts repeated items; shopping-list widget; website 3D tour and motion. |
+| 1.11.1 | 2026-11-20 | Payment-capture fixes: banner opens the inbox, categories guessed from shop names. |
+| 1.11.0 | 2026-11-20 | Four home-screen widgets (This month, Quick add, Today, Upcoming bills) with a new look; website redesign. |
 | 1.10.4 | 2026-11-19 | Website: configurable Play Store and App Store links, device-aware download button. |
 | 1.10.3 | 2026-11-19 | Share card contents scale to fit their panel; darker share preview backdrop. |
 | 1.10.2 | 2026-11-19 | Share card looks now differ in pattern, header and panel; themed Undo; khata payments can be removed. |

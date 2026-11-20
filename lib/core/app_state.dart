@@ -99,6 +99,9 @@ class AppState extends ChangeNotifier {
     captures = await _store.load('capture', Capture.fromJson);
     goals = await _store.load('goal', Goal.fromJson);
     shopping = await _store.load('shopitem', ShopItem.fromJson);
+    for (final item in [...shopping]) {
+      if (shopping.contains(item) && _shopTwin(item.name, done: item.done, except: item) != null) await renameShopItem(item, item.name);
+    }
     loans = await _store.load('loan', Loan.fromJson);
     papers = await _store.load('paper', Paper.fromJson);
     accounts = await _store.load('account', Account.fromJson);
@@ -196,6 +199,34 @@ class AppState extends ChangeNotifier {
     final keys = latest.keys.where((k) => q.isNotEmpty || uses[k]! >= 2).toList()..sort((a, b) => uses[b]!.compareTo(uses[a]!));
     return [for (final k in keys.take(limit)) latest[k]!];
   }
+
+  ShopItem? _shopTwin(String name, {required bool done, ShopItem? except}) =>
+      shopping.where((i) => i != except && i.done == done && i.name.toLowerCase() == name.toLowerCase()).firstOrNull;
+
+  /// Adds [name] to the shopping list; when it is already waiting there, its count goes up.
+  Future<void> addShopItem(String name) => put(shopping, (_shopTwin(name, done: false)?..count += 1) ?? ShopItem(name: name));
+
+  /// Moves how many of [item] to buy up or down by one, never below one.
+  Future<void> stepShopItem(ShopItem item, int by) async {
+    if (item.count + by < 1) return;
+    item.count += by;
+    await put(shopping, item);
+  }
+
+  /// Renames [item]; if that makes it the same as another row, the two become one with their counts added.
+  Future<void> renameShopItem(ShopItem item, String name) async {
+    final twin = _shopTwin(name, done: item.done, except: item);
+    if (twin == null) {
+      item.name = name;
+      return put(shopping, item);
+    }
+    twin.count += item.count;
+    await drop(shopping, item);
+    await put(shopping, twin);
+  }
+
+  /// Key to display name of the categories the household added.
+  Map<String, String> get customCategoryNames => {for (final c in categories.where((c) => !c.builtIn)) c.key: c.customName};
 
   /// The category last used for an expense with this title, so a shop is filed the same way every time.
   String? categoryFor(String title) {
@@ -298,7 +329,7 @@ class AppState extends ChangeNotifier {
     final owner = Member(name: name.trim().capitalised, relation: 'me', isOwner: true, avatar: _randomLook(gender));
     await _store.save(owner);
     members = [owner];
-    final nudge = Reminder(title: tr('preset_daily_nudge'), hour: 20, minute: 30, repeat: RepeatRule.daily);
+    final nudge = Reminder(title: tr('preset_daily_nudge'), hour: 20, minute: 30, repeat: RepeatRule.daily, preset: 'preset_daily_nudge');
     await _store.save(nudge);
     reminders = [nudge];
     settings
@@ -496,12 +527,41 @@ class AppState extends ChangeNotifier {
   Future<void> _syncNative() async {
     if (!Platform.isAndroid || !settings.onboarded) return;
     final today = Days.today();
-    final safe = safeToday;
+    final safe = safeToday?.roundToDouble();
+    String money(num value) => settings.hideWidgetAmounts ? '${Fmt.symbol}••••' : Fmt.money(value);
+    final spentToday = money(max(net(onDay(today)), 0.0));
+    final left = settings.monthlyBudget - spentIn(today);
+    final toBuy = shopping.where((i) => !i.done).toList();
+    final bills = upcomingReminders.where((e) => e.key.amount != null || e.key.category != null).take(3).toList();
     try {
       await _store.saveForNative({
         'widget_title': tr('widget_month', [Fmt.month(today)]),
-        'widget_amount': Fmt.money(spentIn(today)),
-        'widget_note': safe == null ? tr('widget_today', [Fmt.money(max(net(onDay(today)), 0.0))]) : tr('widget_safe', [Fmt.money(max(safe, 0.0))]),
+        'widget_amount': money(spentIn(today)),
+        'widget_note': safe == null ? tr('widget_today', [spentToday]) : tr('widget_safe', [money(max(safe, 0.0))]),
+        'widget_left': settings.monthlyBudget <= 0 ? '' : tr(left >= 0 ? 'widget_left' : 'widget_over', [money(left.abs())]),
+        'widget_progress': '${(budgetProgress.clamp(0.0, 1.0) * 100).round()}',
+        'widget_today_title': tr('today'),
+        'widget_today_amount': spentToday,
+        'widget_today_note': safe == null ? '' : tr('widget_safe_short', [money(max(safe, 0.0))]),
+        'widget_bills_title': tr('widget_bills_title'),
+        for (var i = 0; i < 3; i++)
+          'widget_bill_${i + 1}': i < bills.length
+              ? [Fmt.date(bills[i].value, 'd MMM'), bills[i].key.label, if (bills[i].key.amount != null) money(bills[i].key.amount!)].join(' · ')
+              : i == 0
+                  ? tr('widget_bills_none')
+                  : '',
+        'widget_shop_title': tr('shopping_list'),
+        'widget_shop_note': toBuy.isEmpty ? tr('widget_shop_none') : trPlural('shopping_count', toBuy.length),
+        for (var i = 0; i < 8; i++)
+          'widget_shop_${i + 1}': i >= toBuy.length
+              ? ''
+              : i == 7 && toBuy.length > 8
+                  ? tr('widget_shop_more', [toBuy.length - 7])
+                  : '• ${toBuy[i].label}',
+        'widget_label_add': tr('widget_label_add'),
+        'widget_label_voice': tr('widget_label_voice'),
+        'widget_label_reminders': tr('shortcut_bills'),
+        'widget_label_shopping': tr('widget_label_shopping'),
         'capture_alert_title': tr('capture_alert_title'),
         'capture_alert_body': tr('capture_alert_body'),
       });
@@ -782,6 +842,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> saveReminder(Reminder r) async {
     r.title = r.title.trim().capitalised;
+    r.preset = Reminder.presets.where((k) => tr(k) == r.title).firstOrNull;
     if (r.id == 0) reminders.add(r);
     await _store.save(r);
     await _afterChange();
@@ -928,6 +989,7 @@ class AppState extends ChangeNotifier {
     _applyGlobals();
     await _persist();
     await syncNotifications();
+    await _syncNative();
   }
 
   Future<void> eraseAll() async {
@@ -1051,10 +1113,10 @@ class AppState extends ChangeNotifier {
         if (Days.key(day) <= r.lastLoggedDay || !r.occursOn(day) || due.isAfter(now)) continue;
         r.lastLoggedDay = Days.key(day);
         await _store.save(r);
-        final e = Expense(title: r.title, amount: r.amount!, category: r.category ?? BuiltInCategories.other, mode: PaymentMode.bank, day: Days.key(day), paidBy: members.where((m) => m.isOwner).firstOrNull?.id ?? settings.activeMemberId);
+        final e = Expense(title: r.label, amount: r.amount!, category: r.category ?? BuiltInCategories.other, mode: PaymentMode.bank, day: Days.key(day), paidBy: members.where((m) => m.isOwner).firstOrNull?.id ?? settings.activeMemberId);
         await _store.save(e);
         expenses.add(e);
-        Notifier.show(Channel.autolog, tr('notif_autolog_title', [r.title]), tr('notif_autolog_body', [Fmt.money(e.amount)]), route: 'expenses');
+        Notifier.show(Channel.autolog, tr('notif_autolog_title', [r.label]), tr('notif_autolog_body', [Fmt.money(e.amount)]), route: 'expenses');
       }
     }
     final f = festival;
@@ -1106,8 +1168,8 @@ class AppState extends ChangeNotifier {
         final next = r.nextAfter(now);
         if (next == null) continue;
         List<String> copy() => r.isBill
-            ? [_copy('bill', 0, [r.title]), _copy('bill', 1, ['${r.title} · ${Fmt.money(r.amount!)}'])]
-            : [_copy('nudge', 0), _copy('nudge', 1, [r.title])];
+            ? [_copy('bill', 0, [r.label]), _copy('bill', 1, ['${r.label} · ${Fmt.money(r.amount!)}'])]
+            : [_copy('nudge', 0), _copy('nudge', 1, [r.label])];
         final channel = r.isBill ? Channel.bills : Channel.nudges;
         final route = r.isBill ? 'reminders' : 'add';
         if (r.repeat == RepeatRule.daily) {
@@ -1127,7 +1189,7 @@ class AppState extends ChangeNotifier {
           await Notifier.schedule(NotificationIds.reminder(r.id, 0), channel, next, line[0], line[1], route: route, repeat: repeat);
           final early = next.subtract(const Duration(days: 3));
           if (r.isBill && early.isAfter(now)) {
-            await Notifier.schedule(NotificationIds.reminder(r.id, NotificationIds.earlySlot), channel, early, tr('bill_early_title', [r.title]), tr('bill_early_body', [Fmt.money(r.amount!), Fmt.date(next, 'd MMM')]), route: route);
+            await Notifier.schedule(NotificationIds.reminder(r.id, NotificationIds.earlySlot), channel, early, tr('bill_early_title', [r.label]), tr('bill_early_body', [Fmt.money(r.amount!), Fmt.date(next, 'd MMM')]), route: route);
           }
         }
       }

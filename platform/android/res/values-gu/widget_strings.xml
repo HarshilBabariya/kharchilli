@@ -3,4 +3,13 @@
     <string name="widget_default_note">શરૂ કરવા ઍપ ખોલો</string>
     <string name="widget_voice">બોલીને ઉમેરો</string>
     <string name="widget_add">ખર્ચ ઉમેરો</string>
+    <string name="widget_today">આજે</string>
+    <string name="widget_bills">આવનારા બિલ</string>
+    <string name="widget_bills_none">હમણાં કંઈ બાકી નથી</string>
+    <string name="widget_label_add">ઉમેરો</string>
+    <string name="widget_label_voice">બોલો</string>
+    <string name="widget_label_reminders">બિલ</string>
+    <string name="widget_label_shopping">ખરીદી</string>
+    <string name="widget_shop">ખરીદીની યાદી</string>
+    <string name="widget_shop_none">ખરીદવાનું કંઈ નથી</string>
 </resources>

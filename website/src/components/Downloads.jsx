@@ -1,34 +1,43 @@
-import { APP_VERSION, installSteps, platforms, REPO_URL } from '../content.js'
+import { APP_VERSION, platforms, REPO_URL, storeLinks } from '../content.js'
 import DownloadButton from './DownloadButton.jsx'
 import { useReveal } from '../hooks/useReveal.js'
+import { useCopy } from '../i18n.jsx'
 
 export default function Downloads() {
   const ref = useReveal('.build, .step')
+  const { t: { download } } = useCopy()
   return (
     <section className="section download" id="download" ref={ref}>
       <div className="section-head">
-        <span className="eyebrow">Get Gharcha {APP_VERSION}</span>
-        <h2>One app, every phone.</h2>
-        <p>Free, no ads, no account. Android installs from this page today; the Play Store and App Store listings are on their way.</p>
+        <span className="eyebrow">{download.eyebrow.replace('{version}', APP_VERSION)}</span>
+        <h2>{download.title}</h2>
+        <p>{download.lead}</p>
       </div>
       <div className="builds">
-        {platforms.map((p) => (
-          <article className={`build ${p.live ? 'build-live' : ''}`} key={p.key}>
-            {!p.live && <span className="ribbon">Coming soon</span>}
-            <h3>{p.title}</h3>
-            <p>{p.tagline}</p>
-            <ul>{p.rows.map((r) => <li key={r}>{r}</li>)}</ul>
-            {p.live && (p.url ? <a className="btn btn-primary" href={p.url} target="_blank" rel="noreferrer">{p.cta}</a> : <DownloadButton />)}
-          </article>
-        ))}
+        {platforms.map((key) => {
+          const words = download.platforms[key]
+          const store = storeLinks[key]
+          const live = key === 'android' || Boolean(store)
+          const rows = key === 'android' ? words.rows : [store ? words.live : words.pending, ...words.rows]
+          return (
+            <article className={`build ${live ? 'build-live' : ''}`} key={key}>
+              {!live && <span className="ribbon">{download.soon}</span>}
+              <h3>{words.title}</h3>
+              <p>{words.tagline}</p>
+              <ul>{rows.map((row) => <li key={row}>{row}</li>)}</ul>
+              {store && <a className="btn btn-primary" href={store} target="_blank" rel="noreferrer">{words.cta}</a>}
+              {key === 'android' && <DownloadButton />}
+            </article>
+          )
+        })}
       </div>
       <ol className="steps">
-        {installSteps.map(([t, body], i) => (
-          <li className="step" key={t}><span>{i + 1}</span><div><h4>{t}</h4><p>{body}</p></div></li>
+        {download.steps.map(([title, body], i) => (
+          <li className="step" key={title}><span>{i + 1}</span><div><h4>{title}</h4><p>{body}</p></div></li>
         ))}
       </ol>
       <p className="download-foot">
-        Built by GitHub Actions from the <a href={REPO_URL} target="_blank" rel="noreferrer">source</a> on every push; the button always serves the build this page was published with.
+        {download.foot[0]}<a href={REPO_URL} target="_blank" rel="noreferrer">{download.foot[1]}</a>{download.foot[2]}
       </p>
     </section>
   )

@@ -57,6 +57,31 @@ class VoiceParser {
     PaymentMode.cash: ['cash', 'nakad', 'rokda', 'rokad'],
   };
 
+  /// Words that point at the same kind of shop, so a custom category named after one of them catches the others.
+  static const _alike = [
+    ['petrol', 'petroleum', 'diesel', 'fuel', 'fuels', 'pump', 'filling', 'iocl', 'bpcl', 'hpcl'],
+    ['dairy', 'milk', 'doodh', 'dudh', 'amul', 'curd'],
+    ['vegetable', 'vegetables', 'vegitables', 'sabzi', 'shak', 'fruit', 'fruits'],
+    ['food', 'foods', 'restaurant', 'cafe', 'swiggy', 'zomato', 'snacks', 'bakery', 'sweets'],
+    ['medical', 'medicine', 'medicines', 'pharmacy', 'chemist', 'hospital', 'clinic'],
+  ];
+  static final _wordBreak = RegExp(r'[^a-z0-9\u0900-\u0AFF]+');
+
+  /// A looser match than [parse] makes, for shop names in payment messages: "Xyz Petroleum" finds a category called
+  /// Petrol. Custom categories win over built-in ones; null when nothing fits.
+  static String? guessCategory(String text, Map<String, String> customCategories) {
+    final lower = text.toLowerCase();
+    final words = lower.split(_wordBreak).where((w) => w.length > 2).toList();
+    bool near(String a, String b) => a == b || (min(a.length, b.length) >= 4 && (a.startsWith(b) || b.startsWith(a)));
+    bool hits(Iterable<String> terms) => terms.any((t) => t.contains(' ') ? lower.contains(t) : words.any((w) => near(w, t)));
+    for (final custom in customCategories.entries) {
+      final name = custom.value.toLowerCase().split(_wordBreak).where((w) => w.length > 2).toList();
+      if (name.isEmpty) continue;
+      if (hits(name) || _alike.any((group) => hits(group) && group.any((t) => name.any((n) => near(n, t))))) return custom.key;
+    }
+    return _categoryWords.entries.where((e) => hits(e.value)).firstOrNull?.key;
+  }
+
   static bool _hasWord(String text, String word) => RegExp('(^|\\s)${RegExp.escape(word)}(\\s|\$)').hasMatch(text);
   static String _dropWord(String text, String word) => text.replaceAll(RegExp('(^|\\s)${RegExp.escape(word)}(?=\\s|\$)'), ' ');
   static String _titleCase(String text) => text.split(' ').where((w) => w.isNotEmpty).map((w) => w.capitalised).join(' ');
@@ -118,7 +143,7 @@ class MessageParser {
                 : null;
     final party = _party.allMatches(text).map((m) => m.group(1)!.trim()).where((p) => !RegExp(r'^(a/c|ac|account|your|bank)\b', caseSensitive: false).hasMatch(p)).firstOrNull ?? '';
     final title = party.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).map((w) => w.toLowerCase().capitalised).join(' ');
-    return VoiceResult(double.tryParse(amount.group(1)!.replaceAll(',', '')), title, VoiceParser.parse(party, customCategories).categoryKey, mode, null, _credit.hasMatch(text));
+    return VoiceResult(double.tryParse(amount.group(1)!.replaceAll(',', '')), title, VoiceParser.guessCategory(party, customCategories), mode, null, _credit.hasMatch(text));
   }
 }
 

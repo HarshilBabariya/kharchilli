@@ -3,19 +3,14 @@ import { animate, onScroll } from 'animejs'
 import Logo from './Logo.jsx'
 import DownloadButton from './DownloadButton.jsx'
 import { REPO_URL } from '../content.js'
+import { languages, useCopy } from '../i18n.jsx'
 
-const links = [
-  ['#moments', 'How it works'],
-  ['#features', 'Features'],
-  ['#looks', 'Themes'],
-  ['#festivals', 'Festivals'],
-  ['#rewards', 'Rewards'],
-  ['#download', 'Download']
-]
+const sections = ['tour', 'features', 'looks', 'festivals', 'rewards', 'download']
 
 export default function Nav() {
   const [solid, setSolid] = useState(false)
   const bar = useRef(null)
+  const { lang, t, setLang } = useCopy()
   useEffect(() => {
     const onScrollY = () => setSolid(window.scrollY > 24)
     onScrollY()
@@ -35,11 +30,18 @@ export default function Nav() {
         <span>Gharcha</span>
       </a>
       <nav className="nav-links">
-        {links.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
+        {sections.map((id) => <a key={id} href={`#${id}`}>{t.nav[id]}</a>)}
         <a href={REPO_URL} target="_blank" rel="noreferrer">GitHub</a>
       </nav>
-      <div className="nav-cta">
-        <DownloadButton compact />
+      <div className="nav-end">
+        <div className="lang" role="group" aria-label={t.nav.language}>
+          {languages.map(([code, short, name]) => (
+            <button type="button" key={code} lang={code} className={code === lang ? 'on' : ''} title={name} aria-label={name} aria-pressed={code === lang} onClick={() => setLang(code)}>{short}</button>
+          ))}
+        </div>
+        <div className="nav-cta">
+          <DownloadButton compact />
+        </div>
       </div>
     </header>
   )

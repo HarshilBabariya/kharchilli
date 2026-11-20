@@ -1,4 +1,5 @@
-"""Checks that every string key the app uses exists in all three languages. Usage: python3 tool/check_strings.py [--prune]
+"""Checks that every string key the app uses exists in all three languages, and that the website's three language files
+hold the same entries. Usage: python3 tool/check_strings.py [--prune]
 
 --prune also removes keys nothing refers to, so the language files never carry dead strings.
 """
@@ -26,5 +27,16 @@ for lang in LANGS:
         path.write_text(json.dumps(data, ensure_ascii=False, indent=0))
     elif dead:
         print(f'{lang}: {len(dead)} unused, e.g. {dead[:8]}')
+        failed = True
+def shape(node):
+    if isinstance(node, dict):
+        return {key: shape(value) for key, value in node.items()}
+    return [shape(value) for value in node] if isinstance(node, list) else ''
+
+
+site = {lang: shape(json.loads((ROOT / 'website' / 'src' / 'i18n' / f'{lang}.json').read_text())) for lang in LANGS}
+for lang in LANGS[1:]:
+    if site[lang] != site['en']:
+        print(f'{lang}: website/src/i18n/{lang}.json does not hold the same entries as en.json')
         failed = True
 sys.exit(1 if failed else 0)

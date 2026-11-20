@@ -64,17 +64,22 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
     final name = _entry.text.trim();
     if (name.isEmpty) return;
     _entry.clear();
-    app.put(app.shopping, ShopItem(name: name.capitalised));
+    app.addShopItem(name.capitalised);
   }
 
   @override
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final done = app.shopping.where((i) => i.done).toList();
+    Widget step(ShopItem item, IconData icon, String label, int by) => Pressable(
+          onTap: () => app.stepShopItem(item, by),
+          scale: 0.88,
+          child: SizedBox(width: 30, height: 32, child: Icon(icon, size: 18, color: item.count + by < 1 ? context.cs.outlineVariant : context.cs.primary, semanticLabel: tr(label))),
+        );
     Widget row(ShopItem item) => Pressable(
           onTap: () {
             item.done = !item.done;
-            app.put(app.shopping, item);
+            app.renameShopItem(item, item.name);
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 9),
@@ -82,14 +87,23 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
               Icon(item.done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, color: item.done ? good : context.cs.onSurfaceVariant),
               const SizedBox(width: 12),
               Expanded(child: Text(item.name, style: context.tt.titleMedium!.copyWith(decoration: item.done ? TextDecoration.lineThrough : null, color: item.done ? context.cs.onSurfaceVariant : null))),
+              if (!item.done)
+                Container(
+                  decoration: BoxDecoration(color: context.cs.primary.withValues(alpha: context.isDark ? 0.24 : 0.13), borderRadius: BorderRadius.circular(999)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    step(item, Icons.remove_rounded, 'a11y_less', -1),
+                    ConstrainedBox(constraints: const BoxConstraints(minWidth: 16), child: Text('${item.count}', textAlign: TextAlign.center, style: context.tt.titleSmall)),
+                    step(item, Icons.add_rounded, 'a11y_more', 1),
+                  ]),
+                )
+              else if (item.count > 1)
+                Pill('× ${item.count}'),
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: Icon(Icons.edit_rounded, size: 18, color: context.cs.onSurfaceVariant),
                 onPressed: () async {
                   final name = await askText(context, tr('a11y_edit'), tr('shopping_item'), tr('shopping_hint'), initial: item.name);
-                  if (name == null) return;
-                  item.name = name.capitalised;
-                  await app.put(app.shopping, item);
+                  if (name != null) await app.renameShopItem(item, name.capitalised);
                 },
               ),
               IconButton(visualDensity: VisualDensity.compact, icon: Icon(Icons.close_rounded, size: 20, color: context.cs.onSurfaceVariant), onPressed: () => app.drop(app.shopping, item)),
@@ -98,7 +112,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
         );
     return KPage(
       title: tr('shopping_list'),
-      subtitle: tr('shopping_count', [app.shopping.length - done.length]),
+      subtitle: trPlural('shopping_count', app.shopping.length - done.length),
       bottom: done.isEmpty
           ? null
           : KButton(tr('shopping_log', [done.length]), icon: Icons.receipt_long_rounded, onTap: () {
@@ -106,7 +120,7 @@ class _ShoppingScreenState extends State<ShoppingScreen> {
               open(
                 context,
                 AddExpenseScreen(
-                  draft: VoiceResult(null, app.category(BuiltInCategories.groceries).name, BuiltInCategories.groceries, null, bought.map((i) => i.name).join(', '), false),
+                  draft: VoiceResult(null, app.category(BuiltInCategories.groceries).name, BuiltInCategories.groceries, null, bought.map((i) => i.label).join(', '), false),
                   onSaved: () {
                     for (final item in bought) {
                       app.drop(app.shopping, item);

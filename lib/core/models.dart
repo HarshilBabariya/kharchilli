@@ -423,9 +423,22 @@ class Reminder extends Doc {
     this.enabled = true,
     this.autoLog = false,
     this.lastLoggedDay = 0,
+    this.preset,
   });
 
+  /// Ready-made reminder names, as translation keys.
+  static const presets = ['preset_rent', 'preset_emi', 'preset_electricity', 'preset_insurance', 'preset_school_fees', 'preset_daily_nudge'];
+
   String title;
+
+  /// One of [presets] while the reminder still carries that ready-made name, so the name follows the app language.
+  String? preset;
+
+  /// The name to show. A ready-made name is translated, including one saved in English before `preset` existed.
+  String get label {
+    final key = preset ?? presets.where((k) => L10n.english(k) == title).firstOrNull;
+    return key == null ? title : tr(key);
+  }
   int hour;
   int minute;
   RepeatRule repeat;
@@ -524,6 +537,7 @@ class Reminder extends Doc {
         'enabled': enabled,
         'autoLog': autoLog,
         'lastLoggedDay': lastLoggedDay,
+        'preset': preset,
       };
 
   factory Reminder.fromJson(Json j) => Reminder(
@@ -540,6 +554,7 @@ class Reminder extends Doc {
         enabled: j['enabled'] as bool? ?? true,
         autoLog: j['autoLog'] as bool? ?? false,
         lastLoggedDay: j['lastLoggedDay'] as int? ?? 0,
+        preset: j['preset'] as String?,
       );
 }
 
@@ -784,18 +799,23 @@ class Goal extends Doc {
 
 /// One line of the shopping list.
 class ShopItem extends Doc {
-  ShopItem({required this.name, this.done = false});
+  ShopItem({required this.name, this.done = false, this.count = 1});
 
   String name;
   bool done;
+
+  /// How many of it to buy; adding a name that is already waiting raises this.
+  int count;
+
+  String get label => count > 1 ? '$name × $count' : name;
 
   @override
   String get kind => 'shopitem';
 
   @override
-  Json toJson() => {'name': name, 'done': done};
+  Json toJson() => {'name': name, 'done': done, 'count': count};
 
-  factory ShopItem.fromJson(Json j) => ShopItem(name: j['name'] as String, done: j['done'] as bool? ?? false);
+  factory ShopItem.fromJson(Json j) => ShopItem(name: j['name'] as String, done: j['done'] as bool? ?? false, count: j['count'] as int? ?? 1);
 }
 
 /// Money lent to someone (positive [amount]) or borrowed from them (negative), outside any group.
@@ -917,6 +937,9 @@ class Settings {
   /// The background last used for each kind of share card, keyed by the card's file name.
   Map<String, int> cardLooks = {};
   bool tourSeen = false;
+
+  /// Home-screen widgets show dots in place of money.
+  bool hideWidgetAmounts = false;
   bool soundEffects = true;
   bool festiveMode = true;
   double goldRate = 0;
@@ -955,6 +978,7 @@ class Settings {
         'quickAccess': quickAccess,
         'cardLooks': cardLooks,
         'tourSeen': tourSeen,
+        'hideWidgetAmounts': hideWidgetAmounts,
         'soundEffects': soundEffects,
         'festiveMode': festiveMode,
         'goldRate': goldRate,
@@ -995,6 +1019,7 @@ class Settings {
       ..quickAccess = (j['quickAccess'] as List?)?.cast<String>().toList() ?? ['reminders', 'shopping', 'goals', 'loans']
       ..cardLooks = {...?(j['cardLooks'] as Map?)?.cast<String, int>()}
       ..tourSeen = j['tourSeen'] as bool? ?? false
+      ..hideWidgetAmounts = j['hideWidgetAmounts'] as bool? ?? false
       ..soundEffects = j['soundEffects'] as bool? ?? true
       ..festiveMode = j['festiveMode'] as bool? ?? true
       ..goldRate = (j['goldRate'] as num? ?? 0).toDouble()

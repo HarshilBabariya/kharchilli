@@ -51,7 +51,7 @@ class Store {
 
   Future<void> saveSettings(Settings settings) => _prefs.setString(_settingsKey, jsonEncode(settings.toJson()));
 
-  /// Text the Android side shows without a Flutter engine: the widget's lines (SpendWidget.kt) and the payment
+  /// Text the Android side shows without a Flutter engine: the widget's lines (Widgets.kt) and the payment
   /// alert's wording (PaymentListener.kt). Both read these keys from the same preferences file.
   Future<void> saveForNative(Map<String, String> lines) async {
     for (final line in lines.entries) {

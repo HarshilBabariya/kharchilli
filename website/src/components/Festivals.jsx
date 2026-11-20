@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { animate, stagger, utils } from 'animejs'
-import { festivalPerks, festivals } from '../content.js'
+import { festivals } from '../content.js'
+import { useCopy } from '../i18n.jsx'
 import { reducedMotion, useReveal } from '../hooks/useReveal.js'
 
 function Sparks() {
@@ -27,28 +28,29 @@ function Sparks() {
 
 export default function Festivals() {
   const ref = useReveal('.fest-card, .perk')
+  const { t: { fest } } = useCopy()
   return (
     <section className="section fest" id="festivals" ref={ref}>
       <Sparks />
       <div className="section-head">
-        <span className="eyebrow">Nine festival packs</span>
-        <h2>The app dresses up for every festival. So does your avatar.</h2>
-        <p>From three days before to three days after, Home wears the festival’s colours and decor, your avatar gets the outfit, and the first open during the festival plays a celebration.</p>
+        <span className="eyebrow">{fest.eyebrow}</span>
+        <h2>{fest.title}</h2>
+        <p>{fest.lead}</p>
       </div>
       <ul className="perks">
-        {festivalPerks.map((p) => <li className="perk" key={p}><span>✦</span>{p}</li>)}
+        {fest.perks.map((p) => <li className="perk" key={p}><span>✦</span>{p}</li>)}
       </ul>
       <div className="fest-grid">
-        {festivals.map((f) => (
-          <article className="fest-card" key={f.key} style={{ '--a': f.look.c[0], '--b': f.look.c[2] }}>
-            <span className="fest-emoji">{f.emoji}</span>
-            <h3>{f.name}</h3>
-            <small>{f.when}</small>
+        {festivals.map(({ key, emoji, colors }) => (
+          <article className="fest-card" key={key} style={{ '--a': colors[0], '--b': colors[2] }}>
+            <span className="fest-emoji">{emoji}</span>
+            <h3>{fest.items[key].name}</h3>
+            <small>{fest.items[key].when}</small>
             <dl>
-              <div><dt>Look</dt><dd><i className="swatches">{f.look.c.slice(0, 3).map((c) => <b key={c} style={{ background: c }} />)}</i>{f.look.name}</dd></div>
-              <div><dt>Outfit</dt><dd>{f.outfit}</dd></div>
-              <div><dt>Celebration</dt><dd>{f.effect}</dd></div>
-              <div><dt>Sound</dt><dd>{f.sound}</dd></div>
+              <div><dt>{fest.labels.look}</dt><dd><i className="swatches">{colors.map((c) => <b key={c} style={{ background: c }} />)}</i>{fest.items[key].look}</dd></div>
+              <div><dt>{fest.labels.outfit}</dt><dd>{fest.items[key].outfit}</dd></div>
+              <div><dt>{fest.labels.celebration}</dt><dd>{fest.items[key].effect}</dd></div>
+              <div><dt>{fest.labels.sound}</dt><dd>{fest.items[key].sound}</dd></div>
             </dl>
           </article>
         ))}

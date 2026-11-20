@@ -89,6 +89,21 @@ void main() {
     });
   });
 
+  group('guessCategory', () {
+    const custom = {'c_petrol': 'Petrol', 'c_veg': 'Vegitables & Fruits', 'c_dairy': 'Dairy'};
+
+    test('a shop name finds the custom category it resembles', () {
+      expect(VoiceParser.guessCategory('Xyz Petroleum', custom), 'c_petrol');
+      expect(VoiceParser.guessCategory('HP Fuel Station', custom), 'c_petrol');
+      expect(VoiceParser.guessCategory('Karnavati Milk Parlour', custom), 'c_dairy');
+    });
+
+    test('falls back to a built-in category, then to nothing', () {
+      expect(VoiceParser.guessCategory('Xyz Petroleum', const {}), BuiltInCategories.transport);
+      expect(VoiceParser.guessCategory('Ramesh Kumar', custom), isNull);
+    });
+  });
+
   group('Pin', () {
     test('matches only the PIN it was made from', () {
       final stored = Pin.hash('2580');

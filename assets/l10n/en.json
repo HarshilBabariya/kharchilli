@@ -1016,7 +1016,6 @@
 "capture_manage": "Notification access settings",
 "capture_empty_title": "Nothing waiting",
 "capture_empty_body": "Payments from your bank and UPI messages will show up here.",
-"capture_pending": "%1$d payments to review",
 "capture_review": "Spotted in your messages. Tap to add or dismiss",
 "capture_unknown": "Payment",
 "dismiss": "Dismiss",
@@ -1049,7 +1048,6 @@
 "recap_top": "Biggest category",
 "recap_saved": "Saved",
 "shopping_list": "Shopping list",
-"shopping_count": "%1$d items to buy",
 "shopping_hint": "Add an item",
 "shopping_log": "Log %1$d ticked items as an expense",
 "shopping_empty_title": "Nothing on the list",
@@ -1196,7 +1194,20 @@
 "tour_3_title": "Add without opening the app",
 "tour_3_body": "On Android, long-press the Gharcha icon for shortcuts, or add the Gharcha widget to your home screen.",
 "tour_4_title": "Say it or paste it",
-"tour_4_body": "Tap the mic and say \"250 groceries by UPI\", or paste a bank message on the add screen."
+"tour_4_body": "Tap the mic and say \"250 groceries by UPI\", or paste a bank message on the add screen.",
+"widget_left": "%1$s left",
+"widget_over": "Over by %1$s",
+"widget_safe_short": "Safe to spend %1$s",
+"widget_bills_title": "Upcoming bills",
+"widget_bills_none": "Nothing due soon",
+"widget_label_add": "Add",
+"widget_label_voice": "Voice",
+"widget_label_shopping": "Shopping",
+"widget_shop_none": "Nothing to buy",
+"widget_shop_more": "+ %1$d more",
+"a11y_more": "More",
+"widget_hide_amounts": "Hide amounts on widgets",
+"widget_hide_amounts_sub": "Home-screen widgets show •••• in place of your money"
 },
 "arrays": {
 "mood_lines_happy": [
@@ -1553,6 +1564,14 @@
 "days_left": {
 "one": "1 day left",
 "other": "%1$d days left"
+},
+"capture_pending": {
+"one": "1 payment to review",
+"other": "%1$d payments to review"
+},
+"shopping_count": {
+"one": "1 item to buy",
+"other": "%1$d items to buy"
 }
 }
 }

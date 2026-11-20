@@ -3,13 +3,15 @@ import { animate } from 'animejs'
 import DownloadButton from './components/DownloadButton.jsx'
 import Nav from './components/Nav.jsx'
 import Hero from './components/Hero.jsx'
-import Moments from './components/Moments.jsx'
+import Tour from './components/Tour.jsx'
+import Day from './components/Day.jsx'
 import More from './components/More.jsx'
 import Looks from './components/Looks.jsx'
 import Festivals from './components/Festivals.jsx'
 import Rewards from './components/Rewards.jsx'
 import Downloads from './components/Downloads.jsx'
 import Footer from './components/Footer.jsx'
+import { useCopy } from './i18n.jsx'
 
 function useMagnet() {
   useEffect(() => {
@@ -48,12 +50,14 @@ function useTilt() {
 export default function App() {
   useMagnet()
   useTilt()
+  const { t } = useCopy()
   return (
     <>
       <Nav />
       <main>
         <Hero />
-        <Moments />
+        <Tour />
+        <Day />
         <More />
         <Looks />
         <Festivals />
@@ -61,7 +65,7 @@ export default function App() {
         <Downloads />
       </main>
       <Footer />
-      <div className="sticky-cta"><span>Gharcha for Android</span><DownloadButton compact /></div>
+      <div className="sticky-cta"><span>{t.get.sticky}</span><DownloadButton compact /></div>
     </>
   )
 }

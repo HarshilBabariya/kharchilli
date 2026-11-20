@@ -1,0 +1,572 @@
+{
+  "meta": {
+    "title": "Gharcha · household expenses with spice"
+  },
+  "nav": {
+    "tour": "How it works",
+    "features": "Features",
+    "looks": "Themes",
+    "festivals": "Festivals",
+    "rewards": "Rewards",
+    "download": "Download",
+    "language": "Language"
+  },
+  "get": {
+    "android": "Download for Android",
+    "short": "Download",
+    "ios": "Download for iPhone",
+    "iosSoon": "iPhone app coming soon",
+    "soon": "Soon",
+    "sticky": "Gharcha for Android"
+  },
+  "hero": {
+    "free": "Free",
+    "title": "Ghar ka kharcha,",
+    "accent": "sorted.",
+    "lead": "Log a spend in five seconds, see what is safe to spend today, and run the whole house from one app: splits, shop credit, bills, goals and the shopping list. No account. Nothing leaves your phone.",
+    "see": "See it in action ↓",
+    "stats": [
+      "badges to earn",
+      "colour themes",
+      "avatar outfits",
+      "languages"
+    ],
+    "voice": "Logged by voice",
+    "streak": "12-day streak",
+    "safe": "Safe for today"
+  },
+  "app": {
+    "greeting": "Good evening,",
+    "me": "Harshil",
+    "other": "Hitansi",
+    "spentIn": "Spent in November",
+    "left": "₹2,200 left of ₹75,000",
+    "quick": "Quick access",
+    "edit": "Edit",
+    "shortcuts": [
+      "Bills",
+      "Shopping",
+      "Goals",
+      "Lent"
+    ],
+    "safe": "Safe to spend today",
+    "today": "Today",
+    "recent": "Recent transactions",
+    "seeAll": "See all",
+    "spends": [
+      [
+        "Milk",
+        "Today · UPI"
+      ],
+      [
+        "Lunch",
+        "Today · UPI"
+      ],
+      [
+        "Petrol",
+        "Yesterday · Card"
+      ]
+    ],
+    "tabs": [
+      "Home",
+      "Expenses",
+      "Groups",
+      "Me"
+    ],
+    "add": "Add expense",
+    "voiceTitle": "Say it or type it",
+    "voiceHint": "“380 frankie by UPI”",
+    "titleLabel": "Title",
+    "item": "Frankie",
+    "usuals": [
+      "Milk · ₹77",
+      "Petrol · ₹350",
+      "Rapido · ₹150"
+    ],
+    "categories": [
+      "Dining",
+      "Groceries",
+      "Transport",
+      "Bills"
+    ],
+    "modes": [
+      "Cash",
+      "UPI",
+      "Card",
+      "Bank"
+    ],
+    "save": "Save",
+    "insights": "Insights",
+    "periods": [
+      "Week",
+      "Month",
+      "Year"
+    ],
+    "legend": [
+      "Rent",
+      "Savings",
+      "Transport",
+      "Food"
+    ],
+    "last7": "Last 7 days",
+    "billsDue": "Bills due",
+    "billsCount": "3 this week",
+    "whoPaid": "Who paid",
+    "house": "Our house",
+    "group": "Ghar",
+    "members": "2 members",
+    "settled": "Settled",
+    "shopping": "Shopping list",
+    "toBuy": [
+      "Atta 5 kg",
+      "Tomatoes",
+      "Detergent"
+    ],
+    "friend": "Kenil",
+    "lent": "I lent · due in 4 days",
+    "expires": "Expires 2 Dec 2026",
+    "daysLeft": "12 days left",
+    "milk": "Milk",
+    "milkTally": "28 days · 1 litre a day",
+    "goal": "Goa trip",
+    "goalSaved": "₹5,000 of ₹12,000",
+    "expense": "Expense",
+    "date": "Date",
+    "day": "19 Nov 2026",
+    "paidBy": "Paid by",
+    "mode": "Mode"
+  },
+  "tour": {
+    "screens": {
+      "home": "Home",
+      "add": "Add expense",
+      "insights": "Insights",
+      "house": "Our house"
+    },
+    "steps": [
+      [
+        "This is your month.",
+        "What you spent, what is left and how far through the budget you are. It opens in a second, with no sign-in."
+      ],
+      [
+        "Four shortcuts, your pick.",
+        "Quick access opens the screens you use most. Tap Edit to choose which four sit here."
+      ],
+      [
+        "One number for today.",
+        "Safe to spend is what you can still spend today and stay inside the month’s budget. It moves with every entry."
+      ],
+      [
+        "Every spend, one swipe away.",
+        "Your latest spends sit under the cards. In Expenses, swipe a row left to delete it, or right to add the same one again."
+      ],
+      [
+        "Say it out loud.",
+        "Tap the mic and say “380 frankie by UPI”. The amount, title, category and payment mode fill themselves in."
+      ],
+      [
+        "Your usuals, one tap.",
+        "The things you buy again and again wait as chips. Tap one and it is filled in, at the price you last paid."
+      ],
+      [
+        "See where it went.",
+        "Categories, the last seven days and who paid, by week, month or year."
+      ],
+      [
+        "One list for the whole house.",
+        "Add what the house needs and set how many with − and +. Tick things off in the shop, then log the trip as one expense."
+      ],
+      [
+        "Money lent, papers that expire.",
+        "Gharcha reminds you when a loan is due and before a warranty, PUC or insurance runs out."
+      ],
+      [
+        "Save towards something.",
+        "Give a goal a target and a month. Gharcha works out what to put aside each month to get there."
+      ]
+    ]
+  },
+  "day": {
+    "eyebrow": "A day with Gharcha",
+    "title": "It keeps up without being asked.",
+    "lead": "Five small moments. None of them takes more than a few seconds.",
+    "events": [
+      [
+        "Milk · ₹77",
+        "One tap on the home-screen widget."
+      ],
+      [
+        "Lunch · ₹188",
+        "“188 lunch by UPI”, said out loud."
+      ],
+      [
+        "Petrol · ₹310",
+        "Pasted from the bank message; filed under Petrol."
+      ],
+      [
+        "Electricity bill",
+        "A doorbell: due in three days."
+      ],
+      [
+        "Safe to spend ₹62",
+        "Streak kept. +10 points."
+      ]
+    ]
+  },
+  "more": {
+    "eyebrow": "And the rest",
+    "title": "Built for how a home really spends.",
+    "lead": "Not just “Food and Transport”: kirana credit, the milk tally, chit funds and the papers in the drawer.",
+    "items": {
+      "widget": [
+        "Home-screen widgets",
+        "Five to choose from: this month, today, bills, shopping and quick add."
+      ],
+      "goals": [
+        "Savings goals",
+        "A target, a date and what to put aside each month."
+      ],
+      "shopping": [
+        "Shopping list",
+        "Tick things off, then log the lot as one expense."
+      ],
+      "accounts": [
+        "Accounts",
+        "Cash, bank and wallets, each with a running balance."
+      ],
+      "budgets": [
+        "Budgets & forecast",
+        "Limits per category and a plain-words forecast."
+      ],
+      "groups": [
+        "Groups",
+        "Home, trips and parties, with who owes whom."
+      ],
+      "family": [
+        "Family accounts",
+        "A profile, PIN and avatar for every member."
+      ],
+      "khata": [
+        "Khata & home help",
+        "Shop credit, milk and maid tallies, gold and chits."
+      ],
+      "reminders": [
+        "Reminders",
+        "Bills that log themselves and nudges that never repeat."
+      ],
+      "rewards": [
+        "Points & badges",
+        "Ten levels, 33 badges and a shop to spend points in."
+      ],
+      "avatar": [
+        "Your avatar",
+        "Full outfits, hair and accessories; moods that follow your budget."
+      ],
+      "sounds": [
+        "Sounds of a home",
+        "A cooker whistle for nudges, a doorbell for bills."
+      ],
+      "categories": [
+        "Your categories",
+        "Add your own, recolour the built-in ones."
+      ],
+      "data": [
+        "Backup & lock",
+        "One-file backup, CSV and PDF export, PIN or fingerprint."
+      ],
+      "languages": [
+        "English · हिन्दी · ગુજરાતી",
+        "Every screen, badge and notification follows."
+      ]
+    },
+    "trust": [
+      [
+        "No account",
+        "Open it and start. Nothing to sign up for."
+      ],
+      [
+        "No server",
+        "Everything stays in the phone’s own database."
+      ],
+      [
+        "No ads, no tracking",
+        "Free, and nothing is collected."
+      ],
+      [
+        "Yours to take",
+        "Back up to one file, export CSV or PDF, erase in one tap."
+      ]
+    ]
+  },
+  "looks": {
+    "eyebrow": "Make it yours",
+    "title": "Pick a colour. The whole app follows.",
+    "lead": "Twenty-four themes in the app; try a few on this page. Then send the family a card in any of five styles.",
+    "themes": [
+      "Sunrise",
+      "Ocean",
+      "Forest",
+      "Midnight",
+      "Candy",
+      "Mango",
+      "Peacock",
+      "Ink"
+    ],
+    "cards": [
+      "Classic",
+      "Sunset",
+      "Emerald",
+      "Night",
+      "Charcoal"
+    ]
+  },
+  "fest": {
+    "eyebrow": "Nine festival packs",
+    "title": "The app dresses up for every festival. So does your avatar.",
+    "lead": "From three days before to three days after, Home wears the festival’s colours and decor, your avatar gets the outfit, and the first open during the festival plays a celebration.",
+    "perks": [
+      "Themes and decorations switch on 3 days before the festival and stay for 3 days after",
+      "A full-screen celebration on first open, with the festival’s own sound and your avatar already dressed up",
+      "Tap the festival banner on Home any time to replay the celebration: fireworks, colour clouds, kites, tricolour confetti, petal showers or snow",
+      "Claim my gifts: the pack, +50 points and the outfit — free during the window, yours for good",
+      "A festival banner on Home with its own looping particle show and a countdown from a week before"
+    ],
+    "labels": {
+      "look": "Look",
+      "outfit": "Outfit",
+      "celebration": "Celebration",
+      "sound": "Sound"
+    },
+    "items": {
+      "uttarayan": {
+        "name": "Uttarayan",
+        "when": "13–15 Jan",
+        "effect": "Kites climb the screen with fluttering tails",
+        "sound": "Kite flutter and whistles",
+        "outfit": "Kite-flyer tee",
+        "look": "Kite Sky"
+      },
+      "tiranga": {
+        "name": "Republic & Independence Day",
+        "when": "26 Jan · 15 Aug",
+        "effect": "A shower of tricolour confetti",
+        "sound": "Bugle fanfare",
+        "outfit": "Tiranga jacket",
+        "look": "Tiranga"
+      },
+      "holi": {
+        "name": "Holi",
+        "when": "March",
+        "effect": "Colour clouds burst across the screen with flying droplets",
+        "sound": "Dhol, pichkari and a water-balloon splash",
+        "outfit": "Holi white kurta + gulal face",
+        "look": "Holi Rang"
+      },
+      "rakhi": {
+        "name": "Raksha Bandhan",
+        "when": "August",
+        "effect": "Rose petals drift down the screen",
+        "sound": "Temple bell and santoor plucks",
+        "outfit": "Rakhi pastel kurta",
+        "look": "Rakhi Pastel"
+      },
+      "ganesh": {
+        "name": "Ganesh Chaturthi",
+        "when": "10 days, Aug–Sep",
+        "effect": "Marigold petals shower down the screen",
+        "sound": "Dhol-tasha and bell",
+        "outfit": "Bappa kurta",
+        "look": "Bappa Saffron"
+      },
+      "navratri": {
+        "name": "Navratri",
+        "when": "9 nights, Sep–Oct",
+        "effect": "Glowing colour lights fall like a garba night",
+        "sound": "Garba dhol with dandiya clicks",
+        "outfit": "Garba kediyu",
+        "look": "Garba Nights"
+      },
+      "diwali": {
+        "name": "Diwali",
+        "when": "Dhanteras → Bhai Dooj",
+        "effect": "Rockets climb and burst into rounds of fireworks",
+        "sound": "Anaar, rocket and a string of firecrackers",
+        "outfit": "Diwali silk kurta",
+        "look": "Diwali Glow"
+      },
+      "christmas": {
+        "name": "Christmas",
+        "when": "24–26 Dec",
+        "effect": "Soft snowfall over the whole screen",
+        "sound": "Sleigh bells and chimes",
+        "outfit": "Santa suit + Santa hat",
+        "look": "Jingle Red"
+      },
+      "newyear": {
+        "name": "New Year",
+        "when": "31 Dec – 1 Jan",
+        "effect": "Rockets climb and burst into rounds of fireworks",
+        "sound": "Countdown beeps, popper and party horn",
+        "outfit": "Sequin party jacket + party hat",
+        "look": "New Year Gold"
+      }
+    }
+  },
+  "rewards": {
+    "eyebrow": "Points, levels, badges",
+    "title": "Every log earns something. Streaks earn more.",
+    "lead": "Spend points in the shop on colour themes, outfits, hair and accessories, or claim festival packs free in season.",
+    "level": "Level 6 · Accountant",
+    "earning": "Earning",
+    "points": [
+      [
+        "+10",
+        "per expense logged"
+      ],
+      [
+        "+5",
+        "first log of the day"
+      ],
+      [
+        "+2 / day",
+        "streak bonus, up to +20"
+      ],
+      [
+        "+30",
+        "create a group"
+      ],
+      [
+        "+15",
+        "settle a balance"
+      ],
+      [
+        "+20",
+        "add a family member"
+      ],
+      [
+        "+100",
+        "finish a month under budget"
+      ],
+      [
+        "+50",
+        "claim a festival pack"
+      ]
+    ],
+    "ladder": "Ten levels",
+    "levels": [
+      "Rookie",
+      "Saver",
+      "Planner",
+      "Tracker",
+      "Strategist",
+      "Accountant",
+      "Treasurer",
+      "Guardian",
+      "Master",
+      "Legend"
+    ],
+    "hint": "33 badges · press one",
+    "badges": {
+      "badge_first_step": "First step",
+      "badge_ten_logged": "Getting serious",
+      "badge_century": "Century",
+      "badge_half_k": "Half a thousand",
+      "badge_week_warrior": "Week warrior",
+      "badge_month_master": "Month master",
+      "badge_streak_60": "Iron streak",
+      "badge_streak_100": "Legendary streak",
+      "badge_early_bird": "Early bird",
+      "badge_night_owl": "Night owl",
+      "badge_voice": "Say it out loud",
+      "badge_notes": "Note taker",
+      "badge_explorer": "Explorer",
+      "badge_custom_cat": "Make it yours",
+      "badge_payment_pro": "Payment pro",
+      "badge_big_spender": "Big spender",
+      "badge_penny": "Penny counter",
+      "badge_team_player": "Team player",
+      "badge_group_guru": "Group guru",
+      "badge_fair_share": "Fair share",
+      "badge_settler": "Settler",
+      "badge_family_first": "Family first",
+      "badge_full_house": "Full house",
+      "badge_bill_planner": "Bill planner",
+      "badge_budget_boss": "Budget boss",
+      "badge_budget_hattrick": "Budget hat-trick",
+      "badge_stylist": "Stylist",
+      "badge_accessorized": "Accessorized",
+      "badge_new_look": "New look",
+      "badge_collector": "Collector",
+      "badge_polyglot": "Polyglot",
+      "badge_level_5": "Rising star",
+      "badge_level_10": "Legend"
+    }
+  },
+  "download": {
+    "eyebrow": "Get Gharcha {version}",
+    "title": "One app, every phone.",
+    "lead": "Free, no ads, no account. Android installs from this page today; the Play Store and App Store listings are on their way.",
+    "soon": "Coming soon",
+    "platforms": {
+      "android": {
+        "title": "Android",
+        "tagline": "Install the latest build straight from this page.",
+        "rows": [
+          "Android 7 and newer",
+          "Every feature, no account, no ads",
+          "Updates install over the previous build and keep your data"
+        ]
+      },
+      "play": {
+        "title": "Google Play",
+        "tagline": "The same app, with automatic updates.",
+        "live": "Installs and updates through the Play Store",
+        "pending": "Listing in preparation",
+        "rows": [
+          "Signed release bundle is built on every push"
+        ],
+        "cta": "Get it on Google Play"
+      },
+      "ios": {
+        "title": "iPhone",
+        "tagline": "One codebase, so iOS gets every feature on day one.",
+        "live": "Installs and updates through the App Store",
+        "pending": "App Store listing in preparation",
+        "rows": [
+          "iOS 13 and newer"
+        ],
+        "cta": "Download on the App Store"
+      }
+    },
+    "steps": [
+      [
+        "Download",
+        "Tap Download for Android. The APK is the build this page was published with, so it is always the latest one that passed."
+      ],
+      [
+        "Allow the install",
+        "Open the file; Android asks once to allow installs from your browser or file manager. Later builds install over it and keep your data."
+      ],
+      [
+        "Set up",
+        "Pick a language, your name and mobile, a currency and an optional budget. A daily 8:30 PM nudge is ready for you; App lock is a switch on Me whenever you want it."
+      ],
+      [
+        "Moving from HomeQuest?",
+        "Gharcha is a new app with its own id. Export a CSV from HomeQuest (Me → Your data) and import it in Gharcha (Me → Your data → Import CSV)."
+      ]
+    ],
+    "foot": [
+      "Built by GitHub Actions from the ",
+      "source",
+      " on every push; the button always serves the build this page was published with."
+    ]
+  },
+  "footer": {
+    "tagline": "One Flutter codebase for Android and iOS. Your data never leaves the phone.",
+    "privacy": "Privacy policy",
+    "source": "Source on GitHub",
+    "bug": "Report a bug",
+    "builds": "Builds"
+  }
+}

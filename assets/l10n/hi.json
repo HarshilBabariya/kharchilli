@@ -1016,7 +1016,6 @@
 "capture_manage": "नोटिफ़िकेशन एक्सेस सेटिंग्स",
 "capture_empty_title": "कुछ बाकी नहीं",
 "capture_empty_body": "आपके बैंक और UPI मैसेज के भुगतान यहाँ दिखेंगे।",
-"capture_pending": "%1$d भुगतान देखने बाकी",
 "capture_review": "आपके मैसेज में मिले। जोड़ने या हटाने के लिए टैप करें",
 "capture_unknown": "भुगतान",
 "dismiss": "हटाएँ",
@@ -1049,7 +1048,6 @@
 "recap_top": "सबसे बड़ी कैटेगरी",
 "recap_saved": "बचत",
 "shopping_list": "ख़रीदारी की सूची",
-"shopping_count": "%1$d चीज़ें ख़रीदनी हैं",
 "shopping_hint": "चीज़ जोड़ें",
 "shopping_log": "%1$d टिक की हुई चीज़ें खर्च में दर्ज करें",
 "shopping_empty_title": "सूची खाली है",
@@ -1196,7 +1194,20 @@
 "tour_3_title": "ऐप खोले बिना जोड़ें",
 "tour_3_body": "Android पर Gharcha आइकन को देर तक दबाएँ तो शॉर्टकट मिलेंगे, या होम स्क्रीन पर Gharcha विजेट लगाएँ।",
 "tour_4_title": "बोलें या पेस्ट करें",
-"tour_4_body": "माइक दबाकर बोलें \"250 किराना UPI से\", या जोड़ने की स्क्रीन पर बैंक का संदेश पेस्ट करें।"
+"tour_4_body": "माइक दबाकर बोलें \"250 किराना UPI से\", या जोड़ने की स्क्रीन पर बैंक का संदेश पेस्ट करें।",
+"widget_left": "%1$s बाकी",
+"widget_over": "%1$s ज़्यादा",
+"widget_safe_short": "%1$s खर्च ठीक",
+"widget_bills_title": "आने वाले बिल",
+"widget_bills_none": "अभी कुछ बाकी नहीं",
+"widget_label_add": "जोड़ें",
+"widget_label_voice": "बोलें",
+"widget_label_shopping": "खरीदारी",
+"widget_shop_none": "खरीदने को कुछ नहीं",
+"widget_shop_more": "+ %1$d और",
+"a11y_more": "ज़्यादा",
+"widget_hide_amounts": "विजेट पर रकम छिपाएँ",
+"widget_hide_amounts_sub": "होम स्क्रीन के विजेट पैसों की जगह •••• दिखाएँगे"
 },
 "arrays": {
 "mood_lines_happy": [
@@ -1553,6 +1564,14 @@
 "days_left": {
 "one": "%1$d दिन बाकी",
 "other": "%1$d दिन बाकी"
+},
+"capture_pending": {
+"one": "%1$d भुगतान देखने बाकी",
+"other": "%1$d भुगतान देखने बाकी"
+},
+"shopping_count": {
+"one": "%1$d चीज़ें ख़रीदनी हैं",
+"other": "%1$d चीज़ें ख़रीदनी हैं"
 }
 }
 }

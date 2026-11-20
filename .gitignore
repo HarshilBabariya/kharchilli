@@ -8,4 +8,5 @@ pubspec.lock
 /android/
 /ios/
 .metadata
+translations.csv
  

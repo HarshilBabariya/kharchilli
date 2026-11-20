@@ -33,6 +33,9 @@ class L10n {
     }).replaceAll('%%', '%');
   }
 
+  /// The English text of [key], whatever language is showing.
+  static String english(String key) => (_fallback[key] ?? key) as String;
+
   static String string(String key) => (_strings[key] ?? _fallback[key] ?? key) as String;
   static List<String> array(String key) => ((_arrays[key] ?? const []) as List).cast<String>();
   static String plural(String key, int n) {

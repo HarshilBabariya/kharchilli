@@ -96,7 +96,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
       _credit = d.credit;
       _title.text = d.title;
       _note.text = d.note ?? '';
-      _category = app.categoryFor(d.title) ?? d.categoryKey ?? VoiceParser.parse(d.title, _customCategories()).categoryKey ?? _category;
+      _category = app.categoryFor(d.title) ?? d.categoryKey ?? VoiceParser.parse(d.title, AppScope.read(context).customCategoryNames).categoryKey ?? _category;
       _mode = d.mode ?? _mode;
       final day = widget.draftDay;
       if (day != null) _day = Days.of(day.isAfter(DateTime.now()) ? DateTime.now() : day);
@@ -148,18 +148,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
     );
   }
 
-  Map<String, String> _customCategories() => {for (final c in AppScope.read(context).categories.where((c) => !c.builtIn)) c.key: c.customName};
-
   void _applyVoice(String words) {
     if (words.trim().isEmpty) return;
     _voiceUsed = true;
-    _fill(VoiceParser.parse(words, _customCategories()), words);
+    _fill(VoiceParser.parse(words, AppScope.read(context).customCategoryNames), words);
   }
 
   Future<void> _paste() async {
     final text = (await Clipboard.getData(Clipboard.kTextPlain))?.text?.trim() ?? '';
     if (!mounted) return;
-    final parsed = text.isEmpty ? null : MessageParser.parse(text, _customCategories()) ?? VoiceParser.parse(text, _customCategories());
+    final parsed = text.isEmpty ? null : MessageParser.parse(text, AppScope.read(context).customCategoryNames) ?? VoiceParser.parse(text, AppScope.read(context).customCategoryNames);
     if (parsed?.amount == null) {
       toast(context, tr('paste_nothing'));
       return;

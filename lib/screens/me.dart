@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
@@ -27,7 +29,7 @@ import 'reminders.dart';
 import 'rewards.dart';
 import 'tour.dart';
 
-const appVersion = '1.10.4';
+const appVersion = '1.11.4';
 
 class MeTab extends StatelessWidget {
   const MeTab({super.key});
@@ -170,6 +172,7 @@ class SettingsScreen extends StatelessWidget {
         ]),
         if (me != null)
           _section(context, tr('security'), [
+            if (Platform.isAndroid) toggle(Icons.visibility_off_rounded, tr('widget_hide_amounts'), tr('widget_hide_amounts_sub'), s.hideWidgetAmounts, (x, v) => x.hideWidgetAmounts = v, color: const Color(0xFF5C6BC0)),
             NavRow(
               icon: Icons.lock_rounded,
               title: tr('app_lock'),

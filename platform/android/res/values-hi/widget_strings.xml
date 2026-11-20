@@ -3,4 +3,13 @@
     <string name="widget_default_note">शुरू करने के लिए ऐप खोलें</string>
     <string name="widget_voice">बोलकर जोड़ें</string>
     <string name="widget_add">खर्च जोड़ें</string>
+    <string name="widget_today">आज</string>
+    <string name="widget_bills">आने वाले बिल</string>
+    <string name="widget_bills_none">अभी कुछ बाकी नहीं</string>
+    <string name="widget_label_add">जोड़ें</string>
+    <string name="widget_label_voice">बोलें</string>
+    <string name="widget_label_reminders">बिल</string>
+    <string name="widget_label_shopping">खरीदारी</string>
+    <string name="widget_shop">खरीदारी की सूची</string>
+    <string name="widget_shop_none">खरीदने को कुछ नहीं</string>
 </resources>

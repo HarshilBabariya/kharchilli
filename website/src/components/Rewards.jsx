@@ -1,11 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { animate, stagger, utils } from 'animejs'
-import { badges, levels, points } from '../content.js'
+import { badges } from '../content.js'
+import { useCopy } from '../i18n.jsx'
 import { onceVisible, reducedMotion, useReveal } from '../hooks/useReveal.js'
+import { badgeWall } from '../motion.js'
 
 export default function Rewards() {
   const ref = useReveal('.point, .level, .reward-xp')
   const xp = useRef(null)
+  const wall = useRef(null)
+  const { t: { rewards } } = useCopy()
+  useEffect(() => badgeWall(wall.current), [])
   useEffect(() => {
     const root = xp.current
     const fill = root.querySelector('.xp-fill')
@@ -21,13 +26,13 @@ export default function Rewards() {
   return (
     <section className="section" id="rewards" ref={ref}>
       <div className="section-head">
-        <span className="eyebrow">Points, levels, badges</span>
-        <h2>Every log earns something. Streaks earn more.</h2>
-        <p>Spend points in the shop on colour themes, outfits, hair and accessories, or claim festival packs free in season.</p>
+        <span className="eyebrow">{rewards.eyebrow}</span>
+        <h2>{rewards.title}</h2>
+        <p>{rewards.lead}</p>
       </div>
       <div className="reward-xp" ref={xp}>
         <div className="xp-head">
-          <span>Level 6 · Accountant</span>
+          <span>{rewards.level}</span>
           <span><b className="xp-num">0</b> / 3,000 XP</span>
         </div>
         <div className="xp-track"><i className="xp-fill" /></div>
@@ -35,24 +40,23 @@ export default function Rewards() {
       </div>
       <div className="rewards-grid">
         <div className="points-card">
-          <h3>Earning</h3>
+          <h3>{rewards.earning}</h3>
           <ul>
-            {points.map(([v, l]) => <li className="point" key={l}><b>{v}</b><span>{l}</span></li>)}
+            {rewards.points.map(([v, l]) => <li className="point" key={l}><b>{v}</b><span>{l}</span></li>)}
           </ul>
         </div>
         <div className="ladder">
-          <h3>Ten levels</h3>
+          <h3>{rewards.ladder}</h3>
           <ol>
-            {levels.map((l, i) => <li className="level" key={l} style={{ '--i': i }}><span>{i + 1}</span>{l}</li>)}
+            {rewards.levels.map((l, i) => <li className="level" key={l} style={{ '--i': i }}><span>{i + 1}</span>{l}</li>)}
           </ol>
         </div>
       </div>
-      <div className="marquee" aria-label="Badges">
-        <div className="marquee-track">
-          {[...badges, ...badges].map(([id, name], i) => (
-            <span className="badge-chip" key={i}><img src={`${import.meta.env.BASE_URL}art/${id}.png`} alt="" loading="lazy" />{name}</span>
-          ))}
-        </div>
+      <p className="wall-hint mono">{rewards.hint}</p>
+      <div className="badge-wall" ref={wall}>
+        {badges.map((id) => (
+          <span className="badge-tile" key={id} title={rewards.badges[id]}><img src={`${import.meta.env.BASE_URL}art/${id}.png`} alt={rewards.badges[id]} loading="lazy" /></span>
+        ))}
       </div>
     </section>
   )

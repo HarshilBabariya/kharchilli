@@ -41,7 +41,7 @@ class RemindersScreen extends StatelessWidget {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(tr('rem_next_up'), style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
             const SizedBox(height: 4),
-            Text(upcoming.isEmpty ? tr('rem_all_quiet') : upcoming.first.key.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.headlineSmall!.copyWith(color: Colors.white)),
+            Text(upcoming.isEmpty ? tr('rem_all_quiet') : upcoming.first.key.label, maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.headlineSmall!.copyWith(color: Colors.white)),
             if (upcoming.isNotEmpty) Text(_when(upcoming.first.value), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
             const SizedBox(height: 14),
             _Timeline([for (final u in monthAhead) Days.between(today, u.value)]),
@@ -70,12 +70,11 @@ class RemindersScreen extends StatelessWidget {
   Future<void> _edit(BuildContext context, Reminder? existing) async {
     final app = AppScope.read(context);
     final r = existing ?? Reminder(title: '', hour: 9, minute: 0, dayOfMonth: DateTime.now().day, month: DateTime.now().month, weekday: DateTime.now().weekday);
-    final title = TextEditingController(text: r.title);
+    final title = TextEditingController(text: r.label);
     final amount = TextEditingController(text: r.amount == null ? '' : Fmt.number(r.amount!).replaceAll(',', ''));
     var repeat = r.repeat, hour = r.hour, minute = r.minute, dayOfMonth = r.dayOfMonth, weekday = r.weekday, month = r.month, autoLog = r.autoLog, enabled = r.enabled;
     var category = r.category;
     var onceDay = r.onceDay == null ? Days.today() : Days.fromKey(r.onceDay!);
-    const presets = ['preset_rent', 'preset_emi', 'preset_electricity', 'preset_insurance', 'preset_school_fees', 'preset_daily_nudge'];
     await showKSheet<void>(
       context,
       title: existing == null ? tr('new_reminder') : tr('edit_reminder'),
@@ -88,7 +87,7 @@ class RemindersScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Wrap(spacing: 8, runSpacing: 8, children: [
-                  for (final p in presets)
+                  for (final p in Reminder.presets)
                     KChip(tr(p), selected: title.text == tr(p), onTap: () => setState(() {
                           title.text = tr(p);
                           repeat = p == 'preset_daily_nudge' ? RepeatRule.daily : RepeatRule.monthly;
@@ -205,7 +204,7 @@ class RemindersScreen extends StatelessWidget {
               const SizedBox(height: 8),
               KButton(tr('delete'), tonal: true, danger: true, onTap: () async {
                 final nav = Navigator.of(sheet);
-                if (await confirm(sheet, title: tr('delete_reminder_q', [existing.title]), body: tr('delete_reminder_body'), action: tr('delete'))) {
+                if (await confirm(sheet, title: tr('delete_reminder_q', [existing.label]), body: tr('delete_reminder_body'), action: tr('delete'))) {
                   nav.pop();
                   await app.deleteReminder(existing);
                 }
@@ -239,7 +238,7 @@ class _ReminderCard extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium),
+                Text(r.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleMedium),
                 Text('$when · ${tr(r.repeat.labelKey)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall),
               ]),
             ),

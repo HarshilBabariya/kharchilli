@@ -22,6 +22,11 @@ Steps for Google Play (upload key and four repo secrets) and the App Store (Appl
 ## Version history
 | Version | Date | Notes |
 |---|---|---|
+| 1.11.4 | 2026-11-20 | Shopping − and +, hide amounts on widgets, tests in the build; website in Hindi and Gujarati with a new 3D tour |
+| 1.11.3 | 2026-11-20 | Reminder names and shortcut labels follow the language |
+| 1.11.2 | 2026-11-20 | Shopping counts and widget, website 3D tour |
+| 1.11.1 | 2026-11-20 | Payment capture: banner tap and smarter categories |
+| 1.11.0 | 2026-11-20 | Four home-screen widgets, redesigned website |
 | 1.10.4 | 2026-11-19 | Website store links for Android and iOS |
 | 1.10.3 | 2026-11-19 | Share cards no longer overflow |
 | 1.10.2 | 2026-11-19 | Real share card styles, themed Undo, removable khata payments |
