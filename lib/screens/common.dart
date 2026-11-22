@@ -218,8 +218,11 @@ class RewardTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final cs = context.cs;
-    final owned = app.isUnlocked(item.id);
+    final permOwned = app.isPermanentlyOwned(item.id);
+    final tempRem = app.tempUnlockRemainingForItem(item.id);
+    final unlocked = permOwned || tempRem != null;
     final small = context.tt.labelSmall!.copyWith(fontSize: 10.5);
+    String fmtTemp(Duration d) => d.inHours > 0 ? '${d.inHours}h ${d.inMinutes.remainder(60)}m' : '${d.inMinutes}m';
     return Pressable(
       scale: 0.94,
       onTap: onTap,
@@ -230,13 +233,21 @@ class RewardTile extends StatelessWidget {
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Stack(clipBehavior: Clip.none, children: [
             preview,
-            if (!owned) Positioned(right: -4, top: -4, child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: cs.surface, shape: BoxShape.circle, border: Border.all(color: cs.outlineVariant)), child: Icon(Icons.lock_rounded, size: 12, color: cs.onSurfaceVariant))),
+            if (!unlocked) Positioned(right: -4, top: -4, child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: cs.surface, shape: BoxShape.circle, border: Border.all(color: cs.outlineVariant)), child: Icon(Icons.lock_rounded, size: 12, color: cs.onSurfaceVariant))),
           ]),
           const SizedBox(height: 8),
           Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.labelSmall!.copyWith(color: cs.onSurface)),
           const SizedBox(height: 3),
-          if (owned)
-            Text(active ? activeLabel : tr('owned'), maxLines: 1, overflow: TextOverflow.ellipsis, style: small.copyWith(color: active ? good : null))
+          if (active)
+            Text(activeLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: small.copyWith(color: good))
+          else if (permOwned)
+            Text(tr('owned'), maxLines: 1, overflow: TextOverflow.ellipsis, style: small)
+          else if (tempRem != null)
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.timer_outlined, size: 11, color: cs.primary),
+              const SizedBox(width: 3),
+              Text(fmtTemp(tempRem), maxLines: 1, overflow: TextOverflow.ellipsis, style: small.copyWith(color: cs.primary, fontWeight: FontWeight.w700)),
+            ])
           else if (item.pack != null)
             Text(tr('claim_free'), maxLines: 1, overflow: TextOverflow.ellipsis, style: small.copyWith(color: const Color(0xFFFB8C00)))
           else

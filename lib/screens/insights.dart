@@ -11,9 +11,9 @@ import '../ui/charts.dart';
 import '../ui/glyphs.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import 'common.dart';
 import 'export.dart';
 import 'rewards.dart';
-import 'common.dart';
 
 enum _Period { week, month, year }
 

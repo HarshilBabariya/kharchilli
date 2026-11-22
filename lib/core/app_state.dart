@@ -174,14 +174,26 @@ class AppState extends ChangeNotifier {
         RewardKind.feature => 'insights',
       };
 
-  bool isUnlocked(String id) {
+  bool isPermanentlyOwned(String id) {
     if (settings.unlocked.contains(id)) return true;
     final item = RewardCatalog.find(id);
     if (item != null && item.isFree && item.pack == null) return true;
-    if (remainingUnlock(id) != null) return true;
     final cat = item == null ? null : _categoryForItem(item);
-    return cat != null && isCategoryUnlocked(cat);
+    return cat != null && ownProgressOf(cat) >= 100;
   }
+
+  Duration? tempUnlockRemainingForItem(String id) {
+    if (isPermanentlyOwned(id)) return null;
+    final direct = remainingUnlock(id);
+    final item = RewardCatalog.find(id);
+    final cat = item == null ? null : _categoryForItem(item);
+    final catRem = cat == null ? null : remainingUnlock(cat);
+    if (direct == null) return catRem;
+    if (catRem == null) return direct;
+    return direct > catRem ? direct : catRem;
+  }
+
+  bool isUnlocked(String id) => isPermanentlyOwned(id) || tempUnlockRemainingForItem(id) != null;
 
   Future<void> grantTempUnlock(String key, {Duration duration = const Duration(hours: 8)}) async {
     final now = DateTime.now().millisecondsSinceEpoch;

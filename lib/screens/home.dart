@@ -198,24 +198,6 @@ class _Header extends StatelessWidget {
         ),
       ),
       const SizedBox(width: 8),
-      Stack(clipBehavior: Clip.none, children: [
-        RoundIcon(Icons.casino_rounded, onTap: () => open(context, const RewardsScreen(initialTab: 3))),
-        if (app.canFreeSpinToday)
-          Positioned(
-            right: 2,
-            top: 2,
-            child: Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: context.cs.primary,
-                shape: BoxShape.circle,
-                border: Border.all(color: context.cs.surface, width: 1.5),
-              ),
-            ),
-          ),
-      ]),
-      const SizedBox(width: 8),
       RoundIcon(Icons.mic_rounded, filled: true, onTap: () => open(context, const AddExpenseScreen(startWithVoice: true), rise: true)),
     ]);
   }
