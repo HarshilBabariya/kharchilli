@@ -2,7 +2,7 @@
 
 Run from the project root after `flutter create`; see tool/bootstrap.sh. Safe to run twice.
 """
-import pathlib, plistlib, re, shutil, sys
+import os, pathlib, plistlib, re, shutil, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 MARK = 'gharcha-patched'
@@ -59,6 +59,13 @@ CAPTURE = '''        <service
         </service>
 '''
 
+ADMOB_ANDROID_APP_ID = os.environ.get('ADMOB_ANDROID_APP_ID') or 'ca-app-pub-3940256099942544~3347511713'
+ADMOB_IOS_APP_ID = os.environ.get('ADMOB_IOS_APP_ID') or 'ca-app-pub-3940256099942544~1458002511'
+ADMOB_META = f"""        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="{ADMOB_ANDROID_APP_ID}" />
+"""
+
 WIDGETS = {'Spend': ('spend', 'Gharcha · This month'), 'Quick': ('quick', 'Gharcha · Quick add'), 'Today': ('today', 'Gharcha · Today'), 'Bills': ('bills', 'Gharcha · Upcoming bills'), 'Shopping': ('shopping', 'Gharcha · Shopping list')}
 
 RECEIVERS = ''.join(f'''        <receiver android:name=".{name}Widget" android:exported="true" android:label="{label}">
@@ -76,7 +83,7 @@ RECEIVERS = ''.join(f'''        <receiver android:name=".{name}Widget" android:e
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
-    </application>'''
+''' + ADMOB_META + '''    </application>'''
 
 android = ROOT / 'android' / 'app'
 if android.exists():
@@ -126,6 +133,8 @@ if plist_path.exists():
         'NSPhotoLibraryUsageDescription': 'Gharcha opens your photos when you attach a receipt picture to an expense.',
         'NSFaceIDUsageDescription': 'Gharcha can use Face ID instead of your PIN to open your profile.',
         'ITSAppUsesNonExemptEncryption': False,
+        'GADApplicationIdentifier': ADMOB_IOS_APP_ID,
+        'SKAdNetworkItems': [{'SKAdNetworkIdentifier': 'cstr6suwn9.skadnetwork'}],
     })
     with plist_path.open('wb') as f:
         plistlib.dump(plist, f)

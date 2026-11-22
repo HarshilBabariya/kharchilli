@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'core/ad_service.dart';
 import 'core/app_state.dart';
 import 'core/l10n.dart';
 import 'core/models.dart';
@@ -23,6 +24,7 @@ Future<void> main() async {
   await initializeDateFormatting();
   final app = AppState(await Store.open());
   await Notifier.init();
+  await AdService.instance.init();
   await app.load();
   runApp(AppScope(state: app, child: const GharchaApp()));
 }

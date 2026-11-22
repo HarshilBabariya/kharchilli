@@ -135,4 +135,29 @@ void main() {
       expect(Csv.parseDate('soon'), isNull);
     });
   });
+
+  group('SpinWheelCatalog & RewardProgress', () {
+    test('slice weights sum to 100 and pickWeighted covers full range', () {
+      final total = SpinWheelCatalog.slices.fold(0, (sum, s) => sum + s.weight);
+      expect(total, 100);
+      expect(SpinWheelCatalog.pickWeighted(0).id, 'themes');
+      expect(SpinWheelCatalog.pickWeighted(99).id, 'all_access');
+    });
+
+    test('RewardProgress round-trips through Settings JSON', () {
+      final s = Settings()
+        ..rewardProgress = RewardProgress(
+          tempUnlocks: {'themes': 123456789},
+          ownProgress: {'themes': 40},
+          lastFreeSpinDay: 20261122,
+          lastAdSpinDay: 20261122,
+          adSpinsUsedToday: 2,
+        );
+      final restored = Settings.fromJson(s.toJson());
+      expect(restored.rewardProgress.tempUnlocks['themes'], 123456789);
+      expect(restored.rewardProgress.ownProgress['themes'], 40);
+      expect(restored.rewardProgress.lastFreeSpinDay, 20261122);
+      expect(restored.rewardProgress.adSpinsUsedToday, 2);
+    });
+  });
 }

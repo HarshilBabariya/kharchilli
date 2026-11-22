@@ -186,6 +186,12 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 ),
               ]),
               const SizedBox(height: 14),
+              KButton(
+                tr('unlock_watch_video'),
+                icon: Icons.play_circle_filled_rounded,
+                onTap: () => showUnlockSheet(context, featureId: RewardCatalog.insights, featureName: tr('rw_insights')),
+              ),
+              const SizedBox(height: 8),
               KButton(tr('shop'), tonal: true, icon: Icons.storefront_rounded, onTap: () => open(context, const RewardsScreen(initialTab: 2))),
             ]),
           ),

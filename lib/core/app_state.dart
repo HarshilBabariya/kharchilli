@@ -138,7 +138,96 @@ class AppState extends ChangeNotifier {
   Category category(String key) => categories.where((c) => c.key == key).firstOrNull ?? categories.firstWhere((c) => c.key == BuiltInCategories.other);
   List<Category> get sortedCategories => [...categories]..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
   LevelInfo get level => Levels.of(settings.lifetimePoints);
-  bool isUnlocked(String id) => settings.unlocked.contains(id) || (RewardCatalog.find(id)?.isFree ?? false) && RewardCatalog.find(id)?.pack == null;
+  static const maxDailyAdSpins = 3;
+  static const _eightHoursMs = 8 * 60 * 60 * 1000;
+
+  RewardProgress get _rp => settings.rewardProgress;
+
+  bool get isAdFree => isCategoryUnlocked('ad_free') || isCategoryUnlocked('all_access');
+
+  bool get canFreeSpinToday => _rp.lastFreeSpinDay != Days.key(Days.today());
+
+  int get remainingAdSpinsToday {
+    final today = Days.key(Days.today());
+    if (_rp.lastAdSpinDay != today) return maxDailyAdSpins;
+    return (maxDailyAdSpins - _rp.adSpinsUsedToday).clamp(0, maxDailyAdSpins);
+  }
+
+  int ownProgressOf(String categoryId) => (_rp.ownProgress[categoryId] ?? 0).clamp(0, 100);
+
+  Duration? remainingUnlock(String key, {int? nowMs}) {
+    final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
+    final direct = _rp.tempUnlocks[key] ?? 0;
+    final all = _rp.tempUnlocks['all_access'] ?? 0;
+    final best = max(direct, all);
+    return best > now ? Duration(milliseconds: best - now) : null;
+  }
+
+  bool isCategoryUnlocked(String categoryId, {int? nowMs}) {
+    if (ownProgressOf(categoryId) >= 100) return true;
+    return remainingUnlock(categoryId, nowMs: nowMs) != null;
+  }
+
+  String? _categoryForItem(RewardItem item) => switch (item.kind) {
+        RewardKind.theme => 'themes',
+        RewardKind.outfit || RewardKind.hair || RewardKind.accessory => 'avatar',
+        RewardKind.feature => 'insights',
+      };
+
+  bool isUnlocked(String id) {
+    if (settings.unlocked.contains(id)) return true;
+    final item = RewardCatalog.find(id);
+    if (item != null && item.isFree && item.pack == null) return true;
+    if (remainingUnlock(id) != null) return true;
+    final cat = item == null ? null : _categoryForItem(item);
+    return cat != null && isCategoryUnlocked(cat);
+  }
+
+  Future<void> grantTempUnlock(String key, {Duration duration = const Duration(hours: 8)}) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final base = max(_rp.tempUnlocks[key] ?? 0, now);
+    _rp.tempUnlocks[key] = base + duration.inMilliseconds;
+    await _persist();
+  }
+
+  /// Applies a Spin-to-Own win: 8-hour full unlock plus +20% permanent ownership progress.
+  /// If an ownable category is already at 100%, converts the win to +8 hours of Ad-Free instead.
+  Future<({bool convertedToAdFree, int newPercent})> applySpinWin(SpinSlice slice, {required bool usedAd}) async {
+    final today = Days.key(Days.today());
+    if (usedAd) {
+      if (_rp.lastAdSpinDay != today) {
+        _rp.lastAdSpinDay = today;
+        _rp.adSpinsUsedToday = 0;
+      }
+      _rp.adSpinsUsedToday++;
+    } else {
+      _rp.lastFreeSpinDay = today;
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    void extend(String id) {
+      final base = max(_rp.tempUnlocks[id] ?? 0, now);
+      _rp.tempUnlocks[id] = base + _eightHoursMs;
+    }
+
+    if (slice.ownable) {
+      final cur = ownProgressOf(slice.id);
+      if (cur >= 100) {
+        extend('ad_free');
+        await _persist();
+        return (convertedToAdFree: true, newPercent: 100);
+      }
+      final next = (cur + 20).clamp(0, 100);
+      _rp.ownProgress[slice.id] = next;
+      extend(slice.id);
+      await _persist();
+      return (convertedToAdFree: false, newPercent: next);
+    }
+
+    extend(slice.id);
+    await _persist();
+    return (convertedToAdFree: false, newPercent: 0);
+  }
 
   int get streak {
     if (settings.lastLogDay == 0) return 0;
@@ -1176,7 +1265,7 @@ class AppState extends ChangeNotifier {
           for (var slot = 0; slot < 7; slot++) {
             final line = copy();
             final when = next.add(Duration(days: slot));
-            await Notifier.schedule(NotificationIds.reminder(r.id, slot), channel, when, line[0], line[1], route: route, repeat: slot == 6 ? DateTimeComponents.time : null);
+            await Notifier.schedule(NotificationIds.reminder(r.id, slot), channel, when, line[0], line[1], route: route, repeat: DateTimeComponents.dayOfWeekAndTime);
           }
         } else {
           final line = copy();

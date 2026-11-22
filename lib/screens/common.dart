@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../core/ad_service.dart';
 import '../core/app_state.dart';
 import '../core/catalogs.dart';
 import '../core/format.dart';
@@ -14,6 +15,7 @@ import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'add_expense.dart';
 import 'categories.dart';
+import 'rewards.dart';
 
 class ExpenseTile extends StatelessWidget {
   const ExpenseTile(this.expense, {super.key});
@@ -243,4 +245,58 @@ class RewardTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Bottom sheet prompting the user to watch a short rewarded video for an 8-hour unlock
+/// or jump to the Spin & Own wheel to build permanent ownership progress.
+Future<void> showUnlockSheet(
+  BuildContext context, {
+  required String featureId,
+  required String featureName,
+  int? pointsShortfall,
+  VoidCallback? onUnlocked,
+}) {
+  return showKSheet<void>(
+    context,
+    title: featureName,
+    builder: (sheet) {
+      final app = AppScope.read(sheet);
+      return Column(children: [
+        Icon(Icons.lock_open_rounded, size: 44, color: sheet.cs.primary),
+        const SizedBox(height: 10),
+        if (pointsShortfall != null && pointsShortfall > 0) ...[
+          Text(tr('need_more_points', [pointsShortfall, featureName]), textAlign: TextAlign.center, style: sheet.tt.titleSmall),
+          const SizedBox(height: 6),
+        ],
+        Text(tr('unlock_ad_body'), textAlign: TextAlign.center, style: sheet.tt.bodyMedium),
+        const SizedBox(height: 18),
+        KButton(
+          tr('unlock_watch_video'),
+          icon: Icons.play_circle_filled_rounded,
+          onTap: () {
+            AdService.instance.showRewardedAd(
+              onRewardEarned: () async {
+                await app.grantTempUnlock(featureId);
+                if (!sheet.mounted) return;
+                Navigator.of(sheet).pop();
+                toast(context, tr('unlock_granted_8h', [featureName]));
+                onUnlocked?.call();
+              },
+              onUnavailable: () => toast(sheet, tr('ad_not_ready')),
+            );
+          },
+        ),
+        const SizedBox(height: 10),
+        KButton(
+          tr('go_to_spin_wheel'),
+          tonal: true,
+          icon: Icons.casino_rounded,
+          onTap: () {
+            Navigator.of(sheet).pop();
+            open(context, const RewardsScreen(initialTab: 3));
+          },
+        ),
+      ]);
+    },
+  );
 }

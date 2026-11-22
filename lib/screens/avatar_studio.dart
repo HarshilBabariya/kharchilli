@@ -60,7 +60,14 @@ class _AvatarStudioScreenState extends State<AvatarStudioScreen> {
       final ok = await app.unlock(item);
       if (!mounted) return;
       if (!ok) {
-        toast(context, item.pack != null ? tr('pack_only', [item.pack!.label]) : tr('need_more_points', [item.cost - app.settings.points, item.name]));
+        if (item.pack != null) {
+          toast(context, tr('pack_only', [item.pack!.label]));
+        } else {
+          await showUnlockSheet(context, featureId: item.id, featureName: item.name, pointsShortfall: item.cost - app.settings.points, onUnlocked: () {
+            _set(next);
+            _play(AvatarAction.spin);
+          });
+        }
         return;
       }
       toast(context, tr('unlocked_msg', [item.name]));

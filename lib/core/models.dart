@@ -911,6 +911,78 @@ enum ThemeModeSetting { system, light, dark }
 enum NotifTone { spicy, mild, quiet }
 
 /// Everything that is one-per-household: preferences, the points profile and small keyed sets.
+class SpinSlice {
+  const SpinSlice({
+    required this.id,
+    required this.labelKey,
+    required this.weight,
+    required this.colorValue,
+    required this.ownable,
+  });
+
+  final String id;
+  final String labelKey;
+  final int weight;
+  final int colorValue;
+  final bool ownable;
+}
+
+class SpinWheelCatalog {
+  static const slices = <SpinSlice>[
+    SpinSlice(id: 'themes', labelKey: 'spin_slice_themes', weight: 25, colorValue: 0xFFE53935, ownable: true),
+    SpinSlice(id: 'sfx', labelKey: 'spin_slice_sfx', weight: 20, colorValue: 0xFFFB8C00, ownable: true),
+    SpinSlice(id: 'avatar', labelKey: 'spin_slice_avatar', weight: 20, colorValue: 0xFF8E24AA, ownable: true),
+    SpinSlice(id: 'insights', labelKey: 'spin_slice_insights', weight: 15, colorValue: 0xFF1E88E5, ownable: true),
+    SpinSlice(id: 'ad_free', labelKey: 'spin_slice_ad_free', weight: 10, colorValue: 0xFF43A047, ownable: false),
+    SpinSlice(id: 'all_access', labelKey: 'spin_slice_all_access', weight: 10, colorValue: 0xFFFFB300, ownable: false),
+  ];
+
+  static SpinSlice pickWeighted(int roll0To99) {
+    var acc = 0;
+    for (final s in slices) {
+      acc += s.weight;
+      if (roll0To99 < acc) return s;
+    }
+    return slices.first;
+  }
+}
+
+class RewardProgress {
+  RewardProgress({
+    Map<String, int>? tempUnlocks,
+    Map<String, int>? ownProgress,
+    this.lastFreeSpinDay = 0,
+    this.lastAdSpinDay = 0,
+    this.adSpinsUsedToday = 0,
+  })  : tempUnlocks = tempUnlocks ?? {},
+        ownProgress = ownProgress ?? {};
+
+  final Map<String, int> tempUnlocks;
+  final Map<String, int> ownProgress;
+  int lastFreeSpinDay;
+  int lastAdSpinDay;
+  int adSpinsUsedToday;
+
+  Json toJson() => {
+        'tempUnlocks': tempUnlocks,
+        'ownProgress': ownProgress,
+        'lastFreeSpinDay': lastFreeSpinDay,
+        'lastAdSpinDay': lastAdSpinDay,
+        'adSpinsUsedToday': adSpinsUsedToday,
+      };
+
+  static RewardProgress fromJson(Json? j) {
+    if (j == null) return RewardProgress();
+    return RewardProgress(
+      tempUnlocks: ((j['tempUnlocks'] ?? const {}) as Map).map((k, v) => MapEntry('$k', (v as num).toInt())),
+      ownProgress: ((j['ownProgress'] ?? const {}) as Map).map((k, v) => MapEntry('$k', (v as num).toInt())),
+      lastFreeSpinDay: (j['lastFreeSpinDay'] as num?)?.toInt() ?? 0,
+      lastAdSpinDay: (j['lastAdSpinDay'] as num?)?.toInt() ?? 0,
+      adSpinsUsedToday: (j['adSpinsUsedToday'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 class Settings {
   bool onboarded = false;
   String language = 'en';
@@ -958,6 +1030,7 @@ class Settings {
   Set<String> festivalsSeen = {};
   Set<String> festivalsClaimed = {};
   String festivalThemeSkipped = '';
+  RewardProgress rewardProgress = RewardProgress();
 
   Json toJson() => {
         'onboarded': onboarded,
@@ -996,6 +1069,7 @@ class Settings {
         'festivalsSeen': festivalsSeen.toList(),
         'festivalsClaimed': festivalsClaimed.toList(),
         'festivalThemeSkipped': festivalThemeSkipped,
+        'rewardProgress': rewardProgress.toJson(),
       };
 
   static Settings fromJson(Json j) {
@@ -1036,7 +1110,8 @@ class Settings {
       ..budgetAlertsSent = set<String>('budgetAlertsSent')
       ..festivalsSeen = set<String>('festivalsSeen')
       ..festivalsClaimed = set<String>('festivalsClaimed')
-      ..festivalThemeSkipped = j['festivalThemeSkipped'] as String? ?? '';
+      ..festivalThemeSkipped = j['festivalThemeSkipped'] as String? ?? ''
+      ..rewardProgress = RewardProgress.fromJson((j['rewardProgress'] as Map?)?.cast<String, dynamic>());
   }
 }
 

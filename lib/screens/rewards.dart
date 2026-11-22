@@ -10,6 +10,7 @@ import '../ui/avatar.dart';
 import '../ui/charts.dart';
 import '../ui/effects.dart';
 import '../ui/glyphs.dart';
+import '../ui/spin_wheel.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'cards.dart';
@@ -81,11 +82,12 @@ class _RewardsScreenState extends State<RewardsScreen> {
           ]),
         ),
         const SizedBox(height: 14),
-        Segmented<int>(options: {0: tr('tab_history'), 1: tr('tab_badges'), 2: tr('shop')}, value: _tab, onChanged: (i) => setState(() => _tab = i)),
+        Segmented<int>(options: {0: tr('tab_history'), 1: tr('tab_badges'), 2: tr('shop'), 3: tr('tab_spin')}, value: _tab, onChanged: (i) => setState(() => _tab = i)),
         const SizedBox(height: 6),
         if (_tab == 0) ..._history(context, app),
         if (_tab == 1) ..._badges(context, statuses),
         if (_tab == 2) ..._shop(context, app),
+        if (_tab == 3) const SpinWheelSection(),
       ],
     );
   }
@@ -156,7 +158,11 @@ class _RewardsScreenState extends State<RewardsScreen> {
         final ok = await app.unlock(item);
         if (!context.mounted) return;
         if (!ok) {
-          toast(context, item.pack != null ? tr('pack_only', [item.pack!.label]) : tr('need_more_points', [item.cost - app.settings.points, item.name]));
+          if (item.pack != null) {
+            toast(context, tr('pack_only', [item.pack!.label]));
+          } else {
+            await showUnlockSheet(context, featureId: item.id, featureName: item.name, pointsShortfall: item.cost - app.settings.points);
+          }
           return;
         }
         HapticFeedback.heavyImpact();
