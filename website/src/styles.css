@@ -331,11 +331,20 @@ img { display: block; }
 .ladder ol { display: flex; flex-wrap: wrap; gap: 8px; }
 .level { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px; background: color-mix(in srgb, var(--p) calc(6% + var(--i) * 2.4%), #fff); font-weight: 600; font-size: 0.9rem; }
 .level span { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--grad); color: #fff; font-size: 0.75rem; }
-.wall-hint { margin: 30px 0 12px; color: var(--muted); }
+.wall-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 30px 0 14px; min-height: 28px; }
+.wall-hint { margin: 0; color: var(--muted); }
+.wall-picked { font-family: var(--font-display); font-size: 0.8rem; font-weight: 600; color: var(--p); background: color-mix(in srgb, var(--p) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--p) 22%, transparent); padding: 4px 12px; border-radius: 999px; animation: badgePillIn 240ms cubic-bezier(0.22, 1.4, 0.36, 1) both; }
+@keyframes badgePillIn { from { opacity: 0; transform: translateY(4px) scale(0.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .badge-wall { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 10px; }
-.badge-tile { aspect-ratio: 1; display: grid; place-items: center; border-radius: 20px; background: var(--card); cursor: pointer; box-shadow: 0 8px 22px -18px rgba(29, 21, 23, 0.5); will-change: transform; }
-.badge-tile img { width: 70%; height: 70%; object-fit: contain; pointer-events: none; }
-@media (max-width: 900px) { .badge-wall { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.badge-tile { position: relative; aspect-ratio: 1; padding: 0; border: 1px solid var(--line); display: grid; place-items: center; border-radius: 20px; background: var(--card); cursor: pointer; box-shadow: 0 8px 22px -18px rgba(29, 21, 23, 0.45); will-change: transform; transition: border-color 200ms ease, box-shadow 220ms ease, background 200ms ease; }
+.badge-tile img { width: 70%; height: 70%; object-fit: contain; pointer-events: none; transition: transform 220ms cubic-bezier(0.22, 1.4, 0.36, 1); }
+.badge-tile:hover, .badge-tile:focus-visible { z-index: 4; outline: none; border-color: color-mix(in srgb, var(--p) 40%, transparent); box-shadow: 0 14px 28px -16px color-mix(in srgb, var(--p) 45%, rgba(29, 21, 23, 0.35)); }
+.badge-tile:hover img, .badge-tile:focus-visible img { transform: translateY(-2px) scale(1.1); }
+.badge-tile.is-selected { border-color: color-mix(in srgb, var(--p) 45%, transparent); background: color-mix(in srgb, var(--p) 4%, var(--card)); }
+.badge-tile.is-popped { z-index: 5; box-shadow: 0 0 0 4px color-mix(in srgb, var(--p) 18%, transparent), 0 14px 28px -14px color-mix(in srgb, var(--p) 45%, transparent); }
+.badge-tile::after { content: attr(data-label); position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translate(-50%, 6px) scale(0.95); padding: 5px 10px; border-radius: 999px; background: var(--text); color: #fff; font-family: var(--font-display); font-size: 0.72rem; font-weight: 600; line-height: 1.2; white-space: nowrap; pointer-events: none; opacity: 0; box-shadow: 0 10px 22px -10px rgba(29, 21, 23, 0.55); transition: opacity 160ms ease, transform 200ms cubic-bezier(0.22, 1.4, 0.36, 1); z-index: 10; }
+.badge-tile:hover::after, .badge-tile:focus-visible::after { opacity: 1; transform: translate(-50%, 0) scale(1); }
+@media (max-width: 900px) { .badge-wall { grid-template-columns: repeat(6, minmax(0, 1fr)); } .badge-tile::after { display: none; } }
 
 .builds { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .build { position: relative; padding: 24px; border-radius: var(--radius); background: var(--card); display: flex; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px -22px rgba(29, 21, 23, 0.4); }

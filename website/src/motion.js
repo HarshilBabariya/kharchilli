@@ -153,27 +153,82 @@ export function fanCards(row) {
   return () => deal.revert()
 }
 
-// Badges ripple outwards from the one that is pressed, and once from the middle when the wall scrolls into view.
+// Badges cascade smoothly into view on scroll and send a crisp, non-overlapping ripple when pressed.
 export function badgeWall(wall) {
+  if (!wall) return () => {}
   const tiles = [...wall.children]
+  if (still()) return () => {}
+
   const grid = () => {
-    const cols = tiles.filter((tile) => tile.offsetTop === tiles[0].offsetTop).length
+    const cols = Math.max(1, tiles.filter((tile) => tile.offsetTop === tiles[0].offsetTop).length)
     return [cols, Math.ceil(tiles.length / cols)]
   }
-  const wave = (from) => animate(tiles, {
-    scale: [{ to: 1.32, duration: 220 }, { to: 1, duration: 520 }],
-    rotate: [{ to: 9, duration: 220 }, { to: 0, duration: 520 }],
-    delay: stagger(42, { grid: grid(), from }),
-    ease: 'inOutQuad'
-  })
-  const press = (event) => {
-    const index = tiles.indexOf(event.target.closest('.badge-tile'))
-    if (index >= 0) wave(index)
+
+  let activeWave = null
+  let activePop = null
+  let poppedTile = null
+  let popTimer = 0
+
+  // Smooth staggered pop-in on first scroll reveal
+  utils.set(tiles, { opacity: 0, translateY: 16, scale: 0.88 })
+  const reveal = () => {
+    activeWave?.cancel()
+    activeWave = animate(tiles, {
+      opacity: [0, 1],
+      translateY: [16, 0],
+      scale: [0.88, 1],
+      duration: 540,
+      delay: stagger(24, { grid: grid(), from: 'center' }),
+      ease: 'outBack(1.3)'
+    })
   }
+
+  // Tactile, tight ripple on click without colliding tiles
+  const wave = (from) => {
+    activeWave?.cancel()
+    activeWave = animate(tiles, {
+      translateY: [{ to: -7, duration: 170, ease: 'outQuad' }, { to: 0, duration: 420, ease: 'outBack(1.4)' }],
+      scale: [{ to: 1.07, duration: 170, ease: 'outQuad' }, { to: 1, duration: 420, ease: 'outBack(1.2)' }],
+      delay: stagger(28, { grid: grid(), from })
+    })
+  }
+
+  const press = (event) => {
+    const tile = event.target.closest('.badge-tile')
+    const index = tiles.indexOf(tile)
+    if (index < 0) return
+    wave(index)
+    const img = tile.querySelector('img')
+    if (img) {
+      activePop?.cancel()
+      activePop = animate(img, {
+        scale: [{ to: 1.2, duration: 160, ease: 'outQuad' }, { to: 1, duration: 360, ease: 'outBack(1.8)' }],
+        rotate: [{ to: -7, duration: 110 }, { to: 6, duration: 130 }, { to: 0, duration: 220 }],
+        ease: 'outQuad'
+      })
+    }
+    poppedTile?.classList.remove('is-popped')
+    tile.classList.add('is-popped')
+    poppedTile = tile
+    clearTimeout(popTimer)
+    popTimer = setTimeout(() => tile.classList.remove('is-popped'), 650)
+  }
+
   wall.addEventListener('click', press)
-  const seen = onScroll({ target: wall, onEnter: () => wave('center') })
+  let revealed = false
+  const seen = onScroll({
+    target: wall,
+    onEnter: () => {
+      if (revealed) return
+      revealed = true
+      reveal()
+    }
+  })
   return () => {
     wall.removeEventListener('click', press)
+    clearTimeout(popTimer)
+    activeWave?.cancel()
+    activePop?.cancel()
     seen.revert()
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { animate, stagger, utils } from 'animejs'
 import { badges } from '../content.js'
 import { useCopy } from '../i18n.jsx'
@@ -9,6 +9,7 @@ export default function Rewards() {
   const ref = useReveal('.point, .level, .reward-xp')
   const xp = useRef(null)
   const wall = useRef(null)
+  const [picked, setPicked] = useState(null)
   const { t: { rewards } } = useCopy()
   useEffect(() => badgeWall(wall.current), [])
   useEffect(() => {
@@ -52,10 +53,22 @@ export default function Rewards() {
           </ol>
         </div>
       </div>
-      <p className="wall-hint mono">{rewards.hint}</p>
+      <div className="wall-head">
+        <p className="wall-hint mono">{rewards.hint}</p>
+        {picked && <span className="wall-picked" key={picked}>{rewards.badges[picked]}</span>}
+      </div>
       <div className="badge-wall" ref={wall}>
         {badges.map((id) => (
-          <span className="badge-tile" key={id} title={rewards.badges[id]}><img src={`${import.meta.env.BASE_URL}art/${id}.png`} alt={rewards.badges[id]} loading="lazy" /></span>
+          <button
+            type="button"
+            className={`badge-tile${picked === id ? ' is-selected' : ''}`}
+            key={id}
+            data-label={rewards.badges[id]}
+            aria-label={rewards.badges[id]}
+            onClick={() => setPicked(id)}
+          >
+            <img src={`${import.meta.env.BASE_URL}art/${id}.png`} alt={rewards.badges[id]} loading="lazy" />
+          </button>
         ))}
       </div>
     </section>
