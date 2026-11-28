@@ -5,7 +5,6 @@ import 'package:quick_actions/quick_actions.dart';
 import '../core/app_state.dart';
 import '../core/l10n.dart';
 import '../core/notifier.dart';
-import '../ui/ad_banner.dart';
 import '../ui/effects.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
@@ -148,13 +147,7 @@ class _ShellState extends State<Shell> {
               ),
             ),
         ]),
-        bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_tab == 1 || _tab == 2) const AdBannerBar(),
-            _NavBar(tab: _tab, onSelect: _select, onAdd: () => open(context, const AddExpenseScreen(), rise: true)),
-          ],
-        ),
+        bottomNavigationBar: _NavBar(tab: _tab, onSelect: _select, onAdd: () => open(context, const AddExpenseScreen(), rise: true)),
         ),
       ),
     );

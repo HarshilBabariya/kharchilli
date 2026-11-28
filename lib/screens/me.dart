@@ -29,7 +29,7 @@ import 'reminders.dart';
 import 'rewards.dart';
 import 'tour.dart';
 
-const appVersion = '1.11.4';
+const appVersion = '1.12.0';
 
 class MeTab extends StatelessWidget {
   const MeTab({super.key});
@@ -94,7 +94,7 @@ class MeTab extends StatelessWidget {
           NavRow(icon: Icons.track_changes_rounded, color: good, title: tr('budgets'), subtitle: tr('budgets_sub'), onTap: () => open(context, const BudgetsScreen())),
           NavRow(icon: Icons.notifications_active_rounded, color: const Color(0xFFFB8C00), title: tr('reminders_bills'), subtitle: tr('reminders_sub'), onTap: () => open(context, const RemindersScreen())),
           NavRow(icon: Icons.category_rounded, color: const Color(0xFF039BE5), title: tr('categories'), subtitle: tr('categories_sub'), onTap: () => open(context, const CategoriesScreen())),
-          NavRow(icon: Icons.shopping_basket_rounded, color: const Color(0xFF22A861), title: tr('shopping_list'), subtitle: tr('shopping_count', [app.shopping.where((i) => !i.done).length]), onTap: () => open(context, const ShoppingScreen())),
+          NavRow(icon: Icons.shopping_basket_rounded, color: const Color(0xFF22A861), title: tr('shopping_list'), subtitle: trPlural('shopping_count', app.shopping.where((i) => !i.done).length), onTap: () => open(context, const ShoppingScreen())),
           NavRow(icon: Icons.description_rounded, color: const Color(0xFF8D6E63), title: tr('papers'), subtitle: tr('papers_sub'), onTap: () => open(context, const PapersScreen())),
         ]),
         _section(context, tr('views'), [
@@ -108,7 +108,7 @@ class MeTab extends StatelessWidget {
           NavRow(icon: Icons.storefront_rounded, color: const Color(0xFF8D6E63), title: tr('khata'), subtitle: tr('khata_sub'), onTap: () => open(context, const KhataScreen())),
           NavRow(icon: Icons.local_drink_rounded, color: const Color(0xFF29B6F6), title: tr('services'), subtitle: tr('services_sub'), onTap: () => open(context, const ServicesScreen())),
           NavRow(icon: Icons.diamond_rounded, color: const Color(0xFFFFB300), title: tr('savings'), subtitle: tr('savings_sub'), onTap: () => open(context, const SavingsScreen())),
-          if (captureBuild) NavRow(icon: Icons.sms_rounded, color: const Color(0xFF26A69A), title: tr('capture'), subtitle: app.captures.isEmpty ? tr('capture_sub') : tr('capture_pending', [app.captures.length]), onTap: () => open(context, const CaptureScreen())),
+          if (captureBuild) NavRow(icon: Icons.sms_rounded, color: const Color(0xFF26A69A), title: tr('capture'), subtitle: app.captures.isEmpty ? tr('capture_sub') : trPlural('capture_pending', app.captures.length), onTap: () => open(context, const CaptureScreen())),
         ]),
         const SizedBox(height: 22),
         KCard(
@@ -252,6 +252,8 @@ class SettingsScreen extends StatelessWidget {
         Text('Gharcha', style: sheet.tt.headlineSmall),
         const SizedBox(height: 4),
         Pill(tr('version_label', [appVersion])),
+        const SizedBox(height: 10),
+        Text('Crafted by Harshil Babariya', textAlign: TextAlign.center, style: sheet.tt.titleSmall!.copyWith(color: sheet.cs.primary, fontWeight: FontWeight.w700)),
         const SizedBox(height: 14),
         Text(tr('about_footer'), textAlign: TextAlign.center, style: sheet.tt.bodyMedium!.copyWith(color: sheet.cs.onSurfaceVariant)),
       ]),

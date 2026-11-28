@@ -4,6 +4,7 @@ import '../core/app_state.dart';
 import '../core/format.dart';
 import '../core/l10n.dart';
 import '../core/models.dart';
+import '../ui/ad_banner.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'common.dart';
@@ -139,41 +140,58 @@ class _ExpensesTabState extends State<ExpensesTab> {
             ]),
           ),
         if (list.isEmpty) EmptyState(art: 'receipt', title: tr('no_expenses_title'), body: tr('no_expenses_body')),
-        for (final day in days.entries) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
-            child: Row(children: [
-              Expanded(child: Text(Fmt.relativeDay(Days.fromKey(day.key)), style: context.tt.labelMedium)),
-              Text(Fmt.ledger(AppState.net(day.value)), style: context.tt.labelMedium),
-            ]),
-          ),
-          KCard(
-            padding: EdgeInsets.zero,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(26),
-              child: Column(children: [
-                for (final e in day.value)
-                  Dismissible(
-                    key: ValueKey('expense${e.id}'),
-                    background: const _SwipeAction(Icons.copy_rounded, Color(0xFF039BE5), Alignment.centerLeft),
-                    secondaryBackground: const _SwipeAction(Icons.delete_outline_rounded, bad, Alignment.centerRight),
-                    confirmDismiss: (direction) async {
-                      if (direction == DismissDirection.endToStart) return true;
-                      await app.duplicateExpense(e);
-                      if (context.mounted) toast(context, tr('duplicated_msg', [e.title]));
-                      return false;
-                    },
-                    onDismissed: (_) {
-                      toast(context, tr('deleted_msg', [e.title]), onUndo: () => app.restoreExpense(e));
-                      app.deleteExpense(e);
-                      setState(() {});
-                    },
-                    child: Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4), child: ExpenseTile(e)),
-                  ),
-              ]),
-            ),
-          ),
-        ],
+        ...() {
+          final items = <Widget>[];
+          var seen = 0;
+          var nextAdAt = 25;
+          for (final day in days.entries) {
+            items.add(
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+                child: Row(children: [
+                  Expanded(child: Text(Fmt.relativeDay(Days.fromKey(day.key)), style: context.tt.labelMedium)),
+                  Text(Fmt.ledger(AppState.net(day.value)), style: context.tt.labelMedium),
+                ]),
+              ),
+            );
+            items.add(
+              KCard(
+                padding: EdgeInsets.zero,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child: Column(children: [
+                    for (final e in day.value)
+                      Dismissible(
+                        key: ValueKey('expense${e.id}'),
+                        background: const _SwipeAction(Icons.copy_rounded, Color(0xFF039BE5), Alignment.centerLeft),
+                        secondaryBackground: const _SwipeAction(Icons.delete_outline_rounded, bad, Alignment.centerRight),
+                        confirmDismiss: (direction) async {
+                          if (direction == DismissDirection.endToStart) return true;
+                          await app.duplicateExpense(e);
+                          if (context.mounted) toast(context, tr('duplicated_msg', [e.title]));
+                          return false;
+                        },
+                        onDismissed: (_) {
+                          toast(context, tr('deleted_msg', [e.title]), onUndo: () => app.restoreExpense(e));
+                          app.deleteExpense(e);
+                          setState(() {});
+                        },
+                        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4), child: ExpenseTile(e)),
+                      ),
+                  ]),
+                ),
+              ),
+            );
+            seen += day.value.length;
+            if (seen >= nextAdAt) {
+              items.add(InlineAdBanner(key: ValueKey('exp_ad_$nextAdAt')));
+              while (nextAdAt <= seen) {
+                nextAdAt += 25;
+              }
+            }
+          }
+          return items;
+        }(),
       ],
     );
   }
