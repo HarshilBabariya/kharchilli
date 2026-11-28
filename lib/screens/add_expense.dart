@@ -267,97 +267,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
     if (picked != null) setState(() => _day = Days.of(picked));
   }
 
-  Future<void> _pickDateSheet() async {
-    FocusScope.of(context).unfocus();
-    final today = Days.today();
-    final quickDays = {
-      tr('yesterday'): DateTime(today.year, today.month, today.day - 1),
-      tr('today'): today,
-      tr('tomorrow'): DateTime(today.year, today.month, today.day + 1),
-    };
-    await showKSheet<void>(
-      context,
-      title: tr('date'),
-      builder: (sheet) {
-        final cs = sheet.cs;
-        return Column(children: [
-          Row(children: [
-            for (final q in quickDays.entries)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Pressable(
-                    onTap: () {
-                      setState(() => _day = q.value);
-                      Navigator.of(sheet).pop();
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(color: _day == q.value ? cs.primary : cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
-                      child: FittedBox(child: Text(q.key, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _day == q.value ? Colors.white : cs.onSurface))),
-                    ),
-                  ),
-                ),
-              ),
-          ]),
-          const SizedBox(height: 12),
-          NavRow(
-            icon: Icons.calendar_month_rounded,
-            color: const Color(0xFF039BE5),
-            title: tr('date'),
-            subtitle: Fmt.relativeDay(_day),
-            onTap: () async {
-              Navigator.of(sheet).pop();
-              await _pickDate();
-            },
-          ),
-        ]);
-      },
-    );
-  }
-
-  Future<void> _pickModeSheet() async {
-    FocusScope.of(context).unfocus();
-    await showKSheet<void>(
-      context,
-      title: tr('payment_mode'),
-      builder: (sheet) {
-        final cs = sheet.cs;
-        return Row(children: [
-          for (final m in PaymentMode.values)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: Pressable(
-                  scale: 0.92,
-                  onTap: () {
-                    setState(() => _mode = m);
-                    Navigator.of(sheet).pop();
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      color: _mode == m ? m.color.withValues(alpha: sheet.isDark ? 0.3 : 0.14) : cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: _mode == m ? m.color : Colors.transparent, width: 2),
-                    ),
-                    child: Column(children: [
-                      Icon(m.icon, color: _mode == m ? m.color : cs.onSurfaceVariant),
-                      const SizedBox(height: 6),
-                      Text(m.label, maxLines: 1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _mode == m ? cs.onSurface : cs.onSurfaceVariant)),
-                    ]),
-                  ),
-                ),
-              ),
-            ),
-        ]);
-      },
-    );
-  }
-
   Future<void> _pickGroup(AppState app) async {
     final picked = await showKSheet<int>(
       context,
@@ -378,11 +287,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
     if (picked != null) setState(() => _groupId = picked == 0 ? null : picked);
   }
 
-  Future<void> _moreOptionsSheet(AppState app, bool editing) async {
+  Future<void> _moreDetailsSheet(AppState app, bool editing) async {
     FocusScope.of(context).unfocus();
+    final today = Days.today();
+    final quickDays = {
+      tr('yesterday'): DateTime(today.year, today.month, today.day - 1),
+      tr('today'): today,
+      tr('tomorrow'): DateTime(today.year, today.month, today.day + 1),
+    };
     await showKSheet<void>(
       context,
-      title: tr('settings'),
+      title: tr('more_details'),
       builder: (sheet) => StatefulBuilder(
         builder: (sheetCtx, setSheet) {
           void sync(VoidCallback fn) {
@@ -390,27 +305,39 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
             setSheet(() {});
           }
 
+          final cs = sheetCtx.cs;
           final group = app.groups.where((g) => g.id == _groupId).firstOrNull;
           final shares = _shares(group);
 
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            if (!editing) ...[
-              NavRow(
-                icon: Icons.content_paste_go_rounded,
-                color: sheetCtx.cs.primary,
-                title: tr('paste_title'),
-                subtitle: tr('paste_sub'),
-                onTap: () async {
-                  Navigator.of(sheet).pop();
-                  await _paste();
-                },
-              ),
-              const SizedBox(height: 10),
-            ],
-            Text(tr('paid_by'), style: sheetCtx.tt.labelMedium),
-            const SizedBox(height: 8),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              for (final m in app.members) MemberChip(m, selected: _paidBy == m.id, onTap: () => sync(() => _paidBy = m.id)),
+            NavRow(
+              icon: Icons.calendar_month_rounded,
+              color: const Color(0xFF039BE5),
+              title: tr('date'),
+              subtitle: Fmt.relativeDay(_day),
+              onTap: () async {
+                await _pickDate();
+                if (sheetCtx.mounted) setSheet(() {});
+              },
+            ),
+            const SizedBox(height: 6),
+            Row(children: [
+              for (final q in quickDays.entries)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: Pressable(
+                      onTap: () => sync(() => _day = q.value),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: _day == q.value ? cs.primary : cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(14)),
+                        child: FittedBox(child: Text(q.key, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _day == q.value ? Colors.white : cs.onSurface))),
+                      ),
+                    ),
+                  ),
+                ),
             ]),
             if (app.accounts.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -503,36 +430,22 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
   Widget build(BuildContext context) {
     final app = AppScope.of(context);
     final cs = context.cs;
-    final cat = app.category(_category);
     final group = app.groups.where((g) => g.id == _groupId).firstOrNull;
     final shares = _shares(group);
     final canSave = _value > 0 && shares != null && !_saved;
     final editing = widget.editing != null;
     final picks = app.quickPicks(_title.text);
     final accent = _credit ? good : cs.primary;
-    final hasExtras = group != null || _repeat || _photo.isNotEmpty || _note.text.trim().isNotEmpty || _account != null || _paidBy != app.settings.activeMemberId;
+    final cats = app.sortedCategories;
 
-    Widget quickPill({required IconData icon, required Color color, required String label, required VoidCallback onTap}) {
-      return Pressable(
-        scale: 0.94,
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: cs.outlineVariant),
-          ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 17, color: color),
-            const SizedBox(width: 6),
-            Text(label, style: context.tt.labelLarge!.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(width: 2),
-            Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: cs.onSurfaceVariant),
-          ]),
-        ),
-      );
-    }
+    final moreSummary = [
+      Fmt.relativeDay(_day),
+      if (group != null) group.name,
+      if (_account != null) app.accounts.where((a) => a.id == _account).firstOrNull?.name,
+      if (_repeat) tr('repeat_monthly'),
+      if (_photo.isNotEmpty) tr('receipt_photo'),
+      if (_note.text.trim().isNotEmpty) tr('note'),
+    ].whereType<String>().join(' · ');
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -540,40 +453,25 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
         child: Stack(children: [
           SafeArea(
             child: Column(children: [
-              // Compact Google Pay style top bar
+              // Familiar Gharcha top header
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
                 child: Row(children: [
                   RoundIcon(Icons.close_rounded, onTap: () => Navigator.of(context).pop()),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: editing
-                        ? Text(tr('edit_expense'), maxLines: 1, overflow: TextOverflow.ellipsis, style: context.tt.titleLarge)
-                        : Segmented<bool>(
-                            options: {false: tr('kind_expense'), true: tr('kind_credit')},
-                            value: _credit,
-                            color: accent,
-                            onChanged: (credit) => setState(() => _credit = credit),
-                          ),
-                  ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(editing ? tr('edit_expense') : _credit ? tr('add_credit') : tr('add_transaction'), style: context.tt.headlineSmall)),
                   if (editing) ...[
                     RoundIcon(Icons.ios_share_rounded, onTap: () => shareCard(context, ReceiptCard(widget.editing!), file: 'gharcha-expense', text: '${widget.editing!.title} · ${Fmt.ledger(widget.editing!.amount)}')),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     RoundIcon(Icons.delete_outline_rounded, onTap: _delete),
-                  ] else ...[
-                    Tooltip(
-                      message: tr('voice_title'),
-                      child: Pressable(onTap: _listen, child: _MicPulse(active: _listening)),
-                    ),
                   ],
                 ]),
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
                   physics: const BouncingScrollPhysics(),
-                  child: Column(children: [
+                  children: [
                     if (widget.firstTime)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
@@ -591,162 +489,241 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> with SingleTickerPr
                           ]),
                         ),
                       ),
-                    if (_listening)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(18)),
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(tr('voice_prompt'), style: context.tt.titleSmall!.copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w700)),
-                            Text(_heard.isNotEmpty ? _heard : tr('voice_subtitle'), maxLines: 2, overflow: TextOverflow.ellipsis, style: context.tt.bodySmall),
-                          ]),
+                    // Speak & Paste compact row right above amount
+                    Row(children: [
+                      Expanded(
+                        child: Pressable(
+                          onTap: _listen,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: _listening ? cs.primary : cs.primaryContainer,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Row(children: [
+                              _MicPulse(active: _listening),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _listening ? (_heard.isNotEmpty ? _heard : tr('voice_prompt')) : tr('voice_title'),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: context.tt.labelLarge!.copyWith(color: _listening ? Colors.white : cs.onPrimaryContainer, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ]),
+                          ),
                         ),
                       ),
-                    const SizedBox(height: 14),
-                    // Center Google Pay style editable amount with full cursor support
-                    ScaleTransition(
-                      scale: Tween(begin: 1.0, end: 1.06).animate(CurvedAnimation(parent: _bump, curve: Curves.easeOut, reverseCurve: Curves.easeIn)),
-                      child: Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-                        Text(
-                          _credit ? '+${Fmt.symbol}' : Fmt.symbol,
-                          style: context.tt.displaySmall!.copyWith(fontSize: 38, color: accent.withValues(alpha: 0.8)),
-                        ),
-                        const SizedBox(width: 6),
-                        IntrinsicWidth(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(minWidth: 54, maxWidth: 240),
-                            child: TextField(
-                              controller: _amountCtrl,
-                              focusNode: _amountFocus,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              textAlign: TextAlign.center,
-                              cursorColor: accent,
-                              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d{0,9}(\.\d{0,2})?$'))],
-                              style: context.tt.displaySmall!.copyWith(fontSize: 56, color: accent, fontWeight: FontWeight.w700),
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                filled: false,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                                hintText: '0',
-                                hintStyle: context.tt.displaySmall!.copyWith(fontSize: 56, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                      if (!editing) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Tooltip(
+                            message: tr('paste_sub'),
+                            child: Pressable(
+                              onTap: _paste,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: cs.surface,
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(color: cs.outlineVariant),
                               ),
-                              onChanged: (_) => setState(() {}),
+                              child: Row(children: [
+                                Icon(Icons.content_paste_go_rounded, size: 19, color: cs.primary),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    tr('paste_title'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: context.tt.labelLarge!.copyWith(fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ]),
                             ),
+                          ),
+                          ),
+                        ),
+                      ],
+                    ]),
+                    if (_listening)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(tr('voice_subtitle'), textAlign: TextAlign.center, style: context.tt.bodySmall),
+                      ),
+                    const SizedBox(height: 10),
+                    Segmented<bool>(
+                      options: {false: tr('kind_expense'), true: tr('kind_credit')},
+                      value: _credit,
+                      color: accent,
+                      onChanged: (credit) => setState(() => _credit = credit),
+                    ),
+                    // Editable amount with native cursor (supports editing any digit)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Column(children: [
+                        ScaleTransition(
+                          scale: Tween(begin: 1.0, end: 1.08).animate(CurvedAnimation(parent: _bump, curve: Curves.easeOut, reverseCurve: Curves.easeIn)),
+                          child: Row(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+                            Text(_credit ? '+${Fmt.symbol}' : Fmt.symbol, style: context.tt.displaySmall!.copyWith(fontSize: 36, color: accent.withValues(alpha: 0.78))),
+                            const SizedBox(width: 6),
+                            IntrinsicWidth(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(minWidth: 52, maxWidth: 240),
+                                child: TextField(
+                                  controller: _amountCtrl,
+                                  focusNode: _amountFocus,
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                  textAlign: TextAlign.center,
+                                  cursorColor: accent,
+                                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d{0,9}(\.\d{0,2})?$'))],
+                                  style: context.tt.displaySmall!.copyWith(fontSize: 54, color: accent, fontWeight: FontWeight.w700),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    filled: false,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                    hintText: '0',
+                                    hintStyle: context.tt.displaySmall!.copyWith(fontSize: 54, color: cs.onSurfaceVariant.withValues(alpha: 0.45)),
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ),
+                            ),
+                          ]),
+                        ),
+                        if (_credit) Padding(padding: const EdgeInsets.only(top: 4), child: Text(tr('credit_hint'), textAlign: TextAlign.center, style: context.tt.bodySmall)),
+                      ]),
+                    ),
+                    // Main compact card: What for + 1 row Category + 1 row Payment + 1 row Paid by
+                    KCard(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        KField(controller: _title, label: tr('what_for'), hint: tr('what_for_hint'), onChanged: (_) => setState(() {})),
+                        if (!editing && picks.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            height: 36,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              clipBehavior: Clip.none,
+                              children: [
+                                for (final p in picks)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: KChip('${p.title} · ${Fmt.money(p.amount)}', selected: false, icon: app.category(p.category).icon, color: app.category(p.category).tint, onTap: () => _usePick(p)),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 14),
+                        Row(children: [
+                          Expanded(child: Text(tr('category'), style: context.tt.labelMedium)),
+                          Pressable(
+                            onTap: () async {
+                              FocusScope.of(context).unfocus();
+                              final picked = await pickCategory(context, selected: _category);
+                              if (picked != null) setState(() => _category = picked);
+                            },
+                            child: Text(tr('see_all'), style: context.tt.labelMedium!.copyWith(color: cs.primary, fontWeight: FontWeight.w700)),
+                          ),
+                        ]),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 40,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            clipBehavior: Clip.none,
+                            children: [
+                              for (final c in cats)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: KChip(
+                                    c.name,
+                                    selected: _category == c.key,
+                                    icon: c.icon,
+                                    color: c.tint,
+                                    onTap: () => setState(() => _category = c.key),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(tr('payment_mode'), style: context.tt.labelMedium),
+                        const SizedBox(height: 8),
+                        Row(children: [
+                          for (final m in PaymentMode.values)
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 3),
+                                child: Pressable(
+                                  scale: 0.92,
+                                  onTap: () => setState(() => _mode = m),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: _mode == m ? m.color.withValues(alpha: context.isDark ? 0.3 : 0.14) : cs.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: _mode == m ? m.color : Colors.transparent, width: 2),
+                                    ),
+                                    child: Column(children: [
+                                      Icon(m.icon, size: 20, color: _mode == m ? m.color : cs.onSurfaceVariant),
+                                      const SizedBox(height: 3),
+                                      Text(m.label, maxLines: 1, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: _mode == m ? cs.onSurface : cs.onSurfaceVariant)),
+                                    ]),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ]),
+                        const SizedBox(height: 14),
+                        Text(tr('paid_by'), style: context.tt.labelMedium),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 42,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            clipBehavior: Clip.none,
+                            children: [
+                              for (final m in app.members)
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: MemberChip(m, selected: _paidBy == m.id, onTap: () => setState(() => _paidBy = m.id)),
+                                ),
+                            ],
                           ),
                         ),
                       ]),
                     ),
-                    if (_credit) Padding(padding: const EdgeInsets.only(top: 4), child: Text('${tr('add_credit')} · ${tr('credit_hint')}', textAlign: TextAlign.center, style: context.tt.bodySmall)),
-                    const SizedBox(height: 14),
-                    // Compact GPay-style "Add a note / What for" pill input
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 280),
-                      child: Semantics(
-                        label: tr('what_for'),
-                        child: TextField(
-                          controller: _title,
-                          textAlign: TextAlign.center,
-                          textCapitalization: TextCapitalization.sentences,
-                          style: context.tt.titleSmall,
-                          decoration: InputDecoration(
-                            hintText: tr('what_for_hint'),
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          filled: true,
-                          fillColor: cs.surface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(999), borderSide: BorderSide(color: cs.outlineVariant)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(999), borderSide: BorderSide(color: cs.outlineVariant)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(999), borderSide: BorderSide(color: accent, width: 1.5)),
-                        ),
-                        onChanged: (_) => setState(() {}),
-                        ),
+                    const SizedBox(height: 12),
+                    // Secondary details tucked cleanly below
+                    KCard(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      child: NavRow(
+                        icon: Icons.tune_rounded,
+                        color: cs.primary,
+                        title: tr('more_details'),
+                        subtitle: moreSummary,
+                        onTap: () => _moreDetailsSheet(app, editing),
                       ),
                     ),
-                    if (!editing && picks.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          for (final p in picks.take(4))
-                            KChip('${p.title} · ${Fmt.money(p.amount)}', selected: false, icon: app.category(p.category).icon, color: app.category(p.category).tint, onTap: () => _usePick(p)),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    // Zero-scroll tappable picker pills
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        quickPill(
-                          icon: cat.icon,
-                          color: cat.tint,
-                          label: cat.name,
-                          onTap: () async {
-                            FocusScope.of(context).unfocus();
-                            final picked = await pickCategory(context, selected: _category);
-                            if (picked != null) setState(() => _category = picked);
-                          },
-                        ),
-                        quickPill(
-                          icon: _mode.icon,
-                          color: _mode.color,
-                          label: _mode.label,
-                          onTap: _pickModeSheet,
-                        ),
-                        quickPill(
-                          icon: Icons.calendar_month_rounded,
-                          color: const Color(0xFF039BE5),
-                          label: Fmt.relativeDay(_day),
-                          onTap: _pickDateSheet,
-                        ),
-                        if (group != null)
-                          quickPill(
-                            icon: Icons.groups_rounded,
-                            color: const Color(0xFF7C4DFF),
-                            label: group.name,
-                            onTap: () => _moreOptionsSheet(app, editing),
-                          ),
-                      ],
-                    ),
-
-                  ]),
+                  ],
                 ),
               ),
-              // Fixed bottom action bar directly above keyboard
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-                child: Row(children: [
-                  Stack(clipBehavior: Clip.none, children: [
-                    RoundIcon(Icons.tune_rounded, onTap: () => _moreOptionsSheet(app, editing)),
-                    if (hasExtras)
-                      Positioned(
-                        right: 2,
-                        top: 2,
-                        child: Container(width: 9, height: 9, decoration: BoxDecoration(color: accent, shape: BoxShape.circle, border: Border.all(color: cs.surface, width: 1.5))),
-                      ),
-                  ]),
-                  if (!editing) ...[
-                    const SizedBox(width: 8),
-                    RoundIcon(Icons.content_paste_go_rounded, onTap: _paste),
-                  ],
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: KButton(
-                      editing ? tr('save_changes') : _credit ? tr('save_credit') : tr('save_expense'),
-                      icon: Icons.check_rounded,
-                      onTap: canSave ? () => _save(group) : null,
-                    ),
-                  ),
-                ]),
+                padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
+                child: KButton(
+                  editing ? tr('save_changes') : _credit ? tr('save_credit') : tr('save_expense'),
+                  icon: Icons.check_rounded,
+                  onTap: canSave ? () => _save(group) : null,
+                ),
               ),
             ]),
           ),
@@ -793,8 +770,8 @@ class _MicPulseState extends State<_MicPulse> with SingleTickerProviderStateMixi
   Widget build(BuildContext context) {
     final cs = context.cs;
     return SizedBox(
-      width: 44,
-      height: 44,
+      width: 30,
+      height: 30,
       child: AnimatedBuilder(
         animation: _c,
         builder: (_, child) => Stack(alignment: Alignment.center, children: [
@@ -802,15 +779,15 @@ class _MicPulseState extends State<_MicPulse> with SingleTickerProviderStateMixi
             for (final offset in [0.0, 0.5])
               Opacity(
                 opacity: 1 - (_c.value + offset) % 1,
-                child: Transform.scale(scale: 0.6 + 0.9 * ((_c.value + offset) % 1), child: Container(decoration: BoxDecoration(shape: BoxShape.circle, color: cs.primary.withValues(alpha: 0.35)))),
+                child: Transform.scale(scale: 0.6 + 0.9 * ((_c.value + offset) % 1), child: Container(decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.35)))),
               ),
           child!,
         ]),
         child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: widget.active ? cs.primary : cs.primaryContainer),
-          child: Icon(widget.active ? Icons.graphic_eq_rounded : Icons.mic_rounded, color: widget.active ? Colors.white : cs.primary, size: 21),
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: widget.active ? Colors.white : cs.primary),
+          child: Icon(widget.active ? Icons.graphic_eq_rounded : Icons.mic_rounded, color: widget.active ? cs.primary : Colors.white, size: 15),
         ),
       ),
     );

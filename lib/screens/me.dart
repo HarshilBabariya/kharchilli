@@ -26,6 +26,7 @@ import 'insights.dart';
 import 'lists.dart';
 import 'lock.dart';
 import 'reminders.dart';
+import 'report_issue.dart';
 import 'rewards.dart';
 import 'tour.dart';
 
@@ -236,6 +237,7 @@ class SettingsScreen extends StatelessWidget {
           NavRow(icon: Icons.lightbulb_rounded, color: const Color(0xFFFFB300), title: tr('tour_replay'), subtitle: tr('tour_replay_sub'), onTap: () => showTour(context)),
           NavRow(icon: Icons.help_rounded, title: tr('faqs'), subtitle: tr('faqs_sub'), onTap: () => _faqs(context)),
           NavRow(icon: Icons.shield_rounded, color: good, title: tr('privacy'), subtitle: tr('privacy_sub'), onTap: () => showKSheet<void>(context, title: tr('privacy'), builder: (sheet) => Text(tr('privacy_body'), style: sheet.tt.bodyMedium))),
+          NavRow(icon: Icons.bug_report_rounded, color: const Color(0xFFE53935), title: tr('report_issue'), subtitle: tr('report_issue_sub'), onTap: () => open(context, const ReportIssueScreen())),
           NavRow(icon: Icons.info_rounded, title: tr('about_app'), subtitle: tr('about_sub'), onTap: () => _about(context)),
         ]),
       ],

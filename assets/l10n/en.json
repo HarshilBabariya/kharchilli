@@ -1229,7 +1229,22 @@
 "unlock_watch_video": "Watch Video (Unlock 8h)",
 "go_to_spin_wheel": "Go to Spin & Own Wheel",
 "unlock_granted_8h": "Unlocked %s for 8 hours!",
-"ad_not_ready": "Ad is still loading—try again in a moment."
+"ad_not_ready": "Ad is still loading—try again in a moment.",
+"more_details": "More details",
+"report_issue": "Report an issue",
+"report_issue_sub": "Send a bug report or feedback",
+"report_what_happened": "What happened?",
+"report_type_bug": "Bug",
+"report_type_crash": "Crash",
+"report_type_ui": "UI issue",
+"report_type_idea": "Suggestion",
+"report_describe": "Describe the issue",
+"report_describe_hint": "Tell us what went wrong or what we can improve…",
+"report_screenshot": "Attach screenshot",
+"report_screenshot_sub": "Optional — pick an image from gallery",
+"report_device_info": "Include app & device info",
+"report_send": "Send report",
+"report_empty_hint": "Please describe the issue first."
 },
 "arrays": {
 "mood_lines_happy": [

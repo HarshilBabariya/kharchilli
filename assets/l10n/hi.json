@@ -1229,7 +1229,22 @@
 "unlock_watch_video": "वीडियो देखें (8 घंटे अनलॉक)",
 "go_to_spin_wheel": "स्पिन व्हील पर जाएं",
 "unlock_granted_8h": "%s 8 घंटे के लिए अनलॉक!",
-"ad_not_ready": "विज्ञापन अभी लोड हो रहा है—थोड़ी देर में फिर कोशिश करें।"
+"ad_not_ready": "विज्ञापन अभी लोड हो रहा है—थोड़ी देर में फिर कोशिश करें।",
+"more_details": "अधिक विवरण",
+"report_issue": "समस्या रिपोर्ट करें",
+"report_issue_sub": "बग रिपोर्ट या सुझाव भेजें",
+"report_what_happened": "क्या हुआ?",
+"report_type_bug": "बग",
+"report_type_crash": "क्रैश",
+"report_type_ui": "UI समस्या",
+"report_type_idea": "सुझाव",
+"report_describe": "समस्या का विवरण लिखें",
+"report_describe_hint": "बताएं कि क्या गलत हुआ या हम क्या बेहतर कर सकते हैं…",
+"report_screenshot": "स्क्रीनशॉट जोड़ें",
+"report_screenshot_sub": "वैकल्पिक — गैलरी से फोटो चुनें",
+"report_device_info": "ऐप और डिवाइस की जानकारी शामिल करें",
+"report_send": "रिपोर्ट भेजें",
+"report_empty_hint": "कृपया पहले समस्या का विवरण लिखें।"
 },
 "arrays": {
 "mood_lines_happy": [
