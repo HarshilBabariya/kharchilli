@@ -1244,7 +1244,9 @@
 "report_screenshot_sub": "Optional — pick an image from gallery",
 "report_device_info": "Include app & device info",
 "report_send": "Send report",
-"report_empty_hint": "Please describe the issue first."
+"report_empty_hint": "Please describe the issue first.",
+"voice_short": "Speak",
+"paste_short": "Paste SMS"
 },
 "arrays": {
 "mood_lines_happy": [

@@ -1244,7 +1244,9 @@
 "report_screenshot_sub": "वैकल्पिक — गैलरी से फोटो चुनें",
 "report_device_info": "ऐप और डिवाइस की जानकारी शामिल करें",
 "report_send": "रिपोर्ट भेजें",
-"report_empty_hint": "कृपया पहले समस्या का विवरण लिखें।"
+"report_empty_hint": "कृपया पहले समस्या का विवरण लिखें।",
+"voice_short": "बोलें",
+"paste_short": "SMS पेस्ट करें"
 },
 "arrays": {
 "mood_lines_happy": [
